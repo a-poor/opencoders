@@ -9,6 +9,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut spec: Value =
         serde_json::from_slice(&fs::read(root.join("openapi/opencode-v2.json"))?)?;
     let args: Vec<_> = env::args().skip(1).collect();
+    if args == ["--discovery"] || args == ["--discovery", "--check"] {
+        let output = opencoders_model_spike::discovery::generate_discovery(&spec)?;
+        let path = root.join("src/models/discovery.rs");
+        if args.len() == 2 {
+            if fs::read_to_string(&path)? != output {
+                return Err("discovery models are stale; regenerate with --discovery".into());
+            }
+            println!("Discovery models match the pinned inputs");
+        } else {
+            fs::create_dir_all(path.parent().unwrap())?;
+            fs::write(&path, output)?;
+            println!("Generated {}", path.display());
+        }
+        return Ok(());
+    }
     if args == ["--server-info"] || args == ["--server-info", "--check"] {
         let output = opencoders_model_spike::server_info::generate_server_info(&spec)?;
         let path = root.join("src/models/generated.rs");
@@ -33,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         || (check && (all || raw))
     {
         return Err(
-            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check]]".into(),
+            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check]]".into(),
         );
     }
     let config: Value = serde_json::from_str(include_str!("../probes.json"))?;

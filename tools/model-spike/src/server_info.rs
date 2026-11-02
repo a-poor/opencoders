@@ -42,7 +42,7 @@ pub fn generate_server_info(spec: &Value) -> Result<String, Box<dyn std::error::
     ))
 }
 
-fn allow_additive_fields(value: &mut Value) {
+pub(crate) fn allow_additive_fields(value: &mut Value) {
     match value {
         Value::Object(map) => {
             if map.get("additionalProperties") == Some(&Value::Bool(false)) {

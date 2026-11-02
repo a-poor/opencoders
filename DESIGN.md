@@ -1,6 +1,7 @@
 # opencoders design and implementation plan
 
-Status: foundation implemented through typed `server.info()`; broader API and
+Status: foundation implemented through `server.info()`, `location.get`, and
+`agent.list` with configurable location selection; broader API and
 streaming sections remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
@@ -102,7 +103,7 @@ A client builder should support:
 - Connection and ordinary-request timeouts.
 - An existing `reqwest::Client` for custom TLS, proxy, and transport configuration.
 
-The initial implementation provides all of these except location configuration.
+The initial implementation provides all of these configuration options.
 It uses reqwest 0.13, supports Rust 1.88+, and enables HTTPS through the default
 `rustls` feature. Base URLs preserve reverse-proxy path prefixes and reject URL
 credentials, queries, and fragments. Bearer authentication and arbitrary headers
@@ -120,6 +121,21 @@ routes and server-wide event subscriptions must retain their upstream semantics.
 Paths refer to the server's filesystem and should not require local filesystem
 access or local path canonicalization.
 
+`ClientBuilder::default_location(Location::directory(...))` selects a default for
+location-aware routes. `location().get_at(...)` and `agents().list_at(...)`
+override it for one call without mutating shared configuration. Their argument
+`Location::Unspecified` omits the query entirely, bypassing the SDK default while
+retaining caller-supplied headers. The upstream client's documented fallback is
+location headers followed by the server working directory. This does not promise
+to clear location headers configured on an injected HTTP client.
+
+Both implemented discovery routes explicitly declare `deepObject`/`explode` in
+the pinned schema. We encode a directory with the `location[directory]` key and
+standard query percent encoding, retaining arbitrary server path syntax. Explicit
+null query encoding is not exposed; no equivalence between omission, empty string,
+and the literal string `null` is assumed. Routes with unspecified serialization
+styles and live-server fallback behavior still need verification.
+
 Authentication headers must work consistently for ordinary requests and streams.
 Convenience authentication and pairing helpers should follow verified upstream
 behavior; the empty OpenAPI security section is not evidence that authentication
@@ -130,8 +146,8 @@ separate from ordinary requests. Dropping a request or stream cancels local
 consumption; it does not promise to undo a request already accepted by the server.
 Interrupting an agent is an explicit API operation.
 
-The default transport disables redirects and automatic retries. In particular, a transport error after
-prompt submission must not silently cause duplicate input. Any future retry
+The default transport disables redirects and automatic retries. In particular,
+a transport error after prompt submission must not silently cause duplicate input. Any future retry
 policy must consider the operation's actual idempotency contract.
 
 ### Public Rust API
@@ -139,6 +155,10 @@ policy must consider the operation's actual idempotency contract.
 Group operations by resource rather than exposing hundreds of methods directly
 on `Client`. The implemented `client.server().info().await` returns typed server
 information directly, matching the operation's unenveloped HTTP 200 body.
+`client.location().get().await` also returns a direct response, with directory and
+project information. `client.agents().list().await` returns an `AgentListResponse`
+containing both the resolved `location` and the `data` list, without filtering
+hidden agents. Each method has a per-call location override described above.
 `client.sessions().create(request).await` illustrates the planned shape for later
 resources; those names and signatures remain provisional.
 
@@ -174,9 +194,20 @@ fields both decode to `None` for these response-only types; this does not settle
 the representation of future update requests. `--server-info --check` verifies
 checked-in output without modifying it.
 
+`--discovery` generates `src/models/discovery.rs`, extracting the inline
+`agent.list` envelope and its transitive models. It uses the same additive-field
+policy and validates positive safe-integer agent step limits. A guarded schema
+simplification represents `"auto" | string` cache intervals as strings; a guarded
+named replacement represents provider timeouts as a JSON number or `false`.
+`serde_json::Number` preserves integer values without conversion through `f64`.
+Cache TTL patterns use the generator's `regress` validator. Provider request
+`Debug` redacts configuration, while explicit field access and serialization
+retain values. Unknown enum variants currently produce decode errors, rather than
+silently accepting unsupported permission effects or other values.
+
 The experiment demonstrates adapters for three-state update fields and explicit
-event dispatch. Production response tolerance, full event/error coverage, numeric
-constraints, and inline endpoint schemas still require review. Compilation alone
+event dispatch. Response tolerance, full event/error coverage, numeric
+constraints, and inline schemas for additional endpoints still require review. Compilation alone
 does not establish wire compatibility or complete schema validation.
 
 The generation evaluation must cover tagged unions, nested references, optional
@@ -212,7 +243,8 @@ not appear in default debug or tracing output.
 
 The foundation implements `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
 errors plus separate client-build failures. Only HTTP 200 is successful for
-`server.info()`. Known validation/authentication errors expose typed details;
+all three implemented routes. Known validation/authentication, missing-location,
+and unavailable-service errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
 
@@ -323,7 +355,7 @@ CI should run formatting, Clippy, unit/protocol tests, documentation and example
 checks, supported feature combinations, and a regeneration consistency check.
 The library declares Rust 1.88 as its minimum; its locked dependency build has
 been checked with that compiler. The initial client has deterministic model and
-mock HTTP tests, a compiling server-info example, and tests without default TLS
+mock HTTP tests, compiling server-info/discovery examples, and tests without default TLS
 features. A pinned live server and CI automation remain outstanding.
 
 Record endpoint coverage by upstream operation ID, including deliberate

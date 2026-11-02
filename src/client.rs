@@ -1,6 +1,6 @@
 use crate::{
-    BuildError, DecodeError, Error, HttpError, ResponseTooLargeError, Result, Server,
-    TransportError,
+    Agents, BuildError, DecodeError, Error, HttpError, Location, Locations, ResponseTooLargeError,
+    Result, Server, TransportError,
 };
 use reqwest::{
     StatusCode, Url,
@@ -21,6 +21,7 @@ pub struct Client {
 }
 
 struct Inner {
+    default_location: Location,
     base_url: Url,
     http: reqwest::Client,
     headers: HeaderMap,
@@ -43,6 +44,7 @@ impl Client {
         let mut headers = HeaderMap::new();
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
         ClientBuilder {
+            default_location: Location::Unspecified,
             base_url: base_url.into(),
             http: None,
             headers,
@@ -59,6 +61,21 @@ impl Client {
         Server { client: self }
     }
 
+    /// Resolve working locations on the server.
+    pub fn location(&self) -> Locations<'_> {
+        Locations { client: self }
+    }
+
+    /// Discover registered agents at a working location.
+    pub fn agents(&self) -> Agents<'_> {
+        Agents { client: self }
+    }
+
+    /// Configured default for location-aware routes. Server-wide routes ignore it.
+    pub fn default_location(&self) -> &Location {
+        &self.inner.default_location
+    }
+
     /// The validated base URL, normalized to end in `/`.
     pub fn base_url(&self) -> &Url {
         &self.inner.base_url
@@ -70,12 +87,27 @@ impl Client {
         operation: &'static str,
         expected: StatusCode,
     ) -> Result<T> {
+        self.get_json_at(path, operation, expected, &Location::Unspecified)
+            .await
+    }
+
+    pub(crate) async fn get_json_at<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        operation: &'static str,
+        expected: StatusCode,
+        location: &Location,
+    ) -> Result<T> {
         // Route paths are crate-owned constants, relative to a validated directory URL.
-        let url = self
+        let mut url = self
             .inner
             .base_url
             .join(path)
             .expect("valid relative API route");
+        if let Location::Directory(directory) = location {
+            url.query_pairs_mut()
+                .append_pair("location[directory]", directory);
+        }
         let mut request = self.inner.http.get(url).headers(self.inner.headers.clone());
         if let Some(timeout) = self.inner.request_timeout {
             request = request.timeout(timeout);
@@ -139,6 +171,7 @@ impl fmt::Debug for Client {
 
 /// Configuration for [`Client`]. Validation happens in [`Self::build`].
 pub struct ClientBuilder {
+    default_location: Location,
     base_url: String,
     http: Option<reqwest::Client>,
     headers: HeaderMap,
@@ -150,6 +183,13 @@ pub struct ClientBuilder {
 }
 
 impl ClientBuilder {
+    /// Set the default directory selection for routes that accept a location.
+    /// Defaults to [`Location::Unspecified`]. Per-call overrides do not change it.
+    pub fn default_location(mut self, location: Location) -> Self {
+        self.default_location = location;
+        self
+    }
+
     /// Merge default request headers. Later values override earlier values.
     ///
     /// SDK headers override defaults on a supplied reqwest client. All caller
@@ -265,6 +305,7 @@ impl ClientBuilder {
         };
         Ok(Client {
             inner: Arc::new(Inner {
+                default_location: self.default_location,
                 base_url,
                 http,
                 headers: self.headers,

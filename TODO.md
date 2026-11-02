@@ -36,16 +36,15 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active tasks. The client-foundation goal is recorded under **Completed**.
-The next candidate goal is location configuration and a representative
-location-scoped discovery method, exercising nested query encoding and envelopes.
+No active tasks. The location-aware discovery goal is recorded under **Completed**.
+The next candidate goal is session listing with explicit filters and pagination.
 
 ## Now: contract and foundation (milestone 1)
 
 ### Contract and model generation
 
 - [ ] Select a pinned OpenCode server release for compatibility testing.
-- [ ] Extend the reviewed `--server-info` generation path to additional models
+- [ ] Extend the reviewed `--server-info`/`--discovery` generation paths to additional models
   and decide when to rename the private experiment into the permanent tool.
   Ordinary crate builds must remain independent of generation and schema fetching.
 - [ ] Apply the spike findings to broader production models: additive response fields,
@@ -56,23 +55,20 @@ location-scoped discovery method, exercising nested query encoding and envelopes
 
 ### Crate and transport
 
-- [ ] Add default location and per-request overrides to the client on applicable
-  routes; verify nested location query encoding and dynamic path-segment encoding.
+- [ ] Verify dynamic path-segment encoding when adding routes with path parameters.
 - [ ] Separate ordinary-request timeouts from streaming and long-running
   operations; document local cancellation versus server-side interruption.
 - [ ] Extend response handling to endpoints with documented empty bodies and
   multiple success statuses. Add typed API errors as new resources need them.
-- [ ] Establish request/response conventions for IDs, omitted versus null values,
-  response metadata, and pagination cursors.
-- [ ] Implement representative location-scoped methods to exercise envelopes
-  and public request conventions beyond the direct `server.info()` response.
+- [ ] Extend the discovery response/ID conventions to request construction,
+  omitted versus null updates, and pagination cursors.
 - [ ] Document ambiguous mutation outcomes after transport failures when adding
   write operations; keep the default transport's automatic retries disabled.
 
 ### Initial validation and repository setup
 
-- [ ] Extend mock-server coverage to nested query/request encoding, envelopes,
-  and documented empty responses as additional operations are implemented.
+- [ ] Extend mock-server coverage to request bodies, pagination, and documented
+  empty responses as additional operations are implemented.
 - [ ] Add opt-in smoke tests against the pinned server using disposable data.
 - [ ] Add CI for formatting, Clippy, tests, documentation/examples, supported
   features, the minimum Rust version, and reproducible generation.
@@ -86,7 +82,8 @@ location-scoped discovery method, exercising nested query encoding and envelopes
 - [ ] Implement session creation, retrieval, updates, deletion, and forking.
 - [ ] Implement message history and message retrieval while retaining cursors
   and relevant response metadata.
-- [ ] Implement agent/model discovery and session agent/model selection.
+- [ ] Implement model discovery, individual agent retrieval, and session
+  agent/model selection. Agent listing is implemented.
 - [ ] Implement prompt submission, delivery modes, and inbox inspection/update/
   cancellation. Keep admission distinct from execution completion.
 - [ ] Implement interruption and execution observation/waiting.
@@ -198,7 +195,8 @@ when a decision is made.
 - [ ] Confirm supported authentication and pairing behavior beyond the schema's
   empty security declarations; determine which convenience helpers to expose.
 - [ ] Resolve nested location encoding for routes without an explicit OpenAPI
-  serialization style.
+  serialization style. Discovery routes use documented `deepObject` encoding;
+  explicit-null query semantics and live-server/header fallback remain unverified.
 - [ ] Choose ergonomic resource names and request construction patterns after
   exercising representative methods in library examples.
 - [ ] Confirm the semantics of omitted versus explicit null fields before choosing
@@ -212,6 +210,20 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete location-aware discovery with TDD: default location configuration,
+  per-call directory overrides/omission, `location.get`, and `agent.list`.
+  Queries preserve server path strings; the SDK default never leaks onto
+  server-wide routes. Agent responses retain resolved location metadata and
+  additive fields. Caller location headers survive query omission.
+- [x] Add typed missing-location/unavailable-service errors and extend reviewed
+  generation with `--discovery`. Guard schema adaptations for positive agent
+  step limits, string cache intervals, and number-or-false provider timeouts.
+  Redact provider request configuration in default debug formatting.
+- [x] Add `examples/discovery.rs`, crate/README usage, and documented response
+  compatibility policies. Validate 44 client tests, 21 generator tests, two
+  doctests, both examples, HTTP-only tests, Rust 1.88, formatting, Clippy, docs,
+  and all three model regeneration checks. Live-server/header fallback and
+  explicit-null query behavior remain unverified; no live compatibility claim.
 - [x] Complete the client-foundation goal with test-first configuration and
   protocol coverage: cloneable `Client`/`ClientBuilder`, explicit base URL,
   authentication/headers, deadlines, injected reqwest client, and typed

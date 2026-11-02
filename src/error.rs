@@ -192,7 +192,7 @@ impl fmt::Debug for HttpError {
     }
 }
 
-/// Known server-info errors, with an escape hatch for future or malformed shapes.
+/// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
     /// The request could not be validated.
@@ -209,6 +209,20 @@ pub enum ApiError {
         /// Server explanation.
         message: String,
     },
+    /// The requested working location could not be resolved.
+    LocationNotFound {
+        /// Location reported by the server.
+        location: crate::models::LocationPublicRef,
+        /// Server explanation.
+        message: String,
+    },
+    /// A required server service is unavailable.
+    ServiceUnavailable {
+        /// Optional service name.
+        service: Option<String>,
+        /// Server explanation.
+        message: String,
+    },
     /// JSON that does not match a known error shape. This includes malformed known tags.
     Unrecognized(Value),
 }
@@ -217,6 +231,7 @@ impl ApiError {
     fn from_json(raw: Value) -> Self {
         #[derive(Deserialize)]
         #[serde(tag = "_tag")]
+        #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
             InvalidRequestError {
                 message: String,
@@ -224,6 +239,14 @@ impl ApiError {
                 field: Option<String>,
             },
             UnauthorizedError {
+                message: String,
+            },
+            LocationNotFoundError {
+                location: crate::models::LocationPublicRef,
+                message: String,
+            },
+            ServiceUnavailableError {
+                service: Option<String>,
                 message: String,
             },
         }
@@ -238,6 +261,12 @@ impl ApiError {
                 field,
             },
             Ok(Known::UnauthorizedError { message }) => Self::Unauthorized { message },
+            Ok(Known::LocationNotFoundError { location, message }) => {
+                Self::LocationNotFound { location, message }
+            }
+            Ok(Known::ServiceUnavailableError { service, message }) => {
+                Self::ServiceUnavailable { service, message }
+            }
             Err(_) => Self::Unrecognized(raw),
         }
     }
@@ -248,6 +277,8 @@ impl fmt::Debug for ApiError {
         f.write_str(match self {
             Self::InvalidRequest { .. } => "InvalidRequest { .. }",
             Self::Unauthorized { .. } => "Unauthorized { .. }",
+            Self::LocationNotFound { .. } => "LocationNotFound { .. }",
+            Self::ServiceUnavailable { .. } => "ServiceUnavailable { .. }",
             Self::Unrecognized(_) => "Unrecognized { .. }",
         })
     }

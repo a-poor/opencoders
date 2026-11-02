@@ -1,6 +1,7 @@
 //! Private model-generation experiment; not the opencoders public API.
 
 pub mod compat;
+pub mod discovery;
 pub mod events;
 pub mod server_info;
 #[rustfmt::skip]
@@ -69,7 +70,14 @@ pub fn generate(
             std::iter::empty(),
         );
     }
-    let mut types = typify::TypeSpace::new(&settings);
+    generate_with_settings(schema, &settings)
+}
+
+pub(crate) fn generate_with_settings(
+    schema: Value,
+    settings: &typify::TypeSpaceSettings,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let mut types = typify::TypeSpace::new(settings);
     types.add_root_schema(serde_json::from_value::<schemars::schema::RootSchema>(
         schema,
     )?)?;

@@ -5,7 +5,7 @@ overrides and hand-written request/event adapters. Keep generated wire types
 behind a reviewed public API. This private workspace package is a feasibility
 experiment, not the implementation of the `opencoders` client.
 
-The root crate now exposes the first reviewed server-info models and HTTP method.
+The root crate exposes reviewed server-info and discovery models and HTTP methods.
 Workspace `default-members` keeps this tool out of ordinary `cargo build` and
 `cargo test`; use `--workspace` or `-p` deliberately. Nothing runs generation at
 build time. Generated probe and production model files are checked in separately.
@@ -29,6 +29,29 @@ the runtime validator lives in the root crate's `src/models/mod.rs`.
 These adaptations apply only to this response slice. The original raw experiment
 and its characterization tests remain unchanged. Broader model promotion is still
 a separate task.
+
+## Reviewed discovery models
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --discovery
+cargo run --locked --offline -p opencoders-model-spike -- --discovery --check
+```
+
+Output goes to the root `src/models/discovery.rs`. The inline `agent.list`
+envelope, location responses, and transitive agent/provider models are selected
+from the pinned schema. Adaptations in `src/discovery.rs` preserve additive
+fields, make response objects/enums non-exhaustive, and enforce positive
+safe-integer `steps` while preserving absence. A guarded simplification maps the
+overlapping `"auto" | string` interval union to string. A guarded named replacement
+uses the root `ProviderTimeout` adapter for numbers or exactly `false`; raw Typify
+accepts both booleans. Numeric JSON retains integer precision. Provider requests
+use a redacted handwritten `Debug` implementation; cache TTL regex validation
+uses `regress`.
+
+The public model tests cover these wire behaviors and the tool tests require
+review when adapted schema constraints change. Unknown string enum variants are
+decode errors. Most optional response fields accept null as absent; `steps`
+rejects explicit null. These models are not update-request types.
 
 ## Run the experiment
 
@@ -100,7 +123,7 @@ generation or compilation does not prove complete JSON Schema validation.
 
 Tests named `raw_*` characterize generator limitations. They do not define the
 desired public client contract. Keep these findings distinct from client bugs:
-the root library uses the separately adapted server-info output, not the probe
+the root library uses separately adapted server-info/discovery output, not the probe
 models.
 
 ## Alternatives and next steps
