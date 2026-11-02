@@ -621,6 +621,21 @@ pub struct SessionRevert {
     #[serde(flatten)]
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
+///`SessionUpdateRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionUpdateRequest {
+    ///Archive the session with true or restore it with false. Repeating the current state is a no-op.
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub archived: super::RequestField<bool>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub metadata: super::RequestField<SessionMetadata>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub permissions: super::RequestField<PermissionRulesetInput>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub title: super::RequestField<::std::string::String>,
+}
 ///Opaque pagination cursor returned as cursor.previous or cursor.next in the previous response.
 #[derive(
     ::serde::Deserialize,

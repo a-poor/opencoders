@@ -71,7 +71,7 @@ impl Client {
         Agents { client: self }
     }
 
-    /// Create, retrieve, and browse sessions.
+    /// Create, retrieve, update, remove, and browse sessions.
     pub fn sessions(&self) -> Sessions<'_> {
         Sessions { client: self }
     }
@@ -138,6 +138,15 @@ impl Client {
         operation: &'static str,
         expected: StatusCode,
     ) -> Result<T> {
+        self.send_json(
+            self.request(Method::GET, self.segment_url(path, segment)),
+            operation,
+            expected,
+        )
+        .await
+    }
+
+    fn segment_url(&self, path: &str, segment: &str) -> Url {
         let mut url = self
             .inner
             .base_url
@@ -148,8 +157,7 @@ impl Client {
         url.path_segments_mut()
             .expect("validated HTTP base URL")
             .push(segment);
-        self.send_json(self.request(Method::GET, url), operation, expected)
-            .await
+        url
     }
 
     pub(crate) async fn post_json<T: DeserializeOwned, B: serde::Serialize + ?Sized>(
@@ -159,17 +167,56 @@ impl Client {
         expected: StatusCode,
         body: &B,
     ) -> Result<T> {
-        let body = serde_json::to_vec(body)
-            .map_err(|source| Error::Encode(EncodeError { operation, source }))?;
         let url = self
             .inner
             .base_url
             .join(path)
             .expect("valid relative API route");
+        let request = self.json_request(Method::POST, url, operation, body)?;
+        self.send_json(request, operation, expected).await
+    }
+
+    pub(crate) async fn patch_json_empty<B: serde::Serialize + ?Sized>(
+        &self,
+        path: &str,
+        segment: &str,
+        operation: &'static str,
+        body: &B,
+    ) -> Result<()> {
+        let request = self.json_request(
+            Method::PATCH,
+            self.segment_url(path, segment),
+            operation,
+            body,
+        )?;
+        self.send_empty(request, operation).await
+    }
+
+    pub(crate) async fn delete_empty(
+        &self,
+        path: &str,
+        segment: &str,
+        operation: &'static str,
+    ) -> Result<()> {
+        self.send_empty(
+            self.request(Method::DELETE, self.segment_url(path, segment)),
+            operation,
+        )
+        .await
+    }
+
+    fn json_request<B: serde::Serialize + ?Sized>(
+        &self,
+        method: Method,
+        url: Url,
+        operation: &'static str,
+        body: &B,
+    ) -> Result<reqwest::RequestBuilder> {
+        let body = serde_json::to_vec(body)
+            .map_err(|source| Error::Encode(EncodeError { operation, source }))?;
         let headers =
             HeaderMap::from_iter([(CONTENT_TYPE, HeaderValue::from_static("application/json"))]);
-        let request = self.request(Method::POST, url).headers(headers).body(body);
-        self.send_json(request, operation, expected).await
+        Ok(self.request(method, url).headers(headers).body(body))
     }
 
     fn request(&self, method: Method, url: Url) -> reqwest::RequestBuilder {
@@ -181,10 +228,39 @@ impl Client {
 
     async fn send_json<T: DeserializeOwned>(
         &self,
-        mut request: reqwest::RequestBuilder,
+        request: reqwest::RequestBuilder,
         operation: &'static str,
         expected: StatusCode,
     ) -> Result<T> {
+        let (status, body) = self.send_response(request, operation, expected).await?;
+        serde_json::from_slice(&body).map_err(|source| {
+            Error::Decode(DecodeError::new(
+                operation,
+                status,
+                &body,
+                self.inner.max_error_body_bytes,
+                source,
+            ))
+        })
+    }
+
+    async fn send_empty(
+        &self,
+        request: reqwest::RequestBuilder,
+        operation: &'static str,
+    ) -> Result<()> {
+        // HTTP 204 has no response content. Do not try to decode JSON null/unit.
+        self.send_response(request, operation, StatusCode::NO_CONTENT)
+            .await
+            .map(|_| ())
+    }
+
+    async fn send_response(
+        &self,
+        mut request: reqwest::RequestBuilder,
+        operation: &'static str,
+        expected: StatusCode,
+    ) -> Result<(StatusCode, Vec<u8>)> {
         if let Some(timeout) = self.inner.request_timeout {
             request = request.timeout(timeout);
         }
@@ -223,15 +299,7 @@ impl Client {
                 limit,
             }));
         }
-        serde_json::from_slice(&body).map_err(|source| {
-            Error::Decode(DecodeError::new(
-                operation,
-                status,
-                &body,
-                self.inner.max_error_body_bytes,
-                source,
-            ))
-        })
+        Ok((status, body))
     }
 }
 

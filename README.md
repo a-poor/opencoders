@@ -3,7 +3,7 @@
 `opencoders` is an async Rust client for connecting to the [OpenCode v2 HTTP API](https://opencode.ai/v2/docs/api).
 
 The library currently supports server information, location/agent discovery, and
-session creation, retrieval, and paginated listing. It targets developers building
+session creation, retrieval, updates, deletion, and paginated listing. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -167,6 +167,44 @@ Run `cargo run --example create_session` with `OPENCODE_BASE_URL`,
 `OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates one empty
 session, retrieves it, and leaves it on the server.
 
+## Updating and deleting sessions
+
+```rust
+use opencoders::{Client, models::{SessionId, SessionUpdateRequest}};
+
+async fn manage(client: &Client, id: &SessionId) -> opencoders::Result<()> {
+    client.sessions().update(id, &SessionUpdateRequest::default()
+        .title("Renamed conversation").archived(true)).await?;
+    client.sessions().update(id, &SessionUpdateRequest::default()
+        .archived(false)).await?;
+    // Removal also deletes this session's descendants.
+    client.sessions().remove(id).await?;
+    Ok(())
+}
+```
+
+Both methods return `()` for HTTP 204, without decoding JSON. They encode the ID
+as one path segment and ignore the SDK's discovery location default. Updates
+support `title`, `metadata`, `permissions`, and `archived`, each using
+`RequestField<T>` to preserve omission, null, and values.
+
+On tested v2.2.5, omitted and null fields leave existing values unchanged.
+Metadata and permission values replace their contents; an empty map or list
+clears those contents. `archived(true)` archives, and `archived(false)` restores.
+An empty title requests server-generated titling and can invoke a model when the
+session has conversation history; it does not clear the title.
+
+Deletion removes the session and its descendants; applications own confirmation
+and recovery decisions. Repeated deletion returns a typed missing-session error
+on v2.2.5. Updates can be partially applied before an error, and a lost response
+can follow a completed update or deletion. The default transport does not retry
+either method; inspect server state before deciding to repeat a mutation.
+
+Run `cargo run --example session_lifecycle` with `OPENCODE_BASE_URL`,
+`OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates a fresh empty
+session, renames it, archives/restores it, and deletes it without a model call.
+If a later step fails, the printed session ID is available for inspection.
+
 ## Configuration and behavior
 
 - Base URLs accept an optional reverse-proxy prefix: `https://host/opencode`
@@ -201,9 +239,10 @@ session, retrieves it, and leaves it on the server.
 
 `BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
 `Error::Http`, `Error::Decode`, or `Error::ResponseTooLarge`. Use `operation()`,
-`status()`, and `is_timeout()` for diagnostics and control flow. All implemented methods
-expect exactly HTTP 200; unexpected redirects and other 2xx statuses are HTTP
-errors too. Encoding errors happen before any request is sent and have no status.
+`status()`, and `is_timeout()` for diagnostics and control flow. JSON response
+methods expect exactly HTTP 200; session update/remove expect HTTP 204 with no
+JSON decoding. Unexpected redirects and other success statuses are HTTP errors
+too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.
 
 HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,

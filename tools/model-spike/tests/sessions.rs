@@ -59,3 +59,19 @@ fn create_adapters_require_optional_nullable_fields_and_matching_response_envelo
         .unwrap() = json!({"type": ["string", "null"]});
     assert!(generate_sessions(&changed).is_err());
 }
+
+#[test]
+fn update_adapters_require_optional_nullable_fields() {
+    let spec: Value =
+        serde_json::from_str(include_str!("../../../openapi/opencode-v2.json")).unwrap();
+    let pointer =
+        "/paths/~1api~1session~1{sessionID}/patch/requestBody/content/application~1json/schema";
+    for field in ["title", "metadata", "permissions", "archived"] {
+        let mut changed = spec.clone();
+        changed.pointer_mut(pointer).unwrap()["properties"][field] = json!({"type": "string"});
+        assert!(generate_sessions(&changed).is_err());
+    }
+    let mut changed = spec;
+    changed.pointer_mut(pointer).unwrap()["required"] = json!(["archived"]);
+    assert!(generate_sessions(&changed).is_err());
+}

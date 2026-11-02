@@ -36,8 +36,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active goal. Next candidate: session updates and deletion, including typed
-empty responses and verified update-field semantics.
+No active tasks. Session updates and deletion are complete; see **Completed**.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -56,15 +55,15 @@ empty responses and verified update-field semantics.
 
 - [ ] Separate ordinary-request timeouts from streaming and long-running
   operations; document local cancellation versus server-side interruption.
-- [ ] Extend response handling to endpoints with documented empty bodies and
-  multiple success statuses. Add typed API errors as new resources need them.
+- [ ] Extend response handling to endpoints with multiple success statuses.
+  Empty HTTP 204 responses are supported. Add typed API errors as resources need them.
 - [ ] Apply the established request/ID and omitted/null/value conventions to
-  session updates and other mutations.
+  additional mutations; session creation and updates are implemented.
 
 ### Initial validation and repository setup
 
-- [ ] Extend mock-server coverage to request bodies and documented
-  empty responses as additional operations are implemented.
+- [ ] Extend mock-server coverage as additional operations are implemented,
+  following the existing JSON body, empty-response, and mutation retry checks.
 - [ ] After pushing the workflows, confirm hosted CI and manually run the pinned
   server smoke workflow on Linux/macOS. Local macOS compatibility is verified;
   Linux execution remains unverified.
@@ -74,8 +73,8 @@ empty responses and verified update-field semantics.
 
 ### Core resources
 
-- [ ] Implement session updates, deletion, and forking. Creation and retrieval are
-  implemented with typed request/response models.
+- [ ] Implement session forking. Creation, retrieval, updates, and deletion are
+  implemented with typed requests and appropriate response handling.
 - [ ] Implement message history and message retrieval while retaining cursors
   and relevant response metadata.
 - [ ] Implement model discovery, individual agent retrieval, and session
@@ -109,9 +108,10 @@ empty responses and verified update-field semantics.
 
 ### Examples and first usable release
 
-- [ ] Add runnable Rust examples for session listing, history, prompt submission,
+- [ ] Add runnable Rust examples for history, prompt submission,
   event consumption, permission replies, and form replies. Use ordinary output
-  or assertions, with no GUI/TUI implementation.
+  or assertions, with no GUI/TUI implementation. Session listing, creation, and
+  update/deletion lifecycle examples are implemented.
 - [ ] Add an example of background event consumption and recovery after
   disconnection using minimal application-owned state.
 - [ ] Add an automation example using the same API surface.
@@ -196,9 +196,13 @@ when a decision is made.
   directory query encoding, header fallback, and query precedence.
 - [ ] Choose ergonomic resource names and request construction patterns after
   exercising representative methods in library examples.
-- [ ] Verify omitted/null behavior for update requests. `RequestField<T>` preserves
+- [ ] Verify omitted/null behavior for future mutations. `RequestField<T>` preserves
   all three wire states; v2.2.5 create accepts null for all eight fields and uses
-  server-cwd fallback for omitted/null location without a parent.
+  server-cwd fallback for omitted/null location without a parent. All four session
+  update fields are no-ops when omitted/null; metadata/permissions replace contents.
+- [ ] Verify generated titling on populated sessions and deletion during active
+  execution/concurrent changes when those workflows are implemented. Current live
+  checks use empty, idle sessions without model calls; no atomicity is promised.
 - [ ] Verify maximum session-list limits, project/subpath filters, and page
   consistency during concurrent changes. v2.2.5 smoke tests confirm cursor-bound
   filters/order, boundary cursors that can lead to empty pages, and zero-limit
@@ -212,6 +216,23 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete session update/deletion with TDD: `sessions().update(&id, &request)`
+  and `sessions().remove(&id)` use encoded ID paths, ignore the discovery location
+  default, and accept only HTTP 204 without JSON decoding. Share deadlines, bounded
+  diagnostics, typed errors, and the default no-retry policy with existing methods.
+- [x] Generate `SessionUpdateRequest` through `--sessions`, preserving all four
+  omitted/null/value states and reusing strict nested input types. Guard request
+  shapes and add fluent title/metadata/permissions/archive setters.
+- [x] Verify request bodies, empty responses including keep-alive, unexpected
+  statuses, typed failures, deadlines, and no retries after disconnects. Extend the
+  pinned v2.2.5/macOS arm64 test to cover rename, metadata/permission replacement
+  and clearing, archive/restore, omitted/null no-ops, recursive deletion through
+  three levels, and repeated-delete errors. All fixtures now use SDK methods.
+- [x] Add `examples/session_lifecycle.rs` and document server-generated titling,
+  partial/ambiguous mutation outcomes, and recursive deletion. Validate 83 client
+  tests, 24 generator tests, five doctests, the live smoke test, HTTP-only tests,
+  both Rust 1.88 feature builds, formatting, Clippy, docs, five examples, and all
+  four regeneration checks. No model calls, publishing, or automatic commit.
 - [x] Complete typed session creation and retrieval: `sessions().create(&request)`
   and `sessions().get(&id)` preserve the `SessionResponse` envelope, encode IDs as
   single path segments, and expose typed missing-session/parent errors.

@@ -38,7 +38,7 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     // Inputs keep strict objects and their own nested types. Never reuse tolerant
     // response objects whose extension maps could be sent back as request fields.
     add_request_schemas(&mut spec)?;
-    let request = select_schemas(&spec, &["SessionCreateRequest"])?;
+    let request = select_schemas(&spec, &["SessionCreateRequest", "SessionUpdateRequest"])?;
     schema["definitions"]
         .as_object_mut()
         .unwrap()
@@ -64,13 +64,13 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     );
     let mut syntax = syn::parse_file(&generate_with_settings(schema, &settings)?)?;
     let mut adapted_fields = 0;
-    let mut request_fields = 0;
+    let mut request_fields = [0, 0];
     let mut model_variant = false;
     for item in &mut syntax.items {
         match item {
             Item::Struct(item) if matches!(item.fields, syn::Fields::Named(_)) => {
                 item.attrs.push(parse_quote!(#[non_exhaustive]));
-                if item.ident == "SessionCreateRequest" {
+                if item.ident == "SessionCreateRequest" || item.ident == "SessionUpdateRequest" {
                     // Typify defaults nullable optional properties to Option<T>.
                     // Replace those with a three-state field and skip only Omitted.
                     for field in &mut item.fields {
@@ -100,7 +100,7 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
                                 .push(parse_quote!(#[serde(rename = "parentID")]));
                         }
                         field.attrs.push(parse_quote!(#[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]));
-                        request_fields += 1;
+                        request_fields[usize::from(item.ident == "SessionUpdateRequest")] += 1;
                     }
                 }
                 if item.ident == "SessionModelInput" {
@@ -142,7 +142,7 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     if adapted_fields != 3 {
         return Err("FileDiffInfo fields changed; review the session model adapters".into());
     }
-    if request_fields != 8 || !model_variant {
+    if request_fields != [8, 4] || !model_variant {
         return Err("session input fields changed; review request adapters".into());
     }
     Ok(format!(
@@ -152,16 +152,10 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
 }
 
 fn add_request_schemas(spec: &mut Value) -> Result<(), Box<dyn std::error::Error>> {
-    let mut input = spec
-        .pointer("/paths/~1api~1session/post/requestBody/content/application~1json/schema")
-        .ok_or("session.create request missing")?
-        .clone();
-    let properties = input["properties"]
-        .as_object()
-        .ok_or("request properties missing")?;
-    let names: Vec<_> = properties.keys().map(String::as_str).collect();
-    if names
-        != [
+    let mut input = nullable_request(
+        spec,
+        "/paths/~1api~1session/post/requestBody/content/application~1json/schema",
+        &[
             "agent",
             "id",
             "location",
@@ -170,24 +164,13 @@ fn add_request_schemas(spec: &mut Value) -> Result<(), Box<dyn std::error::Error
             "parentID",
             "permissions",
             "title",
-        ]
-        || input
-            .get("required")
-            .is_some_and(|required| required != &json!([]))
-        || input["additionalProperties"] != json!(false)
-        || properties.values().any(|property| {
-            property["anyOf"].as_array().is_none_or(|items| {
-                items.len() != 2
-                    || items[1] != json!({"type": "null"})
-                    || items[0] == json!({"type": "null"})
-            })
-        })
-    {
-        return Err(
-            "session.create fields must remain optional and nullable; review request adapters"
-                .into(),
-        );
-    }
+        ],
+    )?;
+    let mut update = nullable_request(
+        spec,
+        "/paths/~1api~1session~1{sessionID}/patch/requestBody/content/application~1json/schema",
+        &["archived", "metadata", "permissions", "title"],
+    )?;
     if spec.pointer("/components/schemas/Model.Ref/properties/variant")
         != Some(&json!({"type": "string"}))
     {
@@ -200,6 +183,7 @@ fn add_request_schemas(spec: &mut Value) -> Result<(), Box<dyn std::error::Error
         ("Permission.Ruleset", "PermissionRulesetInput"),
     ];
     rename_input_refs(&mut input, &names);
+    rename_input_refs(&mut update, &names);
     for (original, renamed) in names {
         let mut schema = spec["components"]["schemas"][original].clone();
         if schema.is_null() {
@@ -209,7 +193,42 @@ fn add_request_schemas(spec: &mut Value) -> Result<(), Box<dyn std::error::Error
         spec["components"]["schemas"][renamed] = schema;
     }
     spec["components"]["schemas"]["SessionCreateRequest"] = input;
+    spec["components"]["schemas"]["SessionUpdateRequest"] = update;
     Ok(())
+}
+
+fn nullable_request(
+    spec: &Value,
+    pointer: &str,
+    expected_names: &[&str],
+) -> Result<Value, Box<dyn std::error::Error>> {
+    let input = spec
+        .pointer(pointer)
+        .ok_or("session request missing")?
+        .clone();
+    let properties = input["properties"]
+        .as_object()
+        .ok_or("request properties missing")?;
+    let names: Vec<_> = properties.keys().map(String::as_str).collect();
+    if names != expected_names
+        || input
+            .get("required")
+            .is_some_and(|required| required != &json!([]))
+        || input["additionalProperties"] != json!(false)
+        || properties.values().any(|property| {
+            property["anyOf"].as_array().is_none_or(|items| {
+                items.len() != 2
+                    || items[1] != json!({"type": "null"})
+                    || items[0] == json!({"type": "null"})
+            })
+        })
+    {
+        return Err(format!(
+            "{pointer}: fields must remain optional and nullable; review request adapters"
+        )
+        .into());
+    }
+    Ok(input)
 }
 
 fn rename_input_refs(value: &mut Value, names: &[(&str, &str)]) {

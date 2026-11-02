@@ -32,10 +32,10 @@ normal interruption. The verified archive cache remains. This isolates applicati
 state; it is not an OS sandbox or a guarantee against upstream network activity.
 
 The test checks the server PID, version, temporary path, and initially empty
-session list before writing fixtures. It creates seven empty sessions through the
-SDK and retrieves sessions by ID. One archive operation uses raw HTTP solely for
-fixture setup. It never submits a prompt, invokes
-a model, or connects to an existing server. Do not manually point its environment
+session list before writing fixtures. It creates eight empty sessions through the
+SDK, retrieves and updates them, and deletes them all before completion. All session
+operations use the SDK. It never submits a prompt, invokes a model, or connects
+to an existing server. Do not manually point its environment
 variables at your normal server. `cargo test` compiles but skips this test.
 
 ## Verified behavior
@@ -52,6 +52,8 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.create` | Typed JSON requests/responses, titles, metadata, empty permissions, parent location precedence, missing-parent HTTP 404, `{}` defaults, and all eight fields explicitly null. |
 | `session.get` | Created-session round trips, retrieval across directories independently of the SDK default location, and typed missing-session HTTP 404. |
 | `session.list` | Real session decoding, server-wide scope, directory/search/root/child/archive filters, next/previous traversal, empty terminal page, invalid-cursor HTTP 400, and zero-limit rejection. |
+| `session.update` | Empty HTTP 204; title, metadata/permission replacement and clearing; archive/restore; omitted/null no-ops; cross-directory IDs; typed missing-session HTTP 404. |
+| `session.remove` | Empty HTTP 204; deletion of a parent, child, and grandchild while preserving unrelated sessions; repeated/missing deletion returns typed HTTP 404. |
 
 Two pagination details matter for consumers:
 
@@ -80,8 +82,20 @@ the SDK preserves these wire states rather than rewriting null into omission.
 Create/get ignore the SDK discovery location default. See the pinned
 [session handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/session.ts).
 No retry/idempotency or execution semantics are inferred from these empty-session
-tests. Agent/model selection, explicit IDs, and nonempty permissions are covered
-by request-shape checks, not live execution tests.
+tests. Agent/model selection and explicit IDs are covered by request-shape checks,
+not live execution tests.
+
+For updates, omission/null leave fields unchanged; `{}` is a no-op. Metadata and
+permission lists replace existing contents rather than merging; `{}` metadata
+and `[]` permissions clear those contents. Archive/restore and repeated archive
+are verified. Empty title invokes the server's titling path: the test only checks
+an empty session, where it leaves the title unchanged. The pinned
+[title generator](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/title.ts)
+returns before any model call when there is no user message; a populated session
+can invoke a model and is not tested here. Updates run sequentially in the handler;
+the SDK makes no atomicity guarantee. Deletion's recursive behavior is checked
+on idle, empty sessions, not sessions with active execution or concurrent changes.
+Nonempty permission replacement is verified as stored data, not enforcement.
 
 The existing [`openapi/provenance.json`](../../openapi/provenance.json) describes
 the original schema download, whose originating server release remains unknown.

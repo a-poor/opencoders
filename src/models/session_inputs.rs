@@ -3,6 +3,7 @@
 use super::{
     AgentId, PermissionEffect, PermissionRuleInput, PermissionRulesetInput, ProviderId,
     SessionCreateRequest, SessionId, SessionLocationInput, SessionMetadata, SessionModelInput,
+    SessionUpdateRequest,
 };
 use crate::RequestField;
 
@@ -94,6 +95,34 @@ impl SessionCreateRequest {
     /// Set permission rules explicitly; an empty list is sent unchanged.
     pub fn permissions(mut self, permissions: impl Into<PermissionRulesetInput>) -> Self {
         self.permissions = RequestField::Value(permissions.into());
+        self
+    }
+}
+
+impl SessionUpdateRequest {
+    /// Rename a session. On v2.2.5, an empty string requests generated titling
+    /// instead and may invoke a model when the session has conversation history.
+    pub fn title(mut self, title: impl Into<String>) -> Self {
+        self.title = RequestField::Value(title.into());
+        self
+    }
+
+    /// Replace application metadata rather than merge it on v2.2.5.
+    /// An empty map removes all metadata entries.
+    pub fn metadata(mut self, metadata: impl Into<SessionMetadata>) -> Self {
+        self.metadata = RequestField::Value(metadata.into());
+        self
+    }
+
+    /// Replace the session's permission rules. An empty list is sent unchanged.
+    pub fn permissions(mut self, permissions: impl Into<PermissionRulesetInput>) -> Self {
+        self.permissions = RequestField::Value(permissions.into());
+        self
+    }
+
+    /// Archive with `true` or restore with `false`.
+    pub fn archived(mut self, archived: bool) -> Self {
+        self.archived = RequestField::Value(archived);
         self
     }
 }

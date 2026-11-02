@@ -61,8 +61,9 @@ cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
 ```
 
 Output goes to the root `src/models/sessions.rs`, selecting `SessionsResponse`,
-the inline create/get envelopes (`SessionResponse`), the inline create request
-(`SessionCreateRequest`), and their dependencies. `src/sessions.rs` records adaptations: shared
+the inline create/get envelopes (`SessionResponse`), the inline create/update
+requests (`SessionCreateRequest` and `SessionUpdateRequest`), and their dependencies.
+`src/sessions.rs` records adaptations: shared
 discovery types are reused through named replacements, arbitrary numeric fields
 use `serde_json::Number`, and guarded adapters enforce file-diff count bounds and
 the optional true-only `more` flag. Generated ID prefix checks remain intact.
@@ -72,8 +73,8 @@ the strict `more` adapter. Cursor omission/null both become `None`; empty string
 stay present. This response model policy does not define update-request semantics.
 
 Input definitions retain `additionalProperties: false` and use separate strict
-location/model/permission types. All eight optional nullable create fields use the
-public `RequestField<T>` adapter, preserving omission, null, and values. The nested
+location/model/permission types. All eight create fields and four update fields
+use the public `RequestField<T>` adapter, preserving omission, null, and values. The nested
 model variant rejects explicit null. Guards check nullable/optional field shapes,
 the matching create/get envelopes, and variant constraints before generation.
 Hand-written constructors/setters live in the root `src/models/session_inputs.rs`.
@@ -142,7 +143,7 @@ generation or compilation does not prove complete JSON Schema validation.
 | All 490 component schemas | Generate and compile with the non-null override. This establishes mechanical feasibility, not endpoint or behavioral coverage. |
 | `not: {type: "null"}` | Unmodified Typify panics. An exact conversion to `NonNullValue` preserves all non-null JSON kinds and rejects null. |
 | Messages and structured errors | Reduced unions decode correctly. Typify emits untagged unions with constrained tag fields for these probes; use explicit dispatch for public event/error handling. |
-| Optional nullable update fields | Raw generation collapses omission and null. The tested `Field<T>` adapter preserves omission, null, and a value; the `SessionTitlePatch` probe covers only the actual title field. Server-side meaning of null remains unverified. |
+| Optional nullable update fields | Raw generation collapses omission and null. The tested `Field<T>` adapter preserves omission, null, and a value; the `SessionTitlePatch` probe covers only the actual title field. Production models use `RequestField<T>`; separate v2.2.5 live checks verify all four null update fields are no-ops. |
 | Unknown events | Explicit dispatch preserves raw unknown events while rejecting malformed known variants. Dispatch is intentionally limited to two known variants in this experiment. |
 | SSE `contentSchema` | Generation yields a string without validating its JSON content. The adapter parses SSE data text once and dispatches it; this is not an SSE framing implementation. |
 | Additive response fields | Raw models enforce `additionalProperties: false`. A deliberate response-tolerance policy is still required before production use, including nested objects. |

@@ -1,8 +1,8 @@
 # opencoders design and implementation plan
 
 Status: foundation implemented through `server.info()`, `location.get`, and
-`agent.list` with configurable location selection, plus filtered/paginated
-`session.list`; broader API and
+`agent.list` with configurable location selection, plus session creation,
+retrieval, updates, deletion, and filtered/paginated listing. Broader API and
 streaming sections remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
@@ -170,7 +170,7 @@ body, and a concrete parent ID selects the parent's location. The live baseline
 verifies parent precedence over a conflicting body location and server-cwd
 fallback for omitted/null location without a parent.
 
-Create fields use `RequestField<T>` with `Omitted`, `Null`, and `Value(T)`.
+Create and update fields use `RequestField<T>` with `Omitted`, `Null`, and `Value(T)`.
 Constructors/fluent setters support ordinary values; public fields permit explicit
 null and resetting to omission. Separate strict location/model/permission input
 types prevent response extension maps from leaking into writes. Nested model
@@ -184,6 +184,23 @@ URL delimiters from changing the route. Creation is not retried by the default
 transport: timeouts, disconnects, or unreadable responses may leave a successfully
 created session. Callers must reconcile before retrying; a supplied ID alone does
 not establish idempotency. Injected HTTP-client policies remain caller-controlled.
+
+`client.sessions().update(&SessionId, &SessionUpdateRequest)` and
+`client.sessions().remove(&SessionId)` return `()` for HTTP 204 without decoding
+JSON. They share transport deadlines, bounded error handling, encoded ID paths,
+and the default no-retry policy. Neither applies the discovery location default.
+Updates support title, metadata, permissions, and archived state. On v2.2.5,
+omitted/null fields are no-ops; metadata and permission values replace their
+contents, including empty maps/lists. Archive `true`/`false` archives/restores.
+An empty title requests generated titling and may invoke a model with conversation
+history. The live test exercises it only on an empty session, where it is a no-op.
+
+Updates are not promised atomic: failures can follow partial or complete changes.
+Deletion recursively removes descendants and may have succeeded before a lost
+response; repeated removal returns a missing-session error on v2.2.5. Application
+code owns confirmation and reconciliation. The live test verifies a three-level
+session tree is deleted while unrelated sessions remain; deletion during active
+execution is not covered.
 
 `client.sessions().list(&SessionListOptions)` retrieves one `SessionsResponse`.
 Options are cloneable, default to omission, and have fluent setters plus public
@@ -257,15 +274,15 @@ nonnegative safe-integer file-diff counts and the optional true-only `more` flag
 The same additive-field and unknown-enum policies apply; optional response fields
 generally collapse absent/null except strict adapters such as `more`.
 
-The same command extracts create/get response envelopes and the create request
+The same command extracts create/get response envelopes and create/update requests
 directly from their inline endpoint schemas. Matching response envelopes share
 `SessionResponse`; strict request definitions are kept apart from response
-tolerance adaptations. Guarded AST transformations replace the eight nullable
-optional create fields with `RequestField<T>` and reject explicit null for the
+tolerance adaptations. Guarded AST transformations replace the eight create and
+four update nullable optional fields with `RequestField<T>` and reject explicit null for the
 nested non-nullable model variant. Schema shape changes require adapter review.
 
-The public client now applies three-state fields to session creation; the
-experiment also demonstrates update fields and explicit event dispatch.
+The public client now applies three-state fields to session creation and updates;
+the experiment also demonstrates explicit event dispatch.
 Response tolerance, full event/error coverage, numeric
 constraints, and inline schemas for additional endpoints still require review. Compilation alone
 does not establish wire compatibility or complete schema validation.
@@ -302,8 +319,9 @@ and non-JSON error bodies must remain inspectable. Authentication secrets must
 not appear in default debug or tracing output.
 
 The foundation implements `Encode`, `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
-errors plus separate client-build failures. Only HTTP 200 is successful for
-all implemented routes. Known validation/authentication, missing-location,
+errors plus separate client-build failures. JSON response routes accept HTTP 200;
+session update/remove accept only HTTP 204 and do not attempt JSON decoding.
+Known validation/authentication, missing-location,
 missing-session/parent, unavailable-service, and invalid-cursor errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
@@ -419,8 +437,8 @@ workflow runs the disposable server smoke test; ordinary tests skip it.
 
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
 and commit pinned in `tools/live/server.json`. Server info, location/agent discovery,
-and session creation/retrieval/listing pass locally on macOS arm64. Linux is configured but awaits a
-workflow run. See [compatibility results](tools/live/README.md). Exercised responses
+and session creation/retrieval/listing/update/removal pass locally on macOS arm64.
+Linux is configured but awaits a workflow run. See [compatibility results](tools/live/README.md). Exercised responses
 needed no model changes; authentication and cursor semantics required clearer
 guidance. The original schema's source release remains unknown, independently of
 this tested baseline. No release is downloaded during normal builds/tests.

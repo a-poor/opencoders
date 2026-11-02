@@ -1,7 +1,7 @@
 //! Async Rust client for the OpenCode v2 HTTP API.
 //!
 //! Supports server information, location/agent discovery, and session creation, retrieval,
-//! and paginated listing. Run
+//! updates, deletion, and paginated listing. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -59,6 +59,19 @@
 //!     let second = client.sessions().list(&options).await?;
 //!     // Use second.cursor.previous to request the preceding page.
 //! }
+//! # Ok(())
+//! # }
+//! ```
+
+//! Update or remove a session, accepting the server's empty success response:
+//! ```no_run
+//! # async fn manage(client: &opencoders::Client, id: &opencoders::models::SessionId) -> opencoders::Result<()> {
+//! use opencoders::models::SessionUpdateRequest;
+//! client.sessions().update(id, &SessionUpdateRequest::default()
+//!     .title("Renamed conversation").archived(true)).await?;
+//! client.sessions().update(id, &SessionUpdateRequest::default().archived(false)).await?;
+//! // Deletion also removes this session's descendants.
+//! client.sessions().remove(id).await?;
 //! # Ok(())
 //! # }
 //! ```

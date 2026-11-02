@@ -2,7 +2,7 @@ use crate::{
     Client, Result, StatusCode,
     models::{
         AbsolutePath, ProjectId, RelativePath, SessionCreateRequest, SessionId, SessionResponse,
-        SessionsCursor, SessionsResponse,
+        SessionUpdateRequest, SessionsCursor, SessionsResponse,
     },
 };
 
@@ -151,7 +151,7 @@ impl SessionListOptions {
     }
 }
 
-/// Session creation, retrieval, and browsing, obtained from [`Client::sessions`].
+/// Session lifecycle and browsing operations, obtained from [`Client::sessions`].
 #[derive(Clone, Copy, Debug)]
 pub struct Sessions<'a> {
     pub(crate) client: &'a Client,
@@ -191,6 +191,43 @@ impl Sessions<'_> {
     pub async fn get(&self, id: &SessionId) -> Result<SessionResponse> {
         self.client
             .get_json_segment("api/session", id.as_str(), "session.get", StatusCode::OK)
+            .await
+    }
+
+    /// Update a session with `PATCH /api/session/{sessionID}` (`session.update`).
+    ///
+    /// Returns `()` for HTTP 204 without decoding JSON. The request preserves
+    /// omitted/null/value states; client default location is ignored. An empty
+    /// title requests server-generated titling and can invoke a model on v2.2.5.
+    /// On that version, omission/null leave fields unchanged, while metadata and
+    /// permission values replace their fields. `{}` and `[]` clear those contents.
+    /// A failed response may follow partially or fully applied changes; the default
+    /// transport does not retry. Injected HTTP-client policies are retained.
+    ///
+    /// # Errors
+    /// Returns encode (before sending), transport, unexpected HTTP status, or response-size errors.
+    /// Only 204 is accepted. Missing sessions/locations expose typed API errors.
+    pub async fn update(&self, id: &SessionId, request: &SessionUpdateRequest) -> Result<()> {
+        self.client
+            .patch_json_empty("api/session", id.as_str(), "session.update", request)
+            .await
+    }
+
+    /// Delete a session and its descendants with
+    /// `DELETE /api/session/{sessionID}` (`session.remove`).
+    ///
+    /// Returns `()` for HTTP 204 without decoding JSON. Sends no request body and
+    /// ignores the client default location. Deletion is recursive and irreversible;
+    /// applications own any confirmation policy. A failed response can follow an
+    /// applied deletion. The default transport does not retry; injected policies
+    /// are retained. Repeating deletion may return a missing-session error.
+    ///
+    /// # Errors
+    /// Returns transport, unexpected HTTP status, or response-size errors. Only 204 is accepted.
+    /// Missing sessions expose [`crate::ApiError::SessionNotFound`].
+    pub async fn remove(&self, id: &SessionId) -> Result<()> {
+        self.client
+            .delete_empty("api/session", id.as_str(), "session.remove")
             .await
     }
 
