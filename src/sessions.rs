@@ -49,6 +49,8 @@ pub struct SessionListOptions {
     /// Relative subpath filter on the server.
     pub subpath: Option<RelativePath>,
     /// Opaque `next` or `previous` cursor from a response. Sent without interpretation.
+    /// On OpenCode v2.2.5 it carries the original filters/order; clear it to change
+    /// those. A cursor can lead to an empty page.
     pub cursor: Option<SessionsCursor>,
 }
 
@@ -94,7 +96,7 @@ impl SessionListOptions {
         self
     }
     /// Set a next/previous cursor. Other filters, including order, remain unchanged.
-    /// Clear `order` explicitly when following a cursor; retain applicable filters.
+    /// v2.2.5 uses the cursor's original filters/order; `limit` remains independent.
     pub fn cursor(mut self, cursor: SessionsCursor) -> Self {
         self.cursor = Some(cursor);
         self

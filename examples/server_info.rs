@@ -1,4 +1,4 @@
-//! Run with OPENCODE_BASE_URL and, if required, OPENCODE_TOKEN in the environment.
+//! Run with OPENCODE_BASE_URL and, if required, OPENCODE_PASSWORD in the environment.
 
 use opencoders::Client;
 use std::{env, error::Error};
@@ -8,11 +8,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let base_url = env::var("OPENCODE_BASE_URL")
         .map_err(|_| "set OPENCODE_BASE_URL to your OpenCode server URL")?;
     let mut builder = Client::builder(base_url);
-    match env::var("OPENCODE_TOKEN") {
-        Ok(token) => builder = builder.bearer_auth(token),
+    match env::var("OPENCODE_PASSWORD") {
+        Ok(password) => builder = builder.basic_auth("opencode", password),
         Err(env::VarError::NotPresent) => {}
         Err(env::VarError::NotUnicode(_)) => {
-            return Err("OPENCODE_TOKEN must be valid Unicode".into());
+            return Err("OPENCODE_PASSWORD must be valid Unicode".into());
         }
     }
     let info = builder.build()?.server().info().await?;

@@ -41,6 +41,30 @@ fn invalid_bearer_header_is_a_build_error_without_its_value() {
     assert!(!format!("{error:?} {error}").contains("secret-token"));
 }
 
+#[tokio::test]
+async fn basic_auth_encodes_the_password_and_later_auth_overrides_earlier_auth() {
+    let server = MockServer::start().await;
+    // UTF-8 password containing a colon and newline: encoding prevents header injection.
+    let encoded = "Basic b3BlbmNvZGU6c2VjcmV0OsOpCg==";
+    Mock::given(path("/api/info"))
+        .and(header("authorization", encoded))
+        .respond_with(response())
+        .expect(1)
+        .mount(&server)
+        .await;
+    let builder = Client::builder(server.uri())
+        .bearer_auth("old-token")
+        .basic_auth("opencode", "secret:é\n");
+    let debug = format!("{builder:?}");
+    assert!(!debug.contains("secret"));
+    assert!(!debug.contains(encoded));
+    let client = builder.build().unwrap();
+    assert!(!format!("{client:?}").contains(encoded));
+    client.server().info().await.unwrap();
+    let requests = server.received_requests().await.unwrap();
+    assert_eq!(requests[0].headers["authorization"], encoded);
+}
+
 #[test]
 fn explicit_connect_timeout_cannot_be_silently_ignored_for_a_supplied_client() {
     let http = reqwest::Client::new();

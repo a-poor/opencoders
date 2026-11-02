@@ -1,5 +1,5 @@
 //! Resolve a server location and list its agents without loading a UI.
-//! Uses OPENCODE_BASE_URL, optional OPENCODE_TOKEN, and optional OPENCODE_DIRECTORY.
+//! Uses OPENCODE_BASE_URL, optional OPENCODE_PASSWORD, and optional OPENCODE_DIRECTORY.
 
 use opencoders::{Client, Location};
 use std::{env, error::Error};
@@ -17,8 +17,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let base_url = optional_env("OPENCODE_BASE_URL")?
         .ok_or("set OPENCODE_BASE_URL to your OpenCode server URL")?;
     let mut builder = Client::builder(base_url);
-    if let Some(token) = optional_env("OPENCODE_TOKEN")? {
-        builder = builder.bearer_auth(token);
+    if let Some(password) = optional_env("OPENCODE_PASSWORD")? {
+        builder = builder.basic_auth("opencode", password);
     }
     if let Some(directory) = optional_env("OPENCODE_DIRECTORY")? {
         builder = builder.default_location(Location::directory(directory));

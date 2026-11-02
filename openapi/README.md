@@ -5,7 +5,8 @@
 
 The schema's `info.version` is **not** a server compatibility baseline. The
 published artifact does not identify an associated server release, so provenance
-records that version as `null`. Selecting a pinned server remains a separate task.
+records that version as `null`. A separate [live baseline](../tools/live/README.md)
+now tests OpenCode v2.2.5; it does not establish which release produced this schema.
 
 Schema updates must be explicit: download a candidate to a temporary file,
 compare it with this snapshot, update provenance, regenerate models, and review

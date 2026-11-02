@@ -1,0 +1,26 @@
+name: Pinned server compatibility
+
+# Explicit opt-in: ordinary pull requests never download or launch OpenCode.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - run: rustup toolchain install stable --profile minimal
+      - name: Compile before starting the disposable server
+        run: cargo +stable test --locked --test live --no-run
+      - name: Download, verify, test, and stop the pinned server
+        env:
+          RUSTUP_TOOLCHAIN: stable
+        run: python3 tools/live/run.py

@@ -1,5 +1,5 @@
 //! Explicit cursor pagination (at most three pages), without a UI.
-//! Uses OPENCODE_BASE_URL, optional OPENCODE_TOKEN, and optional OPENCODE_DIRECTORY.
+//! Uses OPENCODE_BASE_URL, optional OPENCODE_PASSWORD, and optional OPENCODE_DIRECTORY.
 
 use opencoders::{Client, SessionListOptions, SessionOrder};
 use std::{env, error::Error};
@@ -17,8 +17,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let base_url = optional_env("OPENCODE_BASE_URL")?
         .ok_or("set OPENCODE_BASE_URL to your OpenCode server URL")?;
     let mut builder = Client::builder(base_url);
-    if let Some(token) = optional_env("OPENCODE_TOKEN")? {
-        builder = builder.bearer_auth(token);
+    if let Some(password) = optional_env("OPENCODE_PASSWORD")? {
+        builder = builder.basic_auth("opencode", password);
     }
     let client = builder.build()?;
     let mut options = SessionListOptions::default()
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for page_number in 1..=3 {
         let page = client.sessions().list(&options).await?;
         println!(
-            "Page {page_number} (previous page available: {})",
+            "Page {page_number} (previous cursor present: {})",
             page.cursor.previous.is_some()
         );
         for session in page.data {

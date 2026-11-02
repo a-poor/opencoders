@@ -17,7 +17,7 @@ use opencoders::Client;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::builder("http://localhost:4096")
-        .bearer_auth("your-server-token")
+        .basic_auth("opencode", "your-server-password")
         .build()?;
 
     let info = client.server().info().await?;
@@ -30,9 +30,14 @@ Run the included example against a server you configure:
 
 ```sh
 export OPENCODE_BASE_URL=http://localhost:4096
-# Set OPENCODE_TOKEN in your environment if bearer authentication is required.
+# Set OPENCODE_PASSWORD in your environment to your server password.
 cargo run --example server_info
 ```
+
+OpenCode v2.2.5 uses HTTP Basic authentication with username `opencode` and the
+server password. Use HTTPS when connecting to a remote server. `bearer_auth`
+remains available for proxies that require it; the stock server does not accept
+Bearer tokens. Pairing/cookie management is not implemented.
 
 Custom authentication schemes and application headers can be supplied through
 `ClientBuilder::default_headers`, using the re-exported `opencoders::header` types.
@@ -70,7 +75,7 @@ configured directory. Agent lists retain their `location`/`data` envelope and
 include hidden agents; applications choose what to display.
 
 Run `cargo run --example discovery` with `OPENCODE_BASE_URL`, optional
-`OPENCODE_TOKEN`, and optional `OPENCODE_DIRECTORY`. The example resolves a
+`OPENCODE_PASSWORD`, and optional `OPENCODE_DIRECTORY`. The example resolves a
 location, then lists agents at that resolved directory.
 
 ## Session listing and pagination
@@ -106,6 +111,11 @@ order. Pass either opaque cursor back unchanged, retaining applicable filters;
 the order option is documented for the first page. Setting a cursor does not
 silently change other options. Missing or null cursors become `None`; an empty
 cursor remains `Some`. The SDK performs no automatic pagination or retries.
+
+On tested OpenCode v2.2.5, cursors carry the original filters and ordering; changing
+those requires clearing the cursor. `limit` still controls page size. A next or
+previous cursor marks a boundary and can lead to an empty page, even when the
+current page is shorter than the requested limit.
 
 Run `cargo run --example sessions` with the same environment variables as the
 discovery example. It follows up to three pages, keeping pagination in caller
@@ -182,10 +192,12 @@ Tests use local mock HTTP servers; they need permission to bind localhost ports
 but do not require OpenCode, provider credentials, or model calls. The runnable
 examples are built by the checks and contact a real server only when invoked.
 
-The pinned schema and provenance live in [`openapi/`](openapi/). Validation so far
-uses that contract and mocks, not a pinned live OpenCode release. Selecting and
-testing a live server remains open. Other endpoints and event streams are not yet
-implemented.
+The pinned schema and provenance live in [`openapi/`](openapi/). The implemented
+operations also pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
+arm64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
+see [compatibility details and CI](tools/live/README.md) for prerequisites, release
+checksums, verified behavior, and limitations. Other endpoints and event streams
+are not yet implemented.
 
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
 contains the initial experiment and reviewed server-info/discovery/session generation commands.

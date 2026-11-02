@@ -6,7 +6,7 @@
 //! ```no_run
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = opencoders::Client::builder("http://localhost:4096")
-//!     .bearer_auth("your-server-token")
+//!     .basic_auth("opencode", "your-server-password")
 //!     .build()?;
 //! let info = client.server().info().await?;
 //! println!("OpenCode {}", info.version);

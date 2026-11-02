@@ -221,8 +221,28 @@ impl ClientBuilder {
         self
     }
 
-    /// Set an Authorization bearer token. Invalid values fail in [`Self::build`].
-    /// Custom authentication schemes can be supplied through default headers.
+    /// Set HTTP Basic credentials (OpenCode v2.2.5 uses username `opencode`).
+    ///
+    /// Later authentication/header settings override earlier ones. Credentials
+    /// are encoded as UTF-8 and marked sensitive; use HTTPS for remote servers.
+    /// Basic authentication usernames must not contain a colon.
+    pub fn basic_auth(mut self, username: impl AsRef<str>, password: impl AsRef<str>) -> Self {
+        use base64::Engine as _;
+        let credentials = base64::engine::general_purpose::STANDARD.encode(format!(
+            "{}:{}",
+            username.as_ref(),
+            password.as_ref()
+        ));
+        let mut value = HeaderValue::from_str(&format!("Basic {credentials}"))
+            .expect("base64 credentials are a valid header value");
+        value.set_sensitive(true);
+        self.headers.insert(AUTHORIZATION, value);
+        self
+    }
+
+    /// Set an Authorization bearer token, for example for an authenticating proxy.
+    /// OpenCode v2.2.5 itself uses Basic authentication. Invalid values fail in
+    /// [`Self::build`]. Custom schemes can be supplied through default headers.
     pub fn bearer_auth(mut self, token: impl AsRef<str>) -> Self {
         match HeaderValue::from_str(&format!("Bearer {}", token.as_ref())) {
             Ok(mut value) => {

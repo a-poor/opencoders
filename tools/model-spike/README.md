@@ -167,7 +167,8 @@ Before broader production models are exposed:
    generation pipeline.
 4. Establish the public resource/request/response naming and module layout, then
    move the proven generation machinery into the production maintainer command.
-5. Select a server release and exercise real request/stream behavior separately.
+5. Exercise real behavior separately using the [pinned server smoke test](../live/README.md).
+   Expand live coverage as request and stream support grows.
 
 These follow-ups belong to the foundation milestone in `TODO.md`; this experiment
 does not commit the crate to Typify's generated public interface.

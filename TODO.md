@@ -36,14 +36,12 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active tasks. The session-listing goal is recorded under **Completed**.
-The next candidate is CI automation and an opt-in pinned-server compatibility baseline.
+No active goal. Next candidate: typed session creation and retrieval.
 
 ## Now: contract and foundation (milestone 1)
 
 ### Contract and model generation
 
-- [ ] Select a pinned OpenCode server release for compatibility testing.
 - [ ] Extend the reviewed production generation paths to additional models
   and decide when to rename the private experiment into the permanent tool.
   Ordinary crate builds must remain independent of generation and schema fetching.
@@ -69,9 +67,9 @@ The next candidate is CI automation and an opt-in pinned-server compatibility ba
 
 - [ ] Extend mock-server coverage to request bodies and documented
   empty responses as additional operations are implemented.
-- [ ] Add opt-in smoke tests against the pinned server using disposable data.
-- [ ] Add CI for formatting, Clippy, tests, documentation/examples, supported
-  features, the minimum Rust version, and reproducible generation.
+- [ ] After pushing the workflows, confirm hosted CI and manually run the pinned
+  server smoke workflow on Linux/macOS. Local macOS compatibility is verified;
+  Linux execution remains unverified.
 - [ ] Replace the MIT license's copyright placeholders with the correct details.
 
 ## Next: interactive conversation APIs (milestone 2)
@@ -191,18 +189,20 @@ resolved. Keep credentials and other secrets out of examples and logs.
 Record findings alongside the related implementation task, then update the design
 when a decision is made.
 
-- [ ] Confirm supported authentication and pairing behavior beyond the schema's
-  empty security declarations; determine which convenience helpers to expose.
+- [ ] Verify pairing/session-cookie behavior beyond tested Basic authentication;
+  determine which additional convenience helpers to expose.
 - [ ] Resolve nested location encoding for routes without an explicit OpenAPI
   serialization style. Discovery routes use documented `deepObject` encoding;
-  explicit-null query semantics and live-server/header fallback remain unverified.
+  explicit-null query semantics remain unverified. The v2.2.5 live test confirms
+  directory query encoding, header fallback, and query precedence.
 - [ ] Choose ergonomic resource names and request construction patterns after
   exercising representative methods in library examples.
 - [ ] Confirm the semantics of omitted versus explicit null fields before choosing
   their public Rust representation.
-- [ ] Verify session cursor/filter binding, supported list limit ranges, and page
-  consistency during concurrent changes against a pinned server. Explicit query
-  encoding, cursor round-tripping, and page order are covered by mocks.
+- [ ] Verify maximum session-list limits, project/subpath filters, and page
+  consistency during concurrent changes. v2.2.5 smoke tests confirm cursor-bound
+  filters/order, boundary cursors that can lead to empty pages, and zero-limit
+  rejection; see `tools/live/README.md`.
 - [ ] Confirm event ordering, connection-marker guarantees, log watermarks, and
   snapshot reconciliation without assuming gap-free global events.
 - [ ] Choose how to expose SSE IDs, log sequences, pagination, and location
@@ -212,6 +212,21 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete the CI/live-baseline goal: add GitHub Actions checks for formatting,
+  Clippy, workspace tests, docs/examples, default/HTTP-only features, Rust 1.88
+  library builds, and all four generation targets (Rust/rustfmt 1.99.1).
+- [x] Pin OpenCode v2.2.5, its commit, and macOS arm64/Linux x86-64 archive hashes.
+  Add an opt-in disposable runner and manual workflow. Verify server info,
+  location/agent discovery, and session listing against the real macOS release
+  with temporary state and empty session fixtures; make no model calls.
+- [x] Add and test `ClientBuilder::basic_auth`, correct example authentication,
+  and document v2.2.5 cursor-bound filters/order and boundary cursors that can lead
+  to empty pages. Exercised responses need no generated-model changes. Record
+  the tested scope and remaining limitations in `tools/live/README.md`.
+- [x] Validate 60 client tests, 22 generator tests, three doctests, six runner
+  tests, and the live smoke test; HTTP-only tests, both MSRV feature builds,
+  formatting, Clippy, docs/examples, all regeneration checks, and actionlint pass.
+  Hosted workflow execution awaits a push; changes are not committed automatically.
 - [x] Complete session listing with TDD: typed `SessionListOptions`, ordering and
   parent filters, direct query encoding, `client.sessions().list(&options)`, and
   typed invalid-cursor errors. Preserve omission versus explicit false/empty/root

@@ -107,7 +107,7 @@ A client builder should support:
 The initial implementation provides all of these configuration options.
 It uses reqwest 0.13, supports Rust 1.88+, and enables HTTPS through the default
 `rustls` feature. Base URLs preserve reverse-proxy path prefixes and reject URL
-credentials, queries, and fragments. Bearer authentication and arbitrary headers
+credentials, queries, and fragments. Basic/Bearer authentication and arbitrary headers
 are explicit; the library does not discover local credentials.
 
 Default connection and ordinary-request timeouts are 10 and 30 seconds,
@@ -135,12 +135,14 @@ the pinned schema. We encode a directory with the `location[directory]` key and
 standard query percent encoding, retaining arbitrary server path syntax. Explicit
 null query encoding is not exposed; no equivalence between omission, empty string,
 and the literal string `null` is assumed. Routes with unspecified serialization
-styles and live-server fallback behavior still need verification.
+styles still need verification. The v2.2.5 smoke test verifies nested directory
+queries, header fallback, and query precedence over the location header.
 
 Authentication headers must work consistently for ordinary requests and streams.
-Convenience authentication and pairing helpers should follow verified upstream
-behavior; the empty OpenAPI security section is not evidence that authentication
-is unnecessary.
+The v2.2.5 baseline verifies Basic authentication with username `opencode`;
+`ClientBuilder::basic_auth` provides it. Bearer remains useful for authenticating
+proxies. Pairing/cookie helpers await their own verification. The empty OpenAPI
+security section is not evidence that authentication is unnecessary.
 
 Long-lived streams and operations that wait for execution need timeout behavior
 separate from ordinary requests. Dropping a request or stream cancels local
@@ -176,8 +178,12 @@ order is preserved. Cursors stay opaque; either `next` or `previous` can be supp
 on a later call. Missing/null cursors mean `None`, while an empty string remains
 present. The caller owns page progression and filter retention; the SDK neither
 auto-fetches nor changes options when a cursor is set. Examples clear first-page
-`order` while following cursors. Cursor/filter binding, accepted limit ranges,
-and consistency under concurrent session changes await live-server verification.
+`order` while following cursors. Verified v2.2.5 cursors carry their original
+filters/order and ignore valid conflicting filter/order parameters; `limit` still
+controls page size. Clear the cursor to change filters. Nonempty pages return
+boundary cursors even at the start/end; they can lead to empty pages. The live
+test verifies forward/backward traversal and rejects a zero limit. Maximum limits
+and consistency under concurrent session changes remain unverified.
 
 Use typed request structs with constructors or defaults for common cases. Provide
 lightweight ID types where they prevent mixing session, message, and other IDs.
@@ -373,16 +379,22 @@ Use a local mock server for deterministic protocol tests covering:
   replayable.
 - WebSocket and binary-response behavior when those features are implemented.
 
-Add opt-in integration tests against a pinned OpenCode server. Keep tests that
+Use opt-in integration tests against a pinned OpenCode server. Keep tests that
 require model credentials, spend money, or mutate a workspace separate from the
 default test suite. Use disposable server data and workspaces for those tests.
 
-CI should run formatting, Clippy, unit/protocol tests, documentation and example
-checks, supported feature combinations, and a regeneration consistency check.
-The library declares Rust 1.88 as its minimum; its locked dependency build has
-been checked with that compiler. The initial client has deterministic model and
-mock HTTP tests, compiling server-info/discovery/session examples, and tests without default TLS
-features. A pinned live server and CI automation remain outstanding.
+GitHub Actions workflows cover formatting, Clippy, unit/protocol tests, docs and
+examples, default/HTTP-only features, Rust 1.88 library builds, and all checked-in
+generation targets. Regeneration pins Rust/rustfmt 1.99.1. A separate manual
+workflow runs the disposable server smoke test; ordinary tests skip it.
+
+OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
+and commit pinned in `tools/live/server.json`. Server info, location/agent discovery,
+and session listing pass locally on macOS arm64. Linux is configured but awaits a
+workflow run. See [compatibility results](tools/live/README.md). Exercised responses
+needed no model changes; authentication and cursor semantics required clearer
+guidance. The original schema's source release remains unknown, independently of
+this tested baseline. No release is downloaded during normal builds/tests.
 
 Record endpoint coverage by upstream operation ID, including deliberate
 deferrals and protocol-specific implementations. Review schema updates as explicit
@@ -395,7 +407,6 @@ tests. Do not automatically replace the schema during normal builds or CI checks
   constraints, and complete event/error dispatch beyond the validated spike?
 - What response and request-builder shapes provide convenient calls while
   retaining location metadata, pagination, and nullable update semantics?
-- Which OpenCode release forms the initial tested server baseline?
 - What snapshot/event reconciliation behavior is actually guaranteed upstream,
   and which recovery steps must remain application-specific?
 - Which terminal operations belong in the earliest WebSocket feature release?

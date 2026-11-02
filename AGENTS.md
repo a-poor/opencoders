@@ -7,6 +7,7 @@ developers. Applications own rendering and UI state; do not build an interface.
 
 - `src/`: public client, transport/errors, resource methods, and generated models.
 - `tools/model-spike/`: private generation tool, experiment, and tests.
+- `tools/live/`: pinned server manifest, disposable runner, and compatibility notes.
 - `openapi/`: pinned schema and provenance.
 - `DESIGN.md`: architecture and milestones; `TODO.md`: tasks, inbox, and backlog.
 - `tests/`: model and mock HTTP tests; `examples/`: runnable library usage.
@@ -46,6 +47,7 @@ of artificial tests. Use Rust's test framework and behavioral names such as
 `prompt_preserves_delivery_mode`. No numeric coverage threshold is configured.
 Prioritize deterministic protocol tests and regressions. Keep live-server/model
 tests opt-in with pinned versions and disposable data.
+Use `python3 tools/live/run.py` for the isolated smoke test; normal tests skip it.
 
 ## Commits and Pull Requests
 
