@@ -36,7 +36,8 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active goal. Next candidate: typed session creation and retrieval.
+No active goal. Next candidate: session updates and deletion, including typed
+empty responses and verified update-field semantics.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -53,15 +54,12 @@ No active goal. Next candidate: typed session creation and retrieval.
 
 ### Crate and transport
 
-- [ ] Verify dynamic path-segment encoding when adding routes with path parameters.
 - [ ] Separate ordinary-request timeouts from streaming and long-running
   operations; document local cancellation versus server-side interruption.
 - [ ] Extend response handling to endpoints with documented empty bodies and
   multiple success statuses. Add typed API errors as new resources need them.
-- [ ] Extend response/ID conventions to mutation request construction and
-  omitted versus null updates.
-- [ ] Document ambiguous mutation outcomes after transport failures when adding
-  write operations; keep the default transport's automatic retries disabled.
+- [ ] Apply the established request/ID and omitted/null/value conventions to
+  session updates and other mutations.
 
 ### Initial validation and repository setup
 
@@ -76,7 +74,8 @@ No active goal. Next candidate: typed session creation and retrieval.
 
 ### Core resources
 
-- [ ] Implement session creation, retrieval, updates, deletion, and forking.
+- [ ] Implement session updates, deletion, and forking. Creation and retrieval are
+  implemented with typed request/response models.
 - [ ] Implement message history and message retrieval while retaining cursors
   and relevant response metadata.
 - [ ] Implement model discovery, individual agent retrieval, and session
@@ -197,8 +196,9 @@ when a decision is made.
   directory query encoding, header fallback, and query precedence.
 - [ ] Choose ergonomic resource names and request construction patterns after
   exercising representative methods in library examples.
-- [ ] Confirm the semantics of omitted versus explicit null fields before choosing
-  their public Rust representation.
+- [ ] Verify omitted/null behavior for update requests. `RequestField<T>` preserves
+  all three wire states; v2.2.5 create accepts null for all eight fields and uses
+  server-cwd fallback for omitted/null location without a parent.
 - [ ] Verify maximum session-list limits, project/subpath filters, and page
   consistency during concurrent changes. v2.2.5 smoke tests confirm cursor-bound
   filters/order, boundary cursors that can lead to empty pages, and zero-limit
@@ -212,6 +212,25 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete typed session creation and retrieval: `sessions().create(&request)`
+  and `sessions().get(&id)` preserve the `SessionResponse` envelope, encode IDs as
+  single path segments, and expose typed missing-session/parent errors.
+- [x] Extend `--sessions` with inline create/get schemas, strict nested input
+  types, and `RequestField<T>` for omitted/null/value creation properties. Keep
+  response extensions separate from inputs; guard request/envelope/variant schema
+  adaptations. Add constructors and fluent value setters.
+- [x] Add JSON POST support sharing deadlines, bounded responses, and diagnostics;
+  force the JSON content type and distinguish pre-send encoding errors. Verify
+  that disconnects after a POST body do not retry, and document ambiguous outcomes
+  and caller-owned policies on injected transports.
+- [x] Replace live fixture creation with SDK methods; verify create/get round trips,
+  metadata, empty permissions, cross-directory retrieval, parent precedence,
+  missing IDs/parents, empty requests, and all eight properties explicitly null on
+  OpenCode v2.2.5/macOS arm64 without model calls. Add `examples/create_session.rs`.
+- [x] Validate 73 client tests, 23 generator tests, four doctests, the live smoke
+  test, HTTP-only tests, both Rust 1.88 feature builds, formatting, Clippy, docs,
+  all four examples, and all four regeneration checks. Hosted Linux validation
+  remains pending separately.
 - [x] Complete the CI/live-baseline goal: add GitHub Actions checks for formatting,
   Clippy, workspace tests, docs/examples, default/HTTP-only features, Rust 1.88
   library builds, and all four generation targets (Rust/rustfmt 1.99.1).

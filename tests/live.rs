@@ -1,7 +1,9 @@
 //! Opt-in only: `python3 tools/live/run.py` owns the server, credentials, and data.
 
 use opencoders::{
-    ApiError, Client, Error, Location, ParentFilter, SessionListOptions, SessionOrder, header,
+    ApiError, Client, Error, Location, ParentFilter, RequestField, SessionListOptions,
+    SessionOrder, header,
+    models::{SessionCreateRequest, SessionLocationInput},
 };
 use serde_json::{Value, json};
 use std::{collections::BTreeSet, env, path::PathBuf, time::Duration};
@@ -128,23 +130,30 @@ async fn pinned_server_discovery_and_session_pagination() {
         workspace
     );
 
-    // Fixture-only raw writes do not add mutation APIs to the library or submit prompts.
+    // Empty sessions exercise SDK mutations without submitting prompts.
     let mut ids = Vec::new();
     for title in ["live alpha", "live beta", "live gamma"] {
-        let session = seed(
-            &http,
-            &format!("{url}/api/session"),
-            reqwest::Method::POST,
-            json!({"title": title, "location": {"directory": workspace}}),
-        )
-        .await;
-        ids.push(
-            session["data"]["id"]
-                .as_str()
-                .expect("session.create ID")
-                .to_owned(),
+        let request = SessionCreateRequest::default()
+            .title(title)
+            .location(SessionLocationInput::new(workspace))
+            .metadata(serde_json::Map::from_iter([(
+                "fixture".into(),
+                json!(true),
+            )]))
+            .permissions(vec![]);
+        let session = client.sessions().create(&request).await.unwrap().data;
+        assert_eq!(session.title.as_deref(), Some(title));
+        let retrieved = client.sessions().get(&session.id).await.unwrap().data;
+        assert_eq!(retrieved.id, session.id);
+        assert_eq!(retrieved.title, session.title);
+        assert_eq!(retrieved.location.directory.as_str(), workspace);
+        assert_eq!(
+            serde_json::to_value(retrieved.metadata).unwrap(),
+            json!({"fixture": true})
         );
+        ids.push(session.id.to_string());
     }
+    // Archiving remains raw HTTP fixture setup until update support is implemented.
     seed(
         &http,
         &format!("{url}/api/session/{}", ids[1]),
@@ -152,20 +161,42 @@ async fn pinned_server_discovery_and_session_pagination() {
         json!({"archived": true}),
     )
     .await;
-    seed(
-        &http,
-        &format!("{url}/api/session"),
-        reqwest::Method::POST,
-        json!({"title": "live child", "parentID": ids[0], "location": {"directory": workspace}}),
-    )
-    .await;
-    seed(
-        &http,
-        &format!("{url}/api/session"),
-        reqwest::Method::POST,
-        json!({"title": "live other", "location": {"directory": other}}),
-    )
-    .await;
+    let child = client
+        .sessions()
+        .create(
+            &SessionCreateRequest::default()
+                .title("live child")
+                .parent_id(ids[0].parse().unwrap())
+                .location(SessionLocationInput::new(other)),
+        )
+        .await
+        .unwrap()
+        .data;
+    // A concrete parent wins over an explicitly conflicting location.
+    assert_eq!(child.parent_id.as_ref().unwrap().as_str(), ids[0]);
+    assert_eq!(child.location.directory.as_str(), workspace);
+    let elsewhere = client
+        .sessions()
+        .create(
+            &SessionCreateRequest::default()
+                .title("live other")
+                .location(SessionLocationInput::new(other)),
+        )
+        .await
+        .unwrap()
+        .data;
+    assert_eq!(
+        client
+            .sessions()
+            .get(&elsewhere.id)
+            .await
+            .unwrap()
+            .data
+            .location
+            .directory
+            .as_str(),
+        other
+    );
 
     // The default SDK location must not limit this server-wide resource.
     let all = client
@@ -244,4 +275,52 @@ async fn pinned_server_discovery_and_session_pagination() {
         .await
         .unwrap_err();
     assert_eq!(error.status(), Some(opencoders::StatusCode::BAD_REQUEST));
+    let missing = "ses_opencoders_missing".parse().unwrap();
+    for result in [
+        client.sessions().get(&missing).await,
+        client
+            .sessions()
+            .create(&SessionCreateRequest::default().parent_id(missing.clone()))
+            .await,
+    ] {
+        let Error::Http(error) = result.unwrap_err() else {
+            panic!("expected missing session")
+        };
+        assert_eq!(error.status(), 404);
+        assert!(
+            matches!(error.api_error(), Some(ApiError::SessionNotFound { session_id, .. }) if session_id == missing.as_str())
+        );
+    }
+
+    // Exercise server defaults and explicit null separately; neither request uses
+    // the SDK discovery default to rewrite its body.
+    let defaults_client = Client::builder(&url)
+        .http_client(http.clone())
+        .default_location(Location::directory(other))
+        .build()
+        .unwrap();
+    let defaults = defaults_client
+        .sessions()
+        .create(&SessionCreateRequest::default())
+        .await
+        .unwrap()
+        .data;
+    assert_eq!(defaults.location.directory.as_str(), workspace);
+    let mut nulls = SessionCreateRequest::default();
+    nulls.id = RequestField::Null;
+    nulls.parent_id = RequestField::Null;
+    nulls.title = RequestField::Null;
+    nulls.agent = RequestField::Null;
+    nulls.model = RequestField::Null;
+    nulls.location = RequestField::Null;
+    nulls.metadata = RequestField::Null;
+    nulls.permissions = RequestField::Null;
+    let null_session = defaults_client
+        .sessions()
+        .create(&nulls)
+        .await
+        .unwrap()
+        .data;
+    assert_eq!(null_session.location.directory.as_str(), workspace);
+    assert!(null_session.parent_id.is_none());
 }

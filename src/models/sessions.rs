@@ -97,6 +97,37 @@ impl ::std::convert::From<::serde_json::Number> for MoneyUsd {
         Self(value)
     }
 }
+///`PermissionRuleInput`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct PermissionRuleInput {
+    pub action: ::std::string::String,
+    pub effect: super::PermissionEffect,
+    pub resource: ::std::string::String,
+}
+///`PermissionRulesetInput`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct PermissionRulesetInput(pub ::std::vec::Vec<PermissionRuleInput>);
+impl ::std::ops::Deref for PermissionRulesetInput {
+    type Target = ::std::vec::Vec<PermissionRuleInput>;
+    fn deref(&self) -> &::std::vec::Vec<PermissionRuleInput> {
+        &self.0
+    }
+}
+impl ::std::convert::From<PermissionRulesetInput>
+for ::std::vec::Vec<PermissionRuleInput> {
+    fn from(value: PermissionRulesetInput) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::From<::std::vec::Vec<PermissionRuleInput>>
+for PermissionRulesetInput {
+    fn from(value: ::std::vec::Vec<PermissionRuleInput>) -> Self {
+        Self(value)
+    }
+}
 ///`RelativePath`
 #[derive(
     ::serde::Deserialize,
@@ -137,6 +168,29 @@ impl ::std::str::FromStr for RelativePath {
     fn from_str(value: &str) -> ::std::result::Result<Self, Self::Err> {
         Ok(Self(value.to_string()))
     }
+}
+///`SessionCreateRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionCreateRequest {
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub agent: super::RequestField<super::AgentId>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub id: super::RequestField<SessionId>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub location: super::RequestField<SessionLocationInput>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub metadata: super::RequestField<SessionMetadata>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub model: super::RequestField<SessionModelInput>,
+    #[serde(rename = "parentID")]
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub parent_id: super::RequestField<SessionId>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub permissions: super::RequestField<PermissionRulesetInput>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub title: super::RequestField<::std::string::String>,
 }
 ///`SessionForkBoundary`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
@@ -443,6 +497,13 @@ pub struct SessionInfoTime {
     #[serde(flatten)]
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
+///`SessionLocationInput`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionLocationInput {
+    pub directory: super::AbsolutePath,
+}
 ///`SessionMessageId`
 #[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[serde(transparent)]
@@ -524,6 +585,26 @@ for SessionMetadata {
     ) -> Self {
         Self(value)
     }
+}
+///`SessionModelInput`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionModelInput {
+    pub id: ::std::string::String,
+    #[serde(rename = "providerID")]
+    pub provider_id: super::ProviderId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    #[serde(default, deserialize_with = "super::deserialize_optional_value")]
+    pub variant: ::std::option::Option<::std::string::String>,
+}
+///`SessionResponse`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionResponse {
+    pub data: SessionInfo,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
 ///`SessionRevert`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]

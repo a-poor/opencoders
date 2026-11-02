@@ -32,3 +32,30 @@ fn session_adapters_require_review_when_file_diff_constraints_change() {
         );
     }
 }
+
+#[test]
+fn create_adapters_require_optional_nullable_fields_and_matching_response_envelopes() {
+    let spec: Value =
+        serde_json::from_str(include_str!("../../../openapi/opencode-v2.json")).unwrap();
+    let request = "/paths/~1api~1session/post/requestBody/content/application~1json/schema";
+    for pointer in [
+        format!("{request}/properties/title"),
+        format!("{request}/required"),
+    ] {
+        let mut changed = spec.clone();
+        if pointer.ends_with("required") {
+            changed.pointer_mut(request).unwrap()["required"] = json!(["title"]);
+        } else {
+            *changed.pointer_mut(&pointer).unwrap() = json!({"type": "string"});
+        }
+        assert!(generate_sessions(&changed).is_err());
+    }
+    let mut changed = spec.clone();
+    *changed.pointer_mut("/paths/~1api~1session~1{sessionID}/get/responses/200/content/application~1json/schema/required").unwrap() = json!([]);
+    assert!(generate_sessions(&changed).is_err());
+    let mut changed = spec;
+    *changed
+        .pointer_mut("/components/schemas/Model.Ref/properties/variant")
+        .unwrap() = json!({"type": ["string", "null"]});
+    assert!(generate_sessions(&changed).is_err());
+}

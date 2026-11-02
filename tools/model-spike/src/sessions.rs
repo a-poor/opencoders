@@ -1,4 +1,4 @@
-//! Reviewed session-list response models, reusing shared discovery model types.
+//! Reviewed session response and input models, reusing shared scalar types.
 
 use crate::{generate_with_settings, select_schemas, server_info::allow_additive_fields};
 use serde_json::{Value, json};
@@ -21,8 +21,28 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     {
         return Err("FileDiff.Info.more changed; review its true-only adapter".into());
     }
-    let mut schema = select_schemas(spec, &["SessionsResponse"])?;
+    let mut spec = spec.clone();
+    let create = spec
+        .pointer("/paths/~1api~1session/post/responses/200/content/application~1json/schema")
+        .ok_or("session.create response missing")?
+        .clone();
+    if spec.pointer(
+        "/paths/~1api~1session~1{sessionID}/get/responses/200/content/application~1json/schema",
+    ) != Some(&create)
+    {
+        return Err("session.create/get envelopes differ; review SessionResponse".into());
+    }
+    spec["components"]["schemas"]["SessionResponse"] = create;
+    let mut schema = select_schemas(&spec, &["SessionsResponse", "SessionResponse"])?;
     allow_additive_fields(&mut schema);
+    // Inputs keep strict objects and their own nested types. Never reuse tolerant
+    // response objects whose extension maps could be sent back as request fields.
+    add_request_schemas(&mut spec)?;
+    let request = select_schemas(&spec, &["SessionCreateRequest"])?;
+    schema["definitions"]
+        .as_object_mut()
+        .unwrap()
+        .extend(request["definitions"].as_object().unwrap().clone());
     let mut settings = typify::TypeSpaceSettings::default();
     for name in [
         "AbsolutePath",
@@ -44,10 +64,53 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     );
     let mut syntax = syn::parse_file(&generate_with_settings(schema, &settings)?)?;
     let mut adapted_fields = 0;
+    let mut request_fields = 0;
+    let mut model_variant = false;
     for item in &mut syntax.items {
         match item {
             Item::Struct(item) if matches!(item.fields, syn::Fields::Named(_)) => {
                 item.attrs.push(parse_quote!(#[non_exhaustive]));
+                if item.ident == "SessionCreateRequest" {
+                    // Typify defaults nullable optional properties to Option<T>.
+                    // Replace those with a three-state field and skip only Omitted.
+                    for field in &mut item.fields {
+                        let syn::Type::Path(path) = &field.ty else {
+                            return Err("unexpected request field type".into());
+                        };
+                        let segment = path
+                            .path
+                            .segments
+                            .last()
+                            .ok_or("request field type missing")?;
+                        if segment.ident != "Option" {
+                            return Err("request fields must remain optional".into());
+                        }
+                        let syn::PathArguments::AngleBracketed(args) = &segment.arguments else {
+                            return Err("request Option arguments missing".into());
+                        };
+                        let Some(syn::GenericArgument::Type(inner)) = args.args.first() else {
+                            return Err("request Option type missing".into());
+                        };
+                        let inner = inner.clone();
+                        field.ty = parse_quote!(super::RequestField<#inner>);
+                        field.attrs.retain(|attr| !attr.path().is_ident("serde"));
+                        if field.ident.as_ref().is_some_and(|name| name == "parent_id") {
+                            field
+                                .attrs
+                                .push(parse_quote!(#[serde(rename = "parentID")]));
+                        }
+                        field.attrs.push(parse_quote!(#[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]));
+                        request_fields += 1;
+                    }
+                }
+                if item.ident == "SessionModelInput" {
+                    for field in &mut item.fields {
+                        if field.ident.as_ref().is_some_and(|name| name == "variant") {
+                            field.attrs.push(parse_quote!(#[serde(default, deserialize_with = "super::deserialize_optional_value")]));
+                            model_variant = true;
+                        }
+                    }
+                }
                 if item.ident == "FileDiffInfo" {
                     for field in &mut item.fields {
                         match field.ident.as_ref().map(ToString::to_string).as_deref() {
@@ -79,8 +142,94 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     if adapted_fields != 3 {
         return Err("FileDiffInfo fields changed; review the session model adapters".into());
     }
+    if request_fields != 8 || !model_variant {
+        return Err("session input fields changed; review request adapters".into());
+    }
     Ok(format!(
         "// Generated from openapi/opencode-v2.json by model-spike --sessions.\n// Do not edit manually; adaptations live in tools/model-spike/src/sessions.rs.\n{}",
         prettyplease::unparse(&syntax)
     ))
+}
+
+fn add_request_schemas(spec: &mut Value) -> Result<(), Box<dyn std::error::Error>> {
+    let mut input = spec
+        .pointer("/paths/~1api~1session/post/requestBody/content/application~1json/schema")
+        .ok_or("session.create request missing")?
+        .clone();
+    let properties = input["properties"]
+        .as_object()
+        .ok_or("request properties missing")?;
+    let names: Vec<_> = properties.keys().map(String::as_str).collect();
+    if names
+        != [
+            "agent",
+            "id",
+            "location",
+            "metadata",
+            "model",
+            "parentID",
+            "permissions",
+            "title",
+        ]
+        || input
+            .get("required")
+            .is_some_and(|required| required != &json!([]))
+        || input["additionalProperties"] != json!(false)
+        || properties.values().any(|property| {
+            property["anyOf"].as_array().is_none_or(|items| {
+                items.len() != 2
+                    || items[1] != json!({"type": "null"})
+                    || items[0] == json!({"type": "null"})
+            })
+        })
+    {
+        return Err(
+            "session.create fields must remain optional and nullable; review request adapters"
+                .into(),
+        );
+    }
+    if spec.pointer("/components/schemas/Model.Ref/properties/variant")
+        != Some(&json!({"type": "string"}))
+    {
+        return Err("Model.Ref.variant changed; review the non-null input adapter".into());
+    }
+    let names = [
+        ("Location.PublicRef", "SessionLocationInput"),
+        ("Model.Ref", "SessionModelInput"),
+        ("Permission.Rule", "PermissionRuleInput"),
+        ("Permission.Ruleset", "PermissionRulesetInput"),
+    ];
+    rename_input_refs(&mut input, &names);
+    for (original, renamed) in names {
+        let mut schema = spec["components"]["schemas"][original].clone();
+        if schema.is_null() {
+            return Err(format!("missing {original}").into());
+        }
+        rename_input_refs(&mut schema, &names);
+        spec["components"]["schemas"][renamed] = schema;
+    }
+    spec["components"]["schemas"]["SessionCreateRequest"] = input;
+    Ok(())
+}
+
+fn rename_input_refs(value: &mut Value, names: &[(&str, &str)]) {
+    match value {
+        Value::Object(map) => {
+            if let Some(Value::String(reference)) = map.get_mut("$ref") {
+                for (original, renamed) in names {
+                    if reference == &format!("#/components/schemas/{original}") {
+                        *reference = format!("#/components/schemas/{renamed}");
+                        break;
+                    }
+                }
+            }
+            for child in map.values_mut() {
+                rename_input_refs(child, names);
+            }
+        }
+        Value::Array(items) => items
+            .iter_mut()
+            .for_each(|value| rename_input_refs(value, names)),
+        _ => {}
+    }
 }

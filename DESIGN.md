@@ -162,8 +162,28 @@ information directly, matching the operation's unenveloped HTTP 200 body.
 project information. `client.agents().list().await` returns an `AgentListResponse`
 containing both the resolved `location` and the `data` list, without filtering
 hidden agents. Each method has a per-call location override described above.
-`client.sessions().create(request).await` illustrates the planned shape for later
-resources; those names and signatures remain provisional.
+`client.sessions().create(&SessionCreateRequest)` and
+`client.sessions().get(&SessionId)` return `SessionResponse`, retaining the `data`
+envelope and additive fields. A default creation request sends `{}`. Create/get
+ignore the discovery location default; creation location belongs in the JSON
+body, and a concrete parent ID selects the parent's location. The live baseline
+verifies parent precedence over a conflicting body location and server-cwd
+fallback for omitted/null location without a parent.
+
+Create fields use `RequestField<T>` with `Omitted`, `Null`, and `Value(T)`.
+Constructors/fluent setters support ordinary values; public fields permit explicit
+null and resetting to omission. Separate strict location/model/permission input
+types prevent response extension maps from leaking into writes. Nested model
+variant is optional but non-nullable; metadata retains arbitrary JSON. The wire
+states are preserved without imposing a general server-side clearing policy.
+
+JSON requests use an explicit content type and the shared bounded response/error
+handling. Serialization failures are reported before sending. Dynamic session IDs
+are appended as encoded path segments, preserving proxy prefixes and preventing
+URL delimiters from changing the route. Creation is not retried by the default
+transport: timeouts, disconnects, or unreadable responses may leave a successfully
+created session. Callers must reconcile before retrying; a supplied ID alone does
+not establish idempotency. Injected HTTP-client policies remain caller-controlled.
 
 `client.sessions().list(&SessionListOptions)` retrieves one `SessionsResponse`.
 Options are cloneable, default to omission, and have fluent setters plus public
@@ -228,7 +248,7 @@ Cache TTL patterns use the generator's `regress` validator. Provider request
 retain values. Unknown enum variants currently produce decode errors, rather than
 silently accepting unsupported permission effects or other values.
 
-`--sessions` generates the session-list response graph into `src/models/sessions.rs`.
+`--sessions` generates the session response/input graph into `src/models/sessions.rs`.
 Named replacements reuse the existing location, project, agent, model, and
 permission types. Numeric values use `serde_json::Number`, retaining supported
 integers rather than passing them through floating point. Generated ID parsers
@@ -237,8 +257,16 @@ nonnegative safe-integer file-diff counts and the optional true-only `more` flag
 The same additive-field and unknown-enum policies apply; optional response fields
 generally collapse absent/null except strict adapters such as `more`.
 
-The experiment demonstrates adapters for three-state update fields and explicit
-event dispatch. Response tolerance, full event/error coverage, numeric
+The same command extracts create/get response envelopes and the create request
+directly from their inline endpoint schemas. Matching response envelopes share
+`SessionResponse`; strict request definitions are kept apart from response
+tolerance adaptations. Guarded AST transformations replace the eight nullable
+optional create fields with `RequestField<T>` and reject explicit null for the
+nested non-nullable model variant. Schema shape changes require adapter review.
+
+The public client now applies three-state fields to session creation; the
+experiment also demonstrates update fields and explicit event dispatch.
+Response tolerance, full event/error coverage, numeric
 constraints, and inline schemas for additional endpoints still require review. Compilation alone
 does not establish wire compatibility or complete schema validation.
 
@@ -273,12 +301,13 @@ details, and bounded diagnostic response content where useful. Unknown API error
 and non-JSON error bodies must remain inspectable. Authentication secrets must
 not appear in default debug or tracing output.
 
-The foundation implements `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
+The foundation implements `Encode`, `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
 errors plus separate client-build failures. Only HTTP 200 is successful for
 all implemented routes. Known validation/authentication, missing-location,
-unavailable-service, and invalid-cursor errors expose typed details;
+missing-session/parent, unavailable-service, and invalid-cursor errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
+Encode failures occur before a request is sent and have no HTTP status.
 
 Success bodies are capped at 8 MiB and retained diagnostic prefixes at 8 KiB by
 default, with configurable limits and explicit truncation. These bound collected
@@ -390,7 +419,7 @@ workflow runs the disposable server smoke test; ordinary tests skip it.
 
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
 and commit pinned in `tools/live/server.json`. Server info, location/agent discovery,
-and session listing pass locally on macOS arm64. Linux is configured but awaits a
+and session creation/retrieval/listing pass locally on macOS arm64. Linux is configured but awaits a
 workflow run. See [compatibility results](tools/live/README.md). Exercised responses
 needed no model changes; authentication and cursor semantics required clearer
 guidance. The original schema's source release remains unknown, independently of

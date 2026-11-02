@@ -1,10 +1,10 @@
 use crate::{
-    Agents, BuildError, DecodeError, Error, HttpError, Location, Locations, ResponseTooLargeError,
-    Result, Server, Sessions, TransportError,
+    Agents, BuildError, DecodeError, EncodeError, Error, HttpError, Location, Locations,
+    ResponseTooLargeError, Result, Server, Sessions, TransportError,
 };
 use reqwest::{
-    StatusCode, Url,
-    header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue},
+    Method, StatusCode, Url,
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderValue},
 };
 use serde::de::DeserializeOwned;
 use std::{fmt, sync::Arc, time::Duration};
@@ -71,7 +71,7 @@ impl Client {
         Agents { client: self }
     }
 
-    /// Browse sessions with explicit filters and cursor pagination.
+    /// Create, retrieve, and browse sessions.
     pub fn sessions(&self) -> Sessions<'_> {
         Sessions { client: self }
     }
@@ -127,7 +127,64 @@ impl Client {
             url.query_pairs_mut()
                 .extend_pairs(query.iter().map(|(key, value)| (*key, value.as_str())));
         }
-        let mut request = self.inner.http.get(url).headers(self.inner.headers.clone());
+        self.send_json(self.request(Method::GET, url), operation, expected)
+            .await
+    }
+
+    pub(crate) async fn get_json_segment<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        segment: &str,
+        operation: &'static str,
+        expected: StatusCode,
+    ) -> Result<T> {
+        let mut url = self
+            .inner
+            .base_url
+            .join(path)
+            .expect("valid relative API route");
+        // The path is crate-owned. A caller's ID is always appended as one encoded
+        // segment, never joined as a relative URL (which could change the route).
+        url.path_segments_mut()
+            .expect("validated HTTP base URL")
+            .push(segment);
+        self.send_json(self.request(Method::GET, url), operation, expected)
+            .await
+    }
+
+    pub(crate) async fn post_json<T: DeserializeOwned, B: serde::Serialize + ?Sized>(
+        &self,
+        path: &str,
+        operation: &'static str,
+        expected: StatusCode,
+        body: &B,
+    ) -> Result<T> {
+        let body = serde_json::to_vec(body)
+            .map_err(|source| Error::Encode(EncodeError { operation, source }))?;
+        let url = self
+            .inner
+            .base_url
+            .join(path)
+            .expect("valid relative API route");
+        let headers =
+            HeaderMap::from_iter([(CONTENT_TYPE, HeaderValue::from_static("application/json"))]);
+        let request = self.request(Method::POST, url).headers(headers).body(body);
+        self.send_json(request, operation, expected).await
+    }
+
+    fn request(&self, method: Method, url: Url) -> reqwest::RequestBuilder {
+        self.inner
+            .http
+            .request(method, url)
+            .headers(self.inner.headers.clone())
+    }
+
+    async fn send_json<T: DeserializeOwned>(
+        &self,
+        mut request: reqwest::RequestBuilder,
+        operation: &'static str,
+        expected: StatusCode,
+    ) -> Result<T> {
         if let Some(timeout) = self.inner.request_timeout {
             request = request.timeout(timeout);
         }
@@ -213,6 +270,7 @@ impl ClientBuilder {
     ///
     /// SDK headers override defaults on a supplied reqwest client. All caller
     /// values are marked sensitive to prevent accidental debug formatting.
+    /// JSON-body operations always set `Content-Type: application/json`.
     pub fn default_headers(mut self, mut headers: HeaderMap) -> Self {
         for value in headers.values_mut() {
             value.set_sensitive(true);
@@ -362,5 +420,50 @@ impl fmt::Debug for ClientBuilder {
             .field("has_http_client", &self.http.is_some())
             .field("request_timeout", &self.request_timeout)
             .finish_non_exhaustive()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::error::Error as _;
+
+    #[tokio::test]
+    async fn encoding_failure_is_redacted_and_does_not_send_a_request() {
+        struct Invalid;
+        impl serde::Serialize for Invalid {
+            fn serialize<S: serde::Serializer>(
+                &self,
+                _: S,
+            ) -> std::result::Result<S::Ok, S::Error> {
+                Err(serde::ser::Error::custom("private request data"))
+            }
+        }
+        let server = wiremock::MockServer::start().await;
+        let error = Client::new(server.uri())
+            .unwrap()
+            .post_json::<serde_json::Value, _>(
+                "api/session",
+                "session.create",
+                StatusCode::OK,
+                &Invalid,
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(error.operation(), "session.create");
+        assert!(error.status().is_none());
+        assert!(!error.is_timeout());
+        assert!(!format!("{error:?} {error}").contains("private request data"));
+        let Error::Encode(error) = error else {
+            panic!("expected encoding error")
+        };
+        assert!(
+            error
+                .source()
+                .unwrap()
+                .to_string()
+                .contains("private request data")
+        );
+        assert!(server.received_requests().await.unwrap().is_empty());
     }
 }

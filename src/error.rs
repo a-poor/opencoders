@@ -21,13 +21,16 @@ pub enum BuildError {
     HttpClient(#[source] reqwest::Error),
 }
 
-/// API-operation failures. Default formatting omits response bodies and sources.
+/// API-operation failures. Default formatting omits request/response data and sources.
 ///
 /// Explicit diagnostic accessors and [`std::error::Error::source`] may expose
-/// server-supplied text. Treat that data as potentially sensitive.
+/// request or server-supplied text. Treat that data as potentially sensitive.
 #[derive(thiserror::Error)]
 #[non_exhaustive]
 pub enum Error {
+    /// A request could not be serialized; no HTTP request was sent.
+    #[error(transparent)]
+    Encode(EncodeError),
     /// Sending the request or reading its body failed.
     #[error(transparent)]
     Transport(TransportError),
@@ -51,6 +54,7 @@ impl Error {
     /// HTTP status, when response headers were received.
     pub fn status(&self) -> Option<StatusCode> {
         match self {
+            Self::Encode(_) => None,
             Self::Transport(error) => error.status(),
             Self::Http(error) => Some(error.status()),
             Self::Decode(error) => Some(error.status()),
@@ -61,6 +65,7 @@ impl Error {
     /// Upstream operation ID, for example `server.info`.
     pub fn operation(&self) -> &'static str {
         match self {
+            Self::Encode(error) => error.operation(),
             Self::Transport(error) => error.operation(),
             Self::Http(error) => error.operation(),
             Self::Decode(error) => error.operation(),
@@ -72,11 +77,37 @@ impl Error {
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Encode(error) => error.fmt(f),
             Self::Transport(error) => error.fmt(f),
             Self::Http(error) => fmt::Debug::fmt(error, f),
             Self::Decode(error) => error.fmt(f),
             Self::ResponseTooLarge(error) => error.fmt(f),
         }
+    }
+}
+
+/// A request serialization failure, before any HTTP send.
+#[derive(thiserror::Error)]
+#[error("{operation}: could not encode request JSON")]
+pub struct EncodeError {
+    pub(crate) operation: &'static str,
+    #[source]
+    pub(crate) source: serde_json::Error,
+}
+
+impl EncodeError {
+    /// Upstream operation ID.
+    pub fn operation(&self) -> &'static str {
+        self.operation
+    }
+}
+
+impl fmt::Debug for EncodeError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("EncodeError")
+            .field("operation", &self.operation)
+            .finish_non_exhaustive()
     }
 }
 
@@ -195,6 +226,13 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// A session (including a requested parent) was not found.
+    SessionNotFound {
+        /// Raw server-reported ID; the error schema does not require the ID prefix.
+        session_id: String,
+        /// Server explanation.
+        message: String,
+    },
     /// A pagination cursor was rejected by the server.
     InvalidCursor {
         /// Server explanation.
@@ -238,6 +276,11 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            SessionNotFoundError {
+                #[serde(rename = "sessionID")]
+                session_id: String,
+                message: String,
+            },
             InvalidCursorError {
                 message: String,
             },
@@ -259,6 +302,13 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::SessionNotFoundError {
+                session_id,
+                message,
+            }) => Self::SessionNotFound {
+                session_id,
+                message,
+            },
             Ok(Known::InvalidCursorError { message }) => Self::InvalidCursor { message },
             Ok(Known::InvalidRequestError {
                 message,
@@ -284,6 +334,7 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::SessionNotFound { .. } => "SessionNotFound { .. }",
             Self::InvalidCursor { .. } => "InvalidCursor { .. }",
             Self::InvalidRequest { .. } => "InvalidRequest { .. }",
             Self::Unauthorized { .. } => "Unauthorized { .. }",

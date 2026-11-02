@@ -1,6 +1,7 @@
 //! Async Rust client for the OpenCode v2 HTTP API.
 //!
-//! Supports server information, location/agent discovery, and paginated session listing. Run
+//! Supports server information, location/agent discovery, and session creation, retrieval,
+//! and paginated listing. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -10,6 +11,19 @@
 //!     .build()?;
 //! let info = client.server().info().await?;
 //! println!("OpenCode {}", info.version);
+//! # Ok(())
+//! # }
+//! ```
+
+//! Create an empty session and retrieve it without submitting a prompt:
+//! ```no_run
+//! # async fn create(client: &opencoders::Client) -> opencoders::Result<()> {
+//! use opencoders::models::{SessionCreateRequest, SessionLocationInput};
+//! let request = SessionCreateRequest::default().title("New conversation")
+//!     .location(SessionLocationInput::new("/remote/workspace"));
+//! let created = client.sessions().create(&request).await?;
+//! let retrieved = client.sessions().get(&created.data.id).await?;
+//! // Creation may succeed even if its response is lost; do not retry blindly.
 //! # Ok(())
 //! # }
 //! ```
@@ -54,15 +68,18 @@ mod client;
 mod error;
 mod location;
 pub mod models;
+mod request;
 mod server;
 mod sessions;
 
 pub use agents::Agents;
 pub use client::{Client, ClientBuilder};
 pub use error::{
-    ApiError, BuildError, DecodeError, Error, HttpError, ResponseTooLargeError, TransportError,
+    ApiError, BuildError, DecodeError, EncodeError, Error, HttpError, ResponseTooLargeError,
+    TransportError,
 };
 pub use location::{Location, Locations};
+pub use request::RequestField;
 pub use reqwest::{StatusCode, header};
 pub use server::Server;
 pub use sessions::{ParentFilter, SessionListOptions, SessionOrder, Sessions};

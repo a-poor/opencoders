@@ -1,6 +1,9 @@
 use crate::{
     Client, Result, StatusCode,
-    models::{AbsolutePath, ProjectId, RelativePath, SessionId, SessionsCursor, SessionsResponse},
+    models::{
+        AbsolutePath, ProjectId, RelativePath, SessionCreateRequest, SessionId, SessionResponse,
+        SessionsCursor, SessionsResponse,
+    },
 };
 
 /// Requested ordering for the first session page.
@@ -148,13 +151,49 @@ impl SessionListOptions {
     }
 }
 
-/// Session browsing operations, obtained from [`Client::sessions`].
+/// Session creation, retrieval, and browsing, obtained from [`Client::sessions`].
 #[derive(Clone, Copy, Debug)]
 pub struct Sessions<'a> {
     pub(crate) client: &'a Client,
 }
 
 impl Sessions<'_> {
+    /// Create a session with `POST /api/session` (`session.create`).
+    ///
+    /// Returns the full `data` envelope. An empty default request sends `{}`.
+    /// Location is selected explicitly in the request body; the client's discovery
+    /// location default is ignored. A concrete parent ID uses the parent's location.
+    /// No prompt is submitted. Nullable fields preserve their exact wire states.
+    ///
+    /// The default transport neither retries nor follows redirects. After a timeout,
+    /// disconnect, or unreadable response, creation may already have succeeded;
+    /// do not blindly resubmit. A supplied HTTP client's retry/redirect policy is
+    /// retained, and supplying an ID does not promise idempotency.
+    ///
+    /// # Errors
+    /// Returns encode (before sending), transport, unexpected HTTP status, decoding,
+    /// or response-size errors. Only 200 is accepted. A missing parent may expose
+    /// [`crate::ApiError::SessionNotFound`].
+    pub async fn create(&self, request: &SessionCreateRequest) -> Result<SessionResponse> {
+        self.client
+            .post_json("api/session", "session.create", StatusCode::OK, request)
+            .await
+    }
+
+    /// Retrieve a session with `GET /api/session/{sessionID}` (`session.get`).
+    ///
+    /// The ID is encoded as one path segment; the client's location default is
+    /// ignored. Returns the full `data` envelope, including extension fields.
+    ///
+    /// # Errors
+    /// Returns transport, unexpected HTTP status, decoding, or response-size errors.
+    /// Only 200 is accepted. Missing sessions expose [`crate::ApiError::SessionNotFound`].
+    pub async fn get(&self, id: &SessionId) -> Result<SessionResponse> {
+        self.client
+            .get_json_segment("api/session", id.as_str(), "session.get", StatusCode::OK)
+            .await
+    }
+
     /// Retrieve one page with `GET /api/session` (`session.list`).
     ///
     /// Returns the `data`/`cursor` envelope, preserving server order and extension

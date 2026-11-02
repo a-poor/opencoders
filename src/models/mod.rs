@@ -1,9 +1,13 @@
-//! Typed API response models derived from the pinned OpenAPI schema.
+//! Typed API input and response models derived from the pinned OpenAPI schema.
 //!
 //! Response objects preserve additional fields in flattened `extra` maps.
 //! Generated optional fields generally accept absent or null as `None`; the
-//! `steps` and `more` adapters reject explicit null. These response-only models do
-//! not define update-request semantics. Unknown enum values are decoding errors.
+//! `steps` and `more` adapters reject explicit null. Request objects use strict
+//! input types and [`crate::RequestField`] for nullable optional properties.
+//! Unknown enum values are decoding errors.
+
+use crate::RequestField;
+mod session_inputs;
 
 #[rustfmt::skip]
 #[allow(dead_code)] // Typify emits conversion helpers unused by these selected models.
@@ -14,12 +18,21 @@ pub use generated::{ServerInfo, ServerInfoCapabilities, ServerInfoPaths};
 mod sessions;
 pub use sessions::error::ConversionError as SessionModelConversionError;
 pub use sessions::{
-    FileDiffInfo, FileDiffInfoStatus, MoneyUsd, RelativePath, SessionForkBoundary,
-    SessionForkBoundaryVariant0Type, SessionForkBoundaryVariant1Type, SessionId, SessionInfo,
-    SessionInfoFork, SessionInfoOutcome, SessionInfoTime, SessionMessageId, SessionMetadata,
-    SessionRevert, SessionsCursor, SessionsResponse, SessionsResponseCursor, SnapshotId,
-    TokenUsageInfo, TokenUsageInfoCache,
+    FileDiffInfo, FileDiffInfoStatus, MoneyUsd, PermissionRuleInput, PermissionRulesetInput,
+    RelativePath, SessionCreateRequest, SessionForkBoundary, SessionForkBoundaryVariant0Type,
+    SessionForkBoundaryVariant1Type, SessionId, SessionInfo, SessionInfoFork, SessionInfoOutcome,
+    SessionInfoTime, SessionLocationInput, SessionMessageId, SessionMetadata, SessionModelInput,
+    SessionResponse, SessionRevert, SessionsCursor, SessionsResponse, SessionsResponseCursor,
+    SnapshotId, TokenUsageInfo, TokenUsageInfoCache,
 };
+
+fn deserialize_optional_value<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
+{
+    T::deserialize(deserializer).map(Some)
+}
 
 #[rustfmt::skip]
 mod discovery;

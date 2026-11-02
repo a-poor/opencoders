@@ -32,8 +32,9 @@ normal interruption. The verified archive cache remains. This isolates applicati
 state; it is not an OS sandbox or a guarantee against upstream network activity.
 
 The test checks the server PID, version, temporary path, and initially empty
-session list before writing fixtures. It creates five empty sessions and archives
-one through raw HTTP solely for fixture setup. It never submits a prompt, invokes
+session list before writing fixtures. It creates seven empty sessions through the
+SDK and retrieves sessions by ID. One archive operation uses raw HTTP solely for
+fixture setup. It never submits a prompt, invokes
 a model, or connects to an existing server. Do not manually point its environment
 variables at your normal server. `cargo test` compiles but skips this test.
 
@@ -48,6 +49,8 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `server.info` | Typed version/PID/paths; Basic authentication with username `opencode`; unauthenticated calls return typed HTTP 401. |
 | `location.get` | Nested query encoding, spaces/Unicode, per-call overrides, `x-opencode-directory` fallback, and query precedence over that header. |
 | `agent.list` | Nonempty typed agent list with resolved location metadata. |
+| `session.create` | Typed JSON requests/responses, titles, metadata, empty permissions, parent location precedence, missing-parent HTTP 404, `{}` defaults, and all eight fields explicitly null. |
+| `session.get` | Created-session round trips, retrieval across directories independently of the SDK default location, and typed missing-session HTTP 404. |
 | `session.list` | Real session decoding, server-wide scope, directory/search/root/child/archive filters, next/previous traversal, empty terminal page, invalid-cursor HTTP 400, and zero-limit rejection. |
 
 Two pagination details matter for consumers:
@@ -60,8 +63,9 @@ Two pagination details matter for consumers:
   the page is shorter than `limit`. Cursor presence does **not** prove that more
   rows exist. Following one can return an empty page without a next cursor.
 
-The typed responses exercised here decode without generated-model changes.
-This does not establish compatibility for every optional field or operation.
+The typed responses exercised here decode without changes to existing response
+field adapters. Creation/retrieval add generated input/envelope types. This does
+not establish compatibility for every optional field or operation.
 The schema's empty security declarations omit authentication requirements;
 v2.2.5 requires Basic credentials (or its pairing/session flow), not Bearer tokens.
 The SDK now provides `ClientBuilder::basic_auth`; Bearer remains available for
@@ -69,11 +73,21 @@ proxies. Pairing/cookies are not covered. See the pinned upstream
 [authorization middleware](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/middleware/authorization.ts)
 and [session listing implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session.ts).
 
+For creation, a concrete parent selects its location even if the body names a
+different directory. With no parent, omitted/null location uses the server's
+working directory. v2.2.5 accepts explicit null for all eight create properties;
+the SDK preserves these wire states rather than rewriting null into omission.
+Create/get ignore the SDK discovery location default. See the pinned
+[session handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/session.ts).
+No retry/idempotency or execution semantics are inferred from these empty-session
+tests. Agent/model selection, explicit IDs, and nonempty permissions are covered
+by request-shape checks, not live execution tests.
+
 The existing [`openapi/provenance.json`](../../openapi/provenance.json) describes
 the original schema download, whose originating server release remains unknown.
 Its `info.version: 0.0.1` is not this server's version. Testing v2.2.5 does not
 retroactively identify that schema's source release. Concurrent session changes,
-maximum page sizes, project/subpath filtering, explicit-null locations, SSE,
+maximum page sizes, project/subpath filtering, explicit-null discovery queries, SSE,
 provider execution, and other platforms remain unverified.
 
 ## CI

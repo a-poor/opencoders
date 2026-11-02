@@ -3,7 +3,7 @@
 `opencoders` is an async Rust client for connecting to the [OpenCode v2 HTTP API](https://opencode.ai/v2/docs/api).
 
 The library currently supports server information, location/agent discovery, and
-paginated session listing through a configurable async client. It targets developers building
+session creation, retrieval, and paginated listing. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -124,6 +124,49 @@ preserve added fields. Numeric timestamps, costs, and token values use
 `serde_json::Number` to retain supported integer precision. Session/message ID
 prefixes and nested file-diff bounds/flags are checked during decoding.
 
+## Creating and retrieving sessions
+
+```rust
+use opencoders::{Client, RequestField, models::{SessionCreateRequest, SessionLocationInput}};
+
+async fn create(client: &Client) -> opencoders::Result<()> {
+    let mut request = SessionCreateRequest::default()
+        .title("New conversation")
+        .location(SessionLocationInput::new("/remote/workspace"));
+    // Public fields also allow explicit null or omission:
+    request.metadata = RequestField::Null;
+    let created = client.sessions().create(&request).await?;
+    let retrieved = client.sessions().get(&created.data.id).await?;
+    println!("{}", retrieved.data.id.as_str());
+    Ok(())
+}
+```
+
+Both calls return `SessionResponse`, preserving `data` and envelope extensions.
+Creation sends a JSON body (`{}` for a default request) and does not submit a
+prompt. `RequestField::Omitted`, `Null`, and `Value(value)` preserve all three wire
+states for the eight optional create fields. Fluent setters set values; public
+fields can be reset to omission or null. Null does not imply a general clearing
+policy. v2.2.5 accepts all eight fields as null; null/omitted location and parent
+use the server working directory with no parent.
+
+Creation uses the body's location or the parent's location when a concrete
+`parentID` is supplied; the parent takes precedence even over a conflicting body
+location on v2.2.5. Create/get ignore `ClientBuilder::default_location`. Retrieval
+encodes the typed session ID as one path segment. Input location/model/permission
+types are separate from tolerant response models, so response extensions are not
+automatically echoed into writes. `SessionModelInput::variant` permits omission
+or a string, not null; arbitrary JSON belongs in `SessionMetadata`.
+
+The default transport does not retry creation or follow redirects. A timeout,
+disconnect, or unreadable response can happen **after the session was created**.
+Inspect server state before resubmitting; an explicit session ID is not a promise
+of idempotency. An injected reqwest client's retry/redirect policy is retained.
+
+Run `cargo run --example create_session` with `OPENCODE_BASE_URL`,
+`OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates one empty
+session, retrieves it, and leaves it on the server.
+
 ## Configuration and behavior
 
 - Base URLs accept an optional reverse-proxy prefix: `https://host/opencode`
@@ -156,15 +199,16 @@ prefixes and nested file-diff bounds/flags are checked during decoding.
 
 ## Errors
 
-`BuildError` covers invalid configuration. API calls return `Error::Transport`,
+`BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
 `Error::Http`, `Error::Decode`, or `Error::ResponseTooLarge`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. All implemented methods
 expect exactly HTTP 200; unexpected redirects and other 2xx statuses are HTTP
-errors too.
+errors too. Encoding errors happen before any request is sent and have no status.
+JSON-body operations set `Content-Type: application/json`, overriding defaults.
 
 HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `UnauthorizedError`, `LocationNotFoundError`, `ServiceUnavailableError`, and
-`InvalidCursorError`.
+`InvalidCursorError`, and `SessionNotFoundError` (including missing parents).
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
 available in the raw body. Truncated or non-JSON bodies have no parsed API error.
@@ -172,7 +216,7 @@ Body-read failures are transport errors and retain any received HTTP status.
 
 Default client/error `Debug` and error `Display` omit URLs, headers, response
 bodies, and source messages. Explicit body access and error sources may contain
-sensitive server-supplied text; inspect them deliberately. Dropping a request
+sensitive request or server-supplied text; inspect them deliberately. Dropping a request
 future cancels local consumption and does not undo server-side work.
 
 `ProviderRequest` also redacts its `Debug` output because provider configuration

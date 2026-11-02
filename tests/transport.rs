@@ -6,6 +6,51 @@ use tokio::{
 };
 use wiremock::{Mock, MockServer, ResponseTemplate, matchers::path};
 
+#[tokio::test]
+async fn create_disconnect_after_the_body_does_not_retry_or_expose_request_data() {
+    use opencoders::models::SessionCreateRequest;
+    let request = SessionCreateRequest::default().title("private request text");
+    let body = serde_json::to_vec(&request).unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let task = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        read_request_headers(&mut socket).await;
+        let mut received = vec![0; body.len()];
+        socket.read_exact(&mut received).await.unwrap();
+        assert_eq!(received, body);
+        drop(socket);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(200), listener.accept())
+                .await
+                .is_err()
+        );
+    });
+    let error = Client::builder(format!("http://{address}/private-prefix"))
+        .request_timeout(Duration::from_secs(1))
+        .build()
+        .unwrap()
+        .sessions()
+        .create(&request)
+        .await
+        .unwrap_err();
+    assert_eq!(error.operation(), "session.create");
+    assert!(error.status().is_none());
+    assert!(!error.is_timeout());
+    assert!(!format!("{error:?} {error}").contains("private request text"));
+    let Error::Transport(error) = error else {
+        panic!("expected transport error")
+    };
+    assert!(
+        !error
+            .source()
+            .unwrap()
+            .to_string()
+            .contains("private-prefix")
+    );
+    task.await.unwrap();
+}
+
 async fn read_request_headers(socket: &mut TcpStream) {
     let mut bytes = Vec::new();
     while !bytes.ends_with(b"\r\n\r\n") {

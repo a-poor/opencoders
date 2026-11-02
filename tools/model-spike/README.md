@@ -53,15 +53,16 @@ review when adapted schema constraints change. Unknown string enum variants are
 decode errors. Most optional response fields accept null as absent; `steps`
 rejects explicit null. These models are not update-request types.
 
-## Reviewed session-list models
+## Reviewed session models
 
 ```sh
 cargo run --locked --offline -p opencoders-model-spike -- --sessions
 cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
 ```
 
-Output goes to the root `src/models/sessions.rs`, selecting `SessionsResponse`
-and its transitive dependencies. `src/sessions.rs` records adaptations: shared
+Output goes to the root `src/models/sessions.rs`, selecting `SessionsResponse`,
+the inline create/get envelopes (`SessionResponse`), the inline create request
+(`SessionCreateRequest`), and their dependencies. `src/sessions.rs` records adaptations: shared
 discovery types are reused through named replacements, arbitrary numeric fields
 use `serde_json::Number`, and guarded adapters enforce file-diff count bounds and
 the optional true-only `more` flag. Generated ID prefix checks remain intact.
@@ -69,6 +70,13 @@ Response objects and union variants preserve added fields; unknown enum values
 fail decoding. Optional response fields generally accept null as absent, except
 the strict `more` adapter. Cursor omission/null both become `None`; empty strings
 stay present. This response model policy does not define update-request semantics.
+
+Input definitions retain `additionalProperties: false` and use separate strict
+location/model/permission types. All eight optional nullable create fields use the
+public `RequestField<T>` adapter, preserving omission, null, and values. The nested
+model variant rejects explicit null. Guards check nullable/optional field shapes,
+the matching create/get envelopes, and variant constraints before generation.
+Hand-written constructors/setters live in the root `src/models/session_inputs.rs`.
 
 Run all production checks (`--server-info --check`, `--discovery --check`, and
 `--sessions --check`) after schema/tool changes, alongside the raw probe `--check`.
