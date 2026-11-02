@@ -36,15 +36,15 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active tasks. The location-aware discovery goal is recorded under **Completed**.
-The next candidate goal is session listing with explicit filters and pagination.
+No active tasks. The session-listing goal is recorded under **Completed**.
+The next candidate is CI automation and an opt-in pinned-server compatibility baseline.
 
 ## Now: contract and foundation (milestone 1)
 
 ### Contract and model generation
 
 - [ ] Select a pinned OpenCode server release for compatibility testing.
-- [ ] Extend the reviewed `--server-info`/`--discovery` generation paths to additional models
+- [ ] Extend the reviewed production generation paths to additional models
   and decide when to rename the private experiment into the permanent tool.
   Ordinary crate builds must remain independent of generation and schema fetching.
 - [ ] Apply the spike findings to broader production models: additive response fields,
@@ -60,14 +60,14 @@ The next candidate goal is session listing with explicit filters and pagination.
   operations; document local cancellation versus server-side interruption.
 - [ ] Extend response handling to endpoints with documented empty bodies and
   multiple success statuses. Add typed API errors as new resources need them.
-- [ ] Extend the discovery response/ID conventions to request construction,
-  omitted versus null updates, and pagination cursors.
+- [ ] Extend response/ID conventions to mutation request construction and
+  omitted versus null updates.
 - [ ] Document ambiguous mutation outcomes after transport failures when adding
   write operations; keep the default transport's automatic retries disabled.
 
 ### Initial validation and repository setup
 
-- [ ] Extend mock-server coverage to request bodies, pagination, and documented
+- [ ] Extend mock-server coverage to request bodies and documented
   empty responses as additional operations are implemented.
 - [ ] Add opt-in smoke tests against the pinned server using disposable data.
 - [ ] Add CI for formatting, Clippy, tests, documentation/examples, supported
@@ -78,7 +78,6 @@ The next candidate goal is session listing with explicit filters and pagination.
 
 ### Core resources
 
-- [ ] Implement session listing with explicit pagination and filters.
 - [ ] Implement session creation, retrieval, updates, deletion, and forking.
 - [ ] Implement message history and message retrieval while retaining cursors
   and relevant response metadata.
@@ -201,6 +200,9 @@ when a decision is made.
   exercising representative methods in library examples.
 - [ ] Confirm the semantics of omitted versus explicit null fields before choosing
   their public Rust representation.
+- [ ] Verify session cursor/filter binding, supported list limit ranges, and page
+  consistency during concurrent changes against a pinned server. Explicit query
+  encoding, cursor round-tripping, and page order are covered by mocks.
 - [ ] Confirm event ordering, connection-marker guarantees, log watermarks, and
   snapshot reconciliation without assuming gap-free global events.
 - [ ] Choose how to expose SSE IDs, log sequences, pagination, and location
@@ -210,6 +212,19 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete session listing with TDD: typed `SessionListOptions`, ordering and
+  parent filters, direct query encoding, `client.sessions().list(&options)`, and
+  typed invalid-cursor errors. Preserve omission versus explicit false/empty/root
+  filters; the SDK's default location does not affect this list route.
+- [x] Add reviewed session models through `--sessions`, reusing shared discovery
+  types. Preserve nested extensions, opaque next/previous cursors, and server
+  page order. Validate ID prefixes, safe-integer file-diff counts, and true-only
+  flags; numeric fields retain supported integer precision through JSON numbers.
+- [x] Add the bounded caller-controlled `examples/sessions.rs`, public API docs,
+  and README pagination guidance. Validate 59 client tests, 22 generator tests,
+  three doctests, all examples, HTTP-only tests, Rust 1.88, formatting, Clippy,
+  docs, and all four regeneration checks. Live cursor/filter semantics, limit
+  ranges, and consistency during concurrent changes remain to be verified.
 - [x] Complete location-aware discovery with TDD: default location configuration,
   per-call directory overrides/omission, `location.get`, and `agent.list`.
   Queries preserve server path strings; the SDK default never leaks onto

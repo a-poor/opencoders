@@ -2,13 +2,24 @@
 //!
 //! Response objects preserve additional fields in flattened `extra` maps.
 //! Generated optional fields generally accept absent or null as `None`; the
-//! bounded `steps` adapter rejects explicit null. These response-only models do
+//! `steps` and `more` adapters reject explicit null. These response-only models do
 //! not define update-request semantics. Unknown enum values are decoding errors.
 
 #[rustfmt::skip]
 #[allow(dead_code)] // Typify emits conversion helpers unused by these selected models.
 mod generated;
 pub use generated::{ServerInfo, ServerInfoCapabilities, ServerInfoPaths};
+
+#[rustfmt::skip]
+mod sessions;
+pub use sessions::error::ConversionError as SessionModelConversionError;
+pub use sessions::{
+    FileDiffInfo, FileDiffInfoStatus, MoneyUsd, RelativePath, SessionForkBoundary,
+    SessionForkBoundaryVariant0Type, SessionForkBoundaryVariant1Type, SessionId, SessionInfo,
+    SessionInfoFork, SessionInfoOutcome, SessionInfoTime, SessionMessageId, SessionMetadata,
+    SessionRevert, SessionsCursor, SessionsResponse, SessionsResponseCursor, SnapshotId,
+    TokenUsageInfo, TokenUsageInfoCache,
+};
 
 #[rustfmt::skip]
 mod discovery;
@@ -79,6 +90,29 @@ fn deserialize_steps<'de, D: serde::Deserializer<'de>>(
         ));
     }
     Ok(Some(steps))
+}
+
+fn deserialize_diff_count<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<u64, D::Error> {
+    let count = <u64 as serde::Deserialize>::deserialize(deserializer)?;
+    if count > 9_007_199_254_740_991 {
+        return Err(serde::de::Error::custom(
+            "file diff count exceeds the safe-integer maximum",
+        ));
+    }
+    Ok(count)
+}
+
+fn deserialize_more<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<bool>, D::Error> {
+    if !<bool as serde::Deserialize>::deserialize(deserializer)? {
+        return Err(serde::de::Error::custom(
+            "file diff more must be true when present",
+        ));
+    }
+    Ok(Some(true))
 }
 
 fn deserialize_pid<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<u64, D::Error> {

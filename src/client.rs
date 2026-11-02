@@ -1,6 +1,6 @@
 use crate::{
     Agents, BuildError, DecodeError, Error, HttpError, Location, Locations, ResponseTooLargeError,
-    Result, Server, TransportError,
+    Result, Server, Sessions, TransportError,
 };
 use reqwest::{
     StatusCode, Url,
@@ -71,6 +71,11 @@ impl Client {
         Agents { client: self }
     }
 
+    /// Browse sessions with explicit filters and cursor pagination.
+    pub fn sessions(&self) -> Sessions<'_> {
+        Sessions { client: self }
+    }
+
     /// Configured default for location-aware routes. Server-wide routes ignore it.
     pub fn default_location(&self) -> &Location {
         &self.inner.default_location
@@ -98,15 +103,29 @@ impl Client {
         expected: StatusCode,
         location: &Location,
     ) -> Result<T> {
+        let query = match location {
+            Location::Directory(directory) => vec![("location[directory]", directory.clone())],
+            Location::Unspecified => Vec::new(),
+        };
+        self.get_json_query(path, operation, expected, &query).await
+    }
+
+    pub(crate) async fn get_json_query<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        operation: &'static str,
+        expected: StatusCode,
+        query: &[(&str, String)],
+    ) -> Result<T> {
         // Route paths are crate-owned constants, relative to a validated directory URL.
         let mut url = self
             .inner
             .base_url
             .join(path)
             .expect("valid relative API route");
-        if let Location::Directory(directory) = location {
+        if !query.is_empty() {
             url.query_pairs_mut()
-                .append_pair("location[directory]", directory);
+                .extend_pairs(query.iter().map(|(key, value)| (*key, value.as_str())));
         }
         let mut request = self.inner.http.get(url).headers(self.inner.headers.clone());
         if let Some(timeout) = self.inner.request_timeout {

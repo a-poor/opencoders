@@ -5,7 +5,7 @@ overrides and hand-written request/event adapters. Keep generated wire types
 behind a reviewed public API. This private workspace package is a feasibility
 experiment, not the implementation of the `opencoders` client.
 
-The root crate exposes reviewed server-info and discovery models and HTTP methods.
+The root crate exposes reviewed server-info, discovery, and session models and HTTP methods.
 Workspace `default-members` keeps this tool out of ordinary `cargo build` and
 `cargo test`; use `--workspace` or `-p` deliberately. Nothing runs generation at
 build time. Generated probe and production model files are checked in separately.
@@ -52,6 +52,27 @@ The public model tests cover these wire behaviors and the tool tests require
 review when adapted schema constraints change. Unknown string enum variants are
 decode errors. Most optional response fields accept null as absent; `steps`
 rejects explicit null. These models are not update-request types.
+
+## Reviewed session-list models
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --sessions
+cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
+```
+
+Output goes to the root `src/models/sessions.rs`, selecting `SessionsResponse`
+and its transitive dependencies. `src/sessions.rs` records adaptations: shared
+discovery types are reused through named replacements, arbitrary numeric fields
+use `serde_json::Number`, and guarded adapters enforce file-diff count bounds and
+the optional true-only `more` flag. Generated ID prefix checks remain intact.
+Response objects and union variants preserve added fields; unknown enum values
+fail decoding. Optional response fields generally accept null as absent, except
+the strict `more` adapter. Cursor omission/null both become `None`; empty strings
+stay present. This response model policy does not define update-request semantics.
+
+Run all production checks (`--server-info --check`, `--discovery --check`, and
+`--sessions --check`) after schema/tool changes, alongside the raw probe `--check`.
+Normal library builds use the checked-in output without invoking the tool.
 
 ## Run the experiment
 
@@ -123,7 +144,7 @@ generation or compilation does not prove complete JSON Schema validation.
 
 Tests named `raw_*` characterize generator limitations. They do not define the
 desired public client contract. Keep these findings distinct from client bugs:
-the root library uses separately adapted server-info/discovery output, not the probe
+the root library uses separately adapted production output, not the probe
 models.
 
 ## Alternatives and next steps

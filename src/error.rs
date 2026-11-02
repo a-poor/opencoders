@@ -195,6 +195,11 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// A pagination cursor was rejected by the server.
+    InvalidCursor {
+        /// Server explanation.
+        message: String,
+    },
     /// The request could not be validated.
     InvalidRequest {
         /// Server explanation.
@@ -233,6 +238,9 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            InvalidCursorError {
+                message: String,
+            },
             InvalidRequestError {
                 message: String,
                 kind: Option<String>,
@@ -251,6 +259,7 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::InvalidCursorError { message }) => Self::InvalidCursor { message },
             Ok(Known::InvalidRequestError {
                 message,
                 kind,
@@ -275,6 +284,7 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::InvalidCursor { .. } => "InvalidCursor { .. }",
             Self::InvalidRequest { .. } => "InvalidRequest { .. }",
             Self::Unauthorized { .. } => "Unauthorized { .. }",
             Self::LocationNotFound { .. } => "LocationNotFound { .. }",

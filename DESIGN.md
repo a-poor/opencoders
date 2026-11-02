@@ -1,7 +1,8 @@
 # opencoders design and implementation plan
 
 Status: foundation implemented through `server.info()`, `location.get`, and
-`agent.list` with configurable location selection; broader API and
+`agent.list` with configurable location selection, plus filtered/paginated
+`session.list`; broader API and
 streaming sections remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
@@ -162,6 +163,22 @@ hidden agents. Each method has a per-call location override described above.
 `client.sessions().create(request).await` illustrates the planned shape for later
 resources; those names and signatures remain provisional.
 
+`client.sessions().list(&SessionListOptions)` retrieves one `SessionsResponse`.
+Options are cloneable, default to omission, and have fluent setters plus public
+fields for clearing values. `ParentFilter::RootOnly` encodes literal `parentID=null`;
+`ChildrenOf(SessionId)` encodes a validated ID. Archive filters preserve omission
+versus explicit false. Request limits use `u32` with server-side range validation.
+The route uses direct directory/project/subpath filters and ignores the SDK's
+default nested location. All supplied options are sent exactly once.
+
+Session pages retain `data`, the cursor object, and additive metadata. Returned
+order is preserved. Cursors stay opaque; either `next` or `previous` can be supplied
+on a later call. Missing/null cursors mean `None`, while an empty string remains
+present. The caller owns page progression and filter retention; the SDK neither
+auto-fetches nor changes options when a cursor is set. Examples clear first-page
+`order` while following cursors. Cursor/filter binding, accepted limit ranges,
+and consistency under concurrent session changes await live-server verification.
+
 Use typed request structs with constructors or defaults for common cases. Provide
 lightweight ID types where they prevent mixing session, message, and other IDs.
 Preserve upstream terminology in documentation so users can map methods back to
@@ -205,6 +222,15 @@ Cache TTL patterns use the generator's `regress` validator. Provider request
 retain values. Unknown enum variants currently produce decode errors, rather than
 silently accepting unsupported permission effects or other values.
 
+`--sessions` generates the session-list response graph into `src/models/sessions.rs`.
+Named replacements reuse the existing location, project, agent, model, and
+permission types. Numeric values use `serde_json::Number`, retaining supported
+integers rather than passing them through floating point. Generated ID parsers
+enforce the schema's session/message prefixes. Guarded adapters validate
+nonnegative safe-integer file-diff counts and the optional true-only `more` flag.
+The same additive-field and unknown-enum policies apply; optional response fields
+generally collapse absent/null except strict adapters such as `more`.
+
 The experiment demonstrates adapters for three-state update fields and explicit
 event dispatch. Response tolerance, full event/error coverage, numeric
 constraints, and inline schemas for additional endpoints still require review. Compilation alone
@@ -243,8 +269,8 @@ not appear in default debug or tracing output.
 
 The foundation implements `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
 errors plus separate client-build failures. Only HTTP 200 is successful for
-all three implemented routes. Known validation/authentication, missing-location,
-and unavailable-service errors expose typed details;
+all implemented routes. Known validation/authentication, missing-location,
+unavailable-service, and invalid-cursor errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
 
@@ -355,7 +381,7 @@ CI should run formatting, Clippy, unit/protocol tests, documentation and example
 checks, supported feature combinations, and a regeneration consistency check.
 The library declares Rust 1.88 as its minimum; its locked dependency build has
 been checked with that compiler. The initial client has deterministic model and
-mock HTTP tests, compiling server-info/discovery examples, and tests without default TLS
+mock HTTP tests, compiling server-info/discovery/session examples, and tests without default TLS
 features. A pinned live server and CI automation remain outstanding.
 
 Record endpoint coverage by upstream operation ID, including deliberate

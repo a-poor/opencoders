@@ -1,0 +1,27 @@
+{
+  "id": "ses_example",
+  "parentID": "ses_parent",
+  "fork": {
+    "sessionID": "ses_source",
+    "boundary": {"type": "through", "messageID": "msg_boundary", "futureBoundary": true},
+    "futureFork": 1
+  },
+  "projectID": "project_one",
+  "agent": "build",
+  "model": {"id": "model_one", "providerID": "provider_one", "variant": "fast", "futureModel": 2},
+  "cost": 0.125,
+  "tokens": {"input": 10, "output": 3, "reasoning": 1, "cache": {"read": 2, "write": 0, "futureCache": 3}, "futureTokens": 4},
+  "outcome": "succeeded",
+  "time": {"created": 100, "updated": 200, "busy": 150, "idle": 180, "viewed": 190, "archived": 201, "futureTime": 5},
+  "title": "Example session",
+  "subpath": "src",
+  "metadata": {"nested": [true, null, "value"]},
+  "permissions": [{"action": "read", "resource": "*", "effect": "ask", "futureRule": 6}],
+  "revert": {
+    "messageID": "msg_revert", "partID": "part_one", "snapshot": "snapshot_one",
+    "files": [{"file": "src/lib.rs", "patch": "example diff", "additions": 1, "deletions": 0, "status": "modified", "more": true, "futureFile": 7}],
+    "futureRevert": 8
+  },
+  "location": {"directory": "/remote/project", "futureLocation": 9},
+  "futureSession": 10
+}

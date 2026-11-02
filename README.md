@@ -2,8 +2,8 @@
 
 `opencoders` is an async Rust client for connecting to the [OpenCode v2 HTTP API](https://opencode.ai/v2/docs/api).
 
-The library currently supports server information, location resolution, and agent
-discovery through a configurable async client. It targets developers building
+The library currently supports server information, location/agent discovery, and
+paginated session listing through a configurable async client. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -73,6 +73,47 @@ Run `cargo run --example discovery` with `OPENCODE_BASE_URL`, optional
 `OPENCODE_TOKEN`, and optional `OPENCODE_DIRECTORY`. The example resolves a
 location, then lists agents at that resolved directory.
 
+## Session listing and pagination
+
+```rust
+use opencoders::{Client, ParentFilter, SessionListOptions, SessionOrder};
+
+async fn browse(client: &Client) -> opencoders::Result<()> {
+    let mut options = SessionListOptions::default()
+        .limit(20).order(SessionOrder::Desc)
+        .parent(ParentFilter::RootOnly).archived(false);
+    let first = client.sessions().list(&options).await?;
+    if let Some(next) = first.cursor.next {
+        options.cursor = Some(next);
+        options.order = None;
+        let second = client.sessions().list(&options).await?;
+        // second.cursor.previous can retrieve the preceding page.
+    }
+    Ok(())
+}
+```
+
+`SessionListOptions::default()` omits all filters. Options cover limit, order,
+search, parent, archived state, directory, project, subpath, and cursor. Root-only
+selection sends `parentID=null`; selecting children uses a typed `SessionId`.
+Omitted archive filtering differs from explicit `false`. Public option fields
+can be cleared with `None`; provided empty strings are sent unchanged. The SDK
+represents limits as `u32` and leaves accepted ranges to the server.
+
+Session listing ignores the SDK's default location and uses explicit, direct
+`directory`/`project` filters. Each call returns one `data`/`cursor` page in server
+order. Pass either opaque cursor back unchanged, retaining applicable filters;
+the order option is documented for the first page. Setting a cursor does not
+silently change other options. Missing or null cursors become `None`; an empty
+cursor remains `Some`. The SDK performs no automatic pagination or retries.
+
+Run `cargo run --example sessions` with the same environment variables as the
+discovery example. It follows up to three pages, keeping pagination in caller
+code. Session models reuse discovery ID/location/model/permission types and
+preserve added fields. Numeric timestamps, costs, and token values use
+`serde_json::Number` to retain supported integer precision. Session/message ID
+prefixes and nested file-diff bounds/flags are checked during decoding.
+
 ## Configuration and behavior
 
 - Base URLs accept an optional reverse-proxy prefix: `https://host/opencode`
@@ -107,12 +148,13 @@ location, then lists agents at that resolved directory.
 
 `BuildError` covers invalid configuration. API calls return `Error::Transport`,
 `Error::Http`, `Error::Decode`, or `Error::ResponseTooLarge`. Use `operation()`,
-`status()`, and `is_timeout()` for diagnostics and control flow. All three methods
+`status()`, and `is_timeout()` for diagnostics and control flow. All implemented methods
 expect exactly HTTP 200; unexpected redirects and other 2xx statuses are HTTP
 errors too.
 
 HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
-`UnauthorizedError`, `LocationNotFoundError`, and `ServiceUnavailableError`.
+`UnauthorizedError`, `LocationNotFoundError`, `ServiceUnavailableError`, and
+`InvalidCursorError`.
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
 available in the raw body. Truncated or non-JSON bodies have no parsed API error.
@@ -146,7 +188,7 @@ testing a live server remains open. Other endpoints and event streams are not ye
 implemented.
 
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
-contains the initial experiment and reviewed server-info/discovery generation commands.
+contains the initial experiment and reviewed server-info/discovery/session generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.
