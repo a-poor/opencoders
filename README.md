@@ -2,8 +2,8 @@
 
 `opencoders` is an async Rust client for connecting to the [OpenCode v2 HTTP API](https://opencode.ai/v2/docs/api).
 
-The library currently supports server information, location/agent discovery,
-session management/listing, and message history/retrieval. It targets developers building
+The library currently supports server information, location/agent/model discovery,
+session management/listing and agent/model selection, and message history/retrieval. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -77,6 +77,54 @@ include hidden agents; applications choose what to display.
 Run `cargo run --example discovery` with `OPENCODE_BASE_URL`, optional
 `OPENCODE_PASSWORD`, and optional `OPENCODE_DIRECTORY`. The example resolves a
 location, then lists agents at that resolved directory.
+
+## Model and agent selection
+
+```rust
+use opencoders::{Client, ModelListOptions,
+    models::{SessionId, SessionModelInput, SessionSwitchAgentRequest, SessionSwitchModelRequest}};
+
+async fn configure(client: &Client, id: &SessionId) -> opencoders::Result<()> {
+    let catalog = client.models().list(&ModelListOptions::default().types(["chat"])).await?;
+    let agent = client.agents().get(&"build".to_owned().into()).await?;
+    if let Some(model) = client.models().default().await?.data {
+        client.sessions().switch_agent(id, &SessionSwitchAgentRequest::new(agent.data.id)).await?;
+        client.sessions().switch_model(id, &SessionSwitchModelRequest::new(
+            SessionModelInput::new(model.provider_id, model.id),
+        )).await?;
+    }
+    Ok(())
+}
+```
+
+`models().list`, `models().default`, and `agents().get` retain `location`/`data`
+envelopes and support per-call `list_at`, `default_at`, and `get_at` overrides.
+Default-model `data` is required but nullable: `None` means no default is available.
+Lists preserve server order and expose a snapshot, without waiting for catalog
+changes. Empty `ModelListOptions::types` omits the filter (chat on v2.2.5); nonempty
+lists send repeated `types` parameters. Types are open strings, including plugin
+types. The SDK preserves duplicates/order; the tested server deduplicates requested
+types and concatenates matching groups. Agent IDs are encoded as one path segment;
+empty IDs and `.`/`..` return a pre-send encoding error.
+
+Selection requests use strict, required, non-null agent/model fields. Use the
+catalog's public `id` and `provider_id`, not its provider-native `model_id`.
+`SessionModelInput::variant` selects an optional variant. Both switch methods
+return `()` for HTTP 204 and ignore the discovery location default. They record
+choices for subsequent turns without executing or validating their availability:
+v2.2.5 accepts even unknown agent/provider/model IDs. There is no null reset operation.
+
+On tested v2.2.5, selecting the same agent again adds another history entry.
+An omitted model variant is stored as `"default"`; repeating the same provider,
+model, and variant creates no additional model-selection entry. The SDK performs
+no local deduplication. A response can be lost after a selection is applied; the
+default transport does not retry either operation.
+
+Run `cargo run --example configure_session` with `OPENCODE_BASE_URL`,
+`OPENCODE_DIRECTORY`, `OPENCODE_AGENT_ID` (for example, `build`), and optional
+`OPENCODE_PASSWORD`. It discovers the selected agent and default model, creates
+a fresh session, records both choices, retrieves it, and leaves it on the server.
+If no default model exists, it exits before creating a session. It makes no model calls.
 
 ## Session listing and pagination
 
@@ -279,16 +327,18 @@ message by ID, without submitting input or changing the session.
   `None` and serialize as absent.
 - Discovery models preserve additional object fields and typed agent/provider
   configuration. Agent `steps`, when present, must be a positive safe integer;
-  provider timeout values accept numbers or `false`. Unknown enum variants remain
-  decoding errors. Generated optional fields generally accept null as absent;
-  the `steps` adapter rejects explicit null. These are response-only models.
+  provider timeout values accept numbers or `false`. Unknown closed enum values
+  remain decoding errors; model types and reasoning-field names are open strings.
+  Model limits and cost-tier sizes enforce the signed safe-integer range in the
+  schema. Generated optional fields generally accept null as absent; `steps` and
+  optional model input limits reject explicit null. These are response-only models.
 
 ## Errors
 
 `BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
 `Error::Http`, `Error::Decode`, or `Error::ResponseTooLarge`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
-methods expect exactly HTTP 200; session update/remove expect HTTP 204 with no
+methods expect exactly HTTP 200; session update/remove/switch methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
 too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.
@@ -296,7 +346,8 @@ JSON-body operations set `Content-Type: application/json`, overriding defaults.
 HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `UnauthorizedError`, `LocationNotFoundError`, `ServiceUnavailableError`, and
 `InvalidCursorError`, `SessionNotFoundError` (including missing parents), and
-`MessageNotFoundError` (also used when a message belongs to another session).
+`MessageNotFoundError` (also used when a message belongs to another session), and
+`AgentNotFoundError`.
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
 available in the raw body. Truncated or non-JSON bodies have no parsed API error.
@@ -307,8 +358,8 @@ bodies, and source messages. Explicit body access and error sources may contain
 sensitive request or server-supplied text; inspect them deliberately. Dropping a request
 future cancels local consumption and does not undo server-side work.
 
-`ProviderRequest` also redacts its `Debug` output because provider configuration
-can contain credentials. Its fields and serialization preserve the original
+`ProviderRequest`, `ModelInfo`, and `ModelVariant` also redact their `Debug` output
+because provider configuration can contain credentials. Their fields and serialization preserve the original
 values; treat explicitly accessed or serialized response data as sensitive.
 
 ## Development and compatibility

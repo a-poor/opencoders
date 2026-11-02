@@ -7,6 +7,63 @@ use tokio::{
 use wiremock::{Mock, MockServer, ResponseTemplate, matchers::path};
 
 #[tokio::test]
+async fn selection_disconnects_after_request_bodies_are_not_retried() {
+    use opencoders::models::{
+        SessionModelInput, SessionSwitchAgentRequest, SessionSwitchModelRequest,
+    };
+    for model in [false, true] {
+        let agent_request = SessionSwitchAgentRequest::new("private-agent".to_owned().into());
+        let model_request = SessionSwitchModelRequest::new(SessionModelInput::new(
+            "private-provider".to_owned().into(),
+            "private-model",
+        ));
+        let body = if model {
+            serde_json::to_vec(&model_request)
+        } else {
+            serde_json::to_vec(&agent_request)
+        }
+        .unwrap();
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            read_request_headers(&mut socket).await;
+            let mut received = vec![0; body.len()];
+            socket.read_exact(&mut received).await.unwrap();
+            assert_eq!(received, body);
+            drop(socket);
+            assert!(
+                tokio::time::timeout(Duration::from_millis(200), listener.accept())
+                    .await
+                    .is_err()
+            );
+        });
+        let client = Client::builder(format!("http://{address}"))
+            .request_timeout(Duration::from_secs(1))
+            .build()
+            .unwrap();
+        let id = "ses_test".parse().unwrap();
+        let error = if model {
+            client.sessions().switch_model(&id, &model_request).await
+        } else {
+            client.sessions().switch_agent(&id, &agent_request).await
+        }
+        .unwrap_err();
+        assert_eq!(
+            error.operation(),
+            if model {
+                "session.switchModel"
+            } else {
+                "session.switchAgent"
+            }
+        );
+        assert!(matches!(error, Error::Transport(_)));
+        assert!(!format!("{error:?} {error}").contains("private-"));
+        task.await.unwrap();
+    }
+}
+
+#[tokio::test]
 async fn update_and_remove_disconnects_are_not_retried() {
     use opencoders::models::SessionUpdateRequest;
     for remove in [false, true] {

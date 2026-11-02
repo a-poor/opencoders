@@ -2,13 +2,19 @@
 //!
 //! Response objects preserve additional fields in flattened `extra` maps.
 //! Generated optional fields generally accept absent or null as `None`; the
-//! `steps`, `more`, and constrained message numeric/content adapters reject explicit
-//! null. Request objects use strict
+//! `steps`, `more`, model integer limits, and constrained message numeric/content
+//! adapters reject explicit null. Default-model `data` is required but nullable.
+//! Request objects use strict
 //! input types and [`crate::RequestField`] for nullable optional properties.
-//! Unknown enum values are decoding errors.
+//! Unknown closed enum values are decoding errors. Model types and reasoning-field
+//! names are open strings, as specified by the schema.
 
 use crate::RequestField;
+mod catalog_adapters;
 mod session_inputs;
+use catalog_adapters::{
+    deserialize_model_integer, deserialize_nullable_model, deserialize_optional_model_integer,
+};
 
 #[rustfmt::skip]
 mod messages;
@@ -72,8 +78,9 @@ pub use sessions::{
     RelativePath, SessionCreateRequest, SessionForkBoundary, SessionForkBoundaryVariant0Type,
     SessionForkBoundaryVariant1Type, SessionId, SessionInfo, SessionInfoFork, SessionInfoOutcome,
     SessionInfoTime, SessionLocationInput, SessionMessageId, SessionMetadata, SessionModelInput,
-    SessionResponse, SessionRevert, SessionUpdateRequest, SessionsCursor, SessionsResponse,
-    SessionsResponseCursor, SnapshotId, TokenUsageInfo, TokenUsageInfoCache,
+    SessionResponse, SessionRevert, SessionSwitchAgentRequest, SessionSwitchModelRequest,
+    SessionUpdateRequest, SessionsCursor, SessionsResponse, SessionsResponseCursor, SnapshotId,
+    TokenUsageInfo, TokenUsageInfoCache,
 };
 
 fn deserialize_optional_value<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
@@ -88,12 +95,16 @@ where
 mod discovery;
 pub use discovery::error::ConversionError as ModelConversionError;
 pub use discovery::{
-    AbsolutePath, AgentColor, AgentId, AgentInfo, AgentInfoMode, AgentListResponse,
-    LocationPublicInfo, LocationPublicInfoProject, LocationPublicRef, ModelRef, PermissionEffect,
-    PermissionRule, PermissionRuleset, ProjectId, ProviderCache, ProviderCacheTtl,
-    ProviderCacheWarming, ProviderCompaction, ProviderCompactionVariant0Type,
-    ProviderCompactionVariant1Type, ProviderEncoding, ProviderId, ProviderRequest,
-    ProviderSettings, ProviderTransport,
+    AbsolutePath, AgentColor, AgentId, AgentInfo, AgentInfoMode, AgentListResponse, AgentResponse,
+    LocationPublicInfo, LocationPublicInfoProject, LocationPublicRef, ModelCacheFormat,
+    ModelCapabilities, ModelCompatibility, ModelCost, ModelCostCache, ModelCostTier,
+    ModelCostTierType, ModelDefaultResponse, ModelInfo, ModelInfoLimit, ModelInfoStatus,
+    ModelInfoTime, ModelListResponse, ModelMaxTokensField, ModelMediaInput, ModelReasoningField,
+    ModelRef, ModelSettings, ModelType, ModelVariant, ModelVariantSettings,
+    MoneyUsdPerMillionTokens, PermissionEffect, PermissionRule, PermissionRuleset, ProjectId,
+    ProviderCache, ProviderCacheTtl, ProviderCacheWarming, ProviderCompaction,
+    ProviderCompactionVariant0Type, ProviderCompactionVariant1Type, ProviderEncoding, ProviderId,
+    ProviderRequest, ProviderSettings, ProviderTransport,
 };
 
 /// Provider timeout value: a JSON number, or `false` to disable the timeout.

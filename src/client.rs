@@ -71,7 +71,12 @@ impl Client {
         Agents { client: self }
     }
 
-    /// Create, retrieve, update, remove, and browse sessions.
+    /// Discover models and the default selection at a working location.
+    pub fn models(&self) -> crate::Models<'_> {
+        crate::Models { client: self }
+    }
+
+    /// Create, configure, retrieve, update, remove, and browse sessions.
     pub fn sessions(&self) -> Sessions<'_> {
         Sessions { client: self }
     }
@@ -103,10 +108,7 @@ impl Client {
         expected: StatusCode,
         location: &Location,
     ) -> Result<T> {
-        let query = match location {
-            Location::Directory(directory) => vec![("location[directory]", directory.clone())],
-            Location::Unspecified => Vec::new(),
-        };
+        let query = location.query();
         self.get_json_query(path, operation, expected, &query).await
     }
 
@@ -207,6 +209,22 @@ impl Client {
         let request = self.json_request(
             Method::PATCH,
             self.segment_url(path, segment),
+            operation,
+            body,
+        )?;
+        self.send_empty(request, operation).await
+    }
+
+    pub(crate) async fn post_json_empty<B: serde::Serialize + ?Sized>(
+        &self,
+        path: &str,
+        segments: &[&str],
+        operation: &'static str,
+        body: &B,
+    ) -> Result<()> {
+        let request = self.json_request(
+            Method::POST,
+            self.segments_url(path, segments),
             operation,
             body,
         )?;

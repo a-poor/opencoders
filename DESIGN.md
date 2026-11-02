@@ -1,8 +1,9 @@
 # opencoders design and implementation plan
 
-Status: foundation implemented through `server.info()`, `location.get`, and
-`agent.list` with configurable location selection, plus session creation,
-retrieval, updates, deletion, filtered/paginated listing, and message history/retrieval. Broader API and
+Status: foundation implemented through `server.info()`, location/agent/model discovery
+with configurable location selection, plus session creation,
+retrieval, updates, deletion, agent/model selection, filtered/paginated listing,
+and message history/retrieval. Broader API and
 streaming sections remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
@@ -123,14 +124,14 @@ Paths refer to the server's filesystem and should not require local filesystem
 access or local path canonicalization.
 
 `ClientBuilder::default_location(Location::directory(...))` selects a default for
-location-aware routes. `location().get_at(...)` and `agents().list_at(...)`
+location-aware routes. The discovery resources' `get_at`, `list_at`, and `default_at` methods
 override it for one call without mutating shared configuration. Their argument
 `Location::Unspecified` omits the query entirely, bypassing the SDK default while
 retaining caller-supplied headers. The upstream client's documented fallback is
 location headers followed by the server working directory. This does not promise
 to clear location headers configured on an injected HTTP client.
 
-Both implemented discovery routes explicitly declare `deepObject`/`explode` in
+The implemented discovery routes explicitly declare `deepObject`/`explode` in
 the pinned schema. We encode a directory with the `location[directory]` key and
 standard query percent encoding, retaining arbitrary server path syntax. Explicit
 null query encoding is not exposed; no equivalence between omission, empty string,
@@ -162,6 +163,27 @@ information directly, matching the operation's unenveloped HTTP 200 body.
 project information. `client.agents().list().await` returns an `AgentListResponse`
 containing both the resolved `location` and the `data` list, without filtering
 hidden agents. Each method has a per-call location override described above.
+
+`agents().get(&AgentId)` returns an `AgentResponse`; `models().list(&ModelListOptions)`
+and `models().default()` return location/data envelopes. Missing agents have typed
+errors. Agent IDs use one encoded path segment; empty IDs and `.`/`..` fail before
+HTTP because URL normalization cannot preserve them as agent path segments.
+Model filters use repeated `types` parameters, preserving caller values/order;
+omitting the filter selects chat models on the pinned server. Model types and
+reasoning-field names are open strings. Lists retain server order, and default
+`data` is required but nullable. Discovery returns current snapshots; catalog
+settlement and execution readiness are not inferred from them.
+
+`sessions().switch_agent(&SessionId, &SessionSwitchAgentRequest)` and
+`switch_model(&SessionId, &SessionSwitchModelRequest)` accept HTTP 204 without
+decoding JSON, share the transport's no-retry policy, and ignore discovery defaults.
+Requests require non-null selections and reuse strict `SessionModelInput`, using
+public catalog IDs rather than provider-native IDs. The v2.2.5 live test confirms
+selections are stored without availability validation or model execution, including
+unknown IDs. Reselecting an agent adds a history marker; repeating the same model
+reference does not. Omitted model variants are stored as `"default"`. Applications
+own changes to existing sessions and reconciliation after ambiguous failures.
+
 `client.sessions().create(&SessionCreateRequest)` and
 `client.sessions().get(&SessionId)` return `SessionResponse`, retaining the `data`
 envelope and additive fields. A default creation request sends `{}`. Create/get
@@ -272,15 +294,18 @@ the representation of future update requests. `--server-info --check` verifies
 checked-in output without modifying it.
 
 `--discovery` generates `src/models/discovery.rs`, extracting the inline
-`agent.list` envelope and its transitive models. It uses the same additive-field
+agent list/get and model list/default envelopes and their transitive models. It uses the same additive-field
 policy and validates positive safe-integer agent step limits. A guarded schema
 simplification represents `"auto" | string` cache intervals as strings; a guarded
 named replacement represents provider timeouts as a JSON number or `false`.
 `serde_json::Number` preserves integer values without conversion through `f64`.
 Cache TTL patterns use the generator's `regress` validator. Provider request
-`Debug` redacts configuration, while explicit field access and serialization
-retain values. Unknown enum variants currently produce decode errors, rather than
-silently accepting unsupported permission effects or other values.
+`Debug` redacts configuration, as do model and model-variant responses, while explicit
+field access and serialization retain values. Unknown closed enum variants produce
+decode errors. Guarded open-string simplifications retain arbitrary model types and
+reasoning-field names. Model limits and cost-tier sizes use signed safe integers;
+optional input limits reject explicit null. A guarded adapter preserves required,
+nullable default-model data and serializes `None` as JSON null.
 
 `--sessions` generates the session response/input graph into `src/models/sessions.rs`.
 Named replacements reuse the existing location, project, agent, model, and
@@ -291,12 +316,13 @@ nonnegative safe-integer file-diff counts and the optional true-only `more` flag
 The same additive-field and unknown-enum policies apply; optional response fields
 generally collapse absent/null except strict adapters such as `more`.
 
-The same command extracts create/get response envelopes and create/update requests
+The same command extracts create/get response envelopes and create/update/selection requests
 directly from their inline endpoint schemas. Matching response envelopes share
 `SessionResponse`; strict request definitions are kept apart from response
 tolerance adaptations. Guarded AST transformations replace the eight create and
 four update nullable optional fields with `RequestField<T>` and reject explicit null for the
 nested non-nullable model variant. Schema shape changes require adapter review.
+Selection bodies are separately guarded strict objects with required, non-null fields.
 
 `--messages` generates a separate response graph in `src/models/messages.rs`,
 reusing shared IDs, location/model types, costs, and token counts. It extracts the
@@ -352,9 +378,9 @@ not appear in default debug or tracing output.
 
 The foundation implements `Encode`, `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
 errors plus separate client-build failures. JSON response routes accept HTTP 200;
-session update/remove accept only HTTP 204 and do not attempt JSON decoding.
+session update/remove/switch methods accept only HTTP 204 and do not attempt JSON decoding.
 Known validation/authentication, missing-location,
-missing-session/parent/message, unavailable-service, and invalid-cursor errors expose typed details;
+missing-agent/session/parent/message, unavailable-service, and invalid-cursor errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
 Encode failures occur before a request is sent and have no HTTP status.
@@ -468,8 +494,8 @@ generation targets. Regeneration pins Rust/rustfmt 1.99.1. A separate manual
 workflow runs the disposable server smoke test; ordinary tests skip it.
 
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
-and commit pinned in `tools/live/server.json`. Server info, location/agent discovery,
-and session creation/retrieval/listing/update/removal plus message list/get pass
+and commit pinned in `tools/live/server.json`. Server info, location/agent/model discovery,
+and session creation/retrieval/listing/update/removal/selection plus message list/get pass
 locally on macOS arm64. The history test imports a fixed transcript through the
 pinned experimental import route solely for fixtures, without scheduling model
 or tool execution; history reads use the SDK. This does not expose import publicly.

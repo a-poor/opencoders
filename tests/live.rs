@@ -464,6 +464,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     };
     assert_eq!(error.status(), 404);
     verify_message_history(&client, &http, &url, &elsewhere).await;
+    verify_selection(&client, &fallback, &elsewhere.id, workspace, other).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())
@@ -482,6 +483,234 @@ async fn pinned_server_discovery_and_session_pagination() {
             .data
             .is_empty()
     );
+}
+
+async fn verify_selection(
+    client: &Client,
+    fallback: &Client,
+    id: &opencoders::models::SessionId,
+    workspace: &str,
+    other: &str,
+) {
+    use opencoders::{
+        ModelListOptions,
+        models::{SessionModelInput, SessionSwitchAgentRequest, SessionSwitchModelRequest},
+    };
+    let models = client
+        .models()
+        .list(&ModelListOptions::default())
+        .await
+        .unwrap();
+    assert_eq!(models.location.directory.as_str(), workspace);
+    let default = client.models().default().await.unwrap();
+    assert_eq!(default.location.directory.as_str(), workspace);
+    let chat = client
+        .models()
+        .list(&ModelListOptions::default().types(["chat", "chat"]))
+        .await
+        .unwrap();
+    assert_eq!(
+        serde_json::to_value(&chat.data).unwrap(),
+        serde_json::to_value(&models.data).unwrap()
+    );
+    let images = client
+        .models()
+        .list(&ModelListOptions::default().types(["image"]))
+        .await
+        .unwrap();
+    assert!(images.data.iter().all(|m| {
+        m.type_
+            .as_ref()
+            .is_some_and(|kind| kind.as_str() == "image")
+    }));
+    let combined = client
+        .models()
+        .list(&ModelListOptions::default().types(["chat", "image"]))
+        .await
+        .unwrap();
+    let expected = chat
+        .data
+        .iter()
+        .chain(images.data.iter())
+        .map(|m| (&m.provider_id, &m.id))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        combined
+            .data
+            .iter()
+            .map(|m| (&m.provider_id, &m.id))
+            .collect::<Vec<_>>(),
+        expected
+    );
+    assert!(
+        client
+            .models()
+            .list(&ModelListOptions::default().types(["opencoders-unknown-type"]))
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+    assert_eq!(
+        client
+            .models()
+            .list_at(&ModelListOptions::default(), Location::directory(other))
+            .await
+            .unwrap()
+            .location
+            .directory
+            .as_str(),
+        other
+    );
+    assert_eq!(
+        fallback
+            .models()
+            .default_at(Location::Unspecified)
+            .await
+            .unwrap()
+            .location
+            .directory
+            .as_str(),
+        other
+    );
+    assert_eq!(
+        fallback
+            .models()
+            .default()
+            .await
+            .unwrap()
+            .location
+            .directory
+            .as_str(),
+        workspace
+    );
+    let agents = client.agents().list().await.unwrap();
+    let agent = &agents.data[0];
+    let got = client.agents().get(&agent.id).await.unwrap();
+    assert_eq!(got.location.directory.as_str(), workspace);
+    assert_eq!(
+        serde_json::to_value(&got.data).unwrap(),
+        serde_json::to_value(agent).unwrap()
+    );
+    assert_eq!(
+        fallback
+            .agents()
+            .get_at(&agent.id, Location::Unspecified)
+            .await
+            .unwrap()
+            .location
+            .directory
+            .as_str(),
+        other
+    );
+    let unknown = "opencoders-nonexistent-agent".to_owned().into();
+    let Error::Http(error) = client.agents().get(&unknown).await.unwrap_err() else {
+        panic!("expected missing agent")
+    };
+    assert!(matches!(
+        error.api_error(),
+        Some(ApiError::AgentNotFound { .. })
+    ));
+    assert_eq!(error.status(), 404);
+
+    let choice = SessionSwitchAgentRequest::new(agent.id.clone());
+    client.sessions().switch_agent(id, &choice).await.unwrap();
+    client.sessions().switch_agent(id, &choice).await.unwrap();
+    let model = default
+        .data
+        .as_ref()
+        .map(|m| SessionModelInput::new(m.provider_id.clone(), &m.id))
+        .unwrap_or_else(|| SessionModelInput::new("fixture".to_owned().into(), "fixture"));
+    let selected = SessionSwitchModelRequest::new(model.clone());
+    client.sessions().switch_model(id, &selected).await.unwrap();
+    let normalized = serde_json::to_value(model.clone().variant("default")).unwrap();
+    assert_eq!(
+        serde_json::to_value(client.sessions().get(id).await.unwrap().data.model.unwrap()).unwrap(),
+        normalized
+    );
+    client
+        .sessions()
+        .switch_model(
+            id,
+            &SessionSwitchModelRequest::new(model.clone().variant("default")),
+        )
+        .await
+        .unwrap();
+    let before_variant = client.sessions().get(id).await.unwrap().data;
+    assert_eq!(before_variant.agent.as_ref().unwrap(), &agent.id);
+    assert_eq!(
+        serde_json::to_value(before_variant.model.as_ref().unwrap()).unwrap(),
+        normalized
+    );
+    let changed = SessionSwitchModelRequest::new(model.variant("fixture-variant"));
+    client.sessions().switch_model(id, &changed).await.unwrap();
+    let after = client.sessions().get(id).await.unwrap().data;
+    assert_eq!(
+        serde_json::to_value(after.model.unwrap()).unwrap(),
+        serde_json::to_value(&changed.model).unwrap()
+    );
+    let history = client
+        .sessions()
+        .messages(id)
+        .list(&MessageListOptions::default())
+        .await
+        .unwrap();
+    assert_eq!(
+        history
+            .data
+            .iter()
+            .filter(|m| m.message_type() == SessionMessageType::AgentSwitched)
+            .count(),
+        2
+    );
+    assert_eq!(
+        history
+            .data
+            .iter()
+            .filter(|m| m.message_type() == SessionMessageType::ModelSwitched)
+            .count(),
+        2
+    );
+    // Selection is stored without catalog validation; it does not invoke a model.
+    client
+        .sessions()
+        .switch_agent(id, &SessionSwitchAgentRequest::new(unknown.clone()))
+        .await
+        .unwrap();
+    let unknown_model = SessionSwitchModelRequest::new(SessionModelInput::new(
+        "opencoders-nonexistent-provider".to_owned().into(),
+        "unknown-model",
+    ));
+    client
+        .sessions()
+        .switch_model(id, &unknown_model)
+        .await
+        .unwrap();
+    let stored = client.sessions().get(id).await.unwrap().data;
+    assert_eq!(stored.agent.unwrap(), unknown);
+    assert_eq!(
+        serde_json::to_value(stored.model.unwrap()).unwrap(),
+        serde_json::to_value(unknown_model.model.variant("default")).unwrap()
+    );
+    for result in [
+        client
+            .sessions()
+            .switch_agent(&"ses_missing".parse().unwrap(), &choice)
+            .await,
+        client
+            .sessions()
+            .switch_model(&"ses_missing".parse().unwrap(), &selected)
+            .await,
+    ] {
+        let Error::Http(error) = result.unwrap_err() else {
+            panic!("expected missing session")
+        };
+        assert_eq!(error.status(), 404);
+        assert!(matches!(
+            error.api_error(),
+            Some(ApiError::SessionNotFound { .. })
+        ));
+    }
 }
 
 async fn verify_message_history(

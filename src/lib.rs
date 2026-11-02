@@ -1,6 +1,6 @@
 //! Async Rust client for the OpenCode v2 HTTP API.
 //!
-//! Supports server information, location/agent discovery, and session creation, retrieval,
+//! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, and projected message history/retrieval. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
@@ -96,7 +96,25 @@
 //! # }
 //! ```
 
+//! Discover models and configure a session without submitting a prompt:
+//! ```no_run
+//! # async fn configure(client: &opencoders::Client, id: &opencoders::models::SessionId) -> opencoders::Result<()> {
+//! use opencoders::{ModelListOptions, models::{SessionModelInput, SessionSwitchAgentRequest, SessionSwitchModelRequest}};
+//! let catalog = client.models().list(&ModelListOptions::default().types(["chat"])).await?;
+//! let agent = client.agents().get(&"build".to_owned().into()).await?;
+//! if let Some(model) = client.models().default().await?.data {
+//!     client.sessions().switch_agent(id, &SessionSwitchAgentRequest::new(agent.data.id)).await?;
+//!     client.sessions().switch_model(id, &SessionSwitchModelRequest::new(
+//!         SessionModelInput::new(model.provider_id, model.id),
+//!     )).await?;
+//! }
+//! // A successful selection records a choice; it does not prove execution readiness.
+//! # Ok(())
+//! # }
+//! ```
+
 mod agents;
+mod catalog;
 mod client;
 mod error;
 mod location;
@@ -107,6 +125,7 @@ mod server;
 mod sessions;
 
 pub use agents::Agents;
+pub use catalog::{ModelListOptions, Models};
 pub use client::{Client, ClientBuilder};
 pub use error::{
     ApiError, BuildError, DecodeError, EncodeError, Error, HttpError, ResponseTooLargeError,

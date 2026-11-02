@@ -3,7 +3,7 @@
 use super::{
     AgentId, PermissionEffect, PermissionRuleInput, PermissionRulesetInput, ProviderId,
     SessionCreateRequest, SessionId, SessionLocationInput, SessionMetadata, SessionModelInput,
-    SessionUpdateRequest,
+    SessionSwitchAgentRequest, SessionSwitchModelRequest, SessionUpdateRequest,
 };
 use crate::RequestField;
 
@@ -16,8 +16,22 @@ impl SessionLocationInput {
     }
 }
 
+impl SessionSwitchAgentRequest {
+    /// Select an agent by ID for subsequent provider turns.
+    pub fn new(agent: AgentId) -> Self {
+        Self { agent }
+    }
+}
+impl SessionSwitchModelRequest {
+    /// Select a model using a strict input reference; response extensions are not sent.
+    pub fn new(model: SessionModelInput) -> Self {
+        Self { model }
+    }
+}
+
 impl SessionModelInput {
-    /// Select a model from a provider. No model execution is performed by creation.
+    /// Select a model using its catalog `id` and provider, not its native `modelID`.
+    /// Session creation and selection requests do not execute the model.
     pub fn new(provider_id: ProviderId, id: impl Into<String>) -> Self {
         Self {
             provider_id,

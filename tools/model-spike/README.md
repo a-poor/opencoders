@@ -37,8 +37,8 @@ cargo run --locked --offline -p opencoders-model-spike -- --discovery
 cargo run --locked --offline -p opencoders-model-spike -- --discovery --check
 ```
 
-Output goes to the root `src/models/discovery.rs`. The inline `agent.list`
-envelope, location responses, and transitive agent/provider models are selected
+Output goes to the root `src/models/discovery.rs`. Inline agent list/get and model
+list/default envelopes, location responses, and transitive agent/provider/model types are selected
 from the pinned schema. Adaptations in `src/discovery.rs` preserve additive
 fields, make response objects/enums non-exhaustive, and enforce positive
 safe-integer `steps` while preserving absence. A guarded simplification maps the
@@ -48,8 +48,16 @@ accepts both booleans. Numeric JSON retains integer precision. Provider requests
 use a redacted handwritten `Debug` implementation; cache TTL regex validation
 uses `regress`.
 
+Guarded `Model.Type` and `Model.ReasoningField` unions simplify to open strings.
+Model limits and cost-tier sizes enforce signed safe-integer bounds (including
+negative values allowed by the schema); optional input limits reject explicit null.
+Default-model `data` must be present but can be null; its adapter preserves null on
+serialization. `ModelInfo` and `ModelVariant` use redacted debug output because
+their headers/body/settings can contain credentials. Adapters live in the root
+`src/models/catalog_adapters.rs`; schema guards require review when shapes change.
+
 The public model tests cover these wire behaviors and the tool tests require
-review when adapted schema constraints change. Unknown string enum variants are
+review when adapted schema constraints change. Unknown closed string enum variants are
 decode errors. Most optional response fields accept null as absent; `steps`
 rejects explicit null. These models are not update-request types.
 
@@ -62,7 +70,8 @@ cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
 
 Output goes to the root `src/models/sessions.rs`, selecting `SessionsResponse`,
 the inline create/get envelopes (`SessionResponse`), the inline create/update
-requests (`SessionCreateRequest` and `SessionUpdateRequest`), and their dependencies.
+requests (`SessionCreateRequest` and `SessionUpdateRequest`), selection requests
+(`SessionSwitchAgentRequest` and `SessionSwitchModelRequest`), and their dependencies.
 `src/sessions.rs` records adaptations: shared
 discovery types are reused through named replacements, arbitrary numeric fields
 use `serde_json::Number`, and guarded adapters enforce file-diff count bounds and
@@ -78,6 +87,8 @@ use the public `RequestField<T>` adapter, preserving omission, null, and values.
 model variant rejects explicit null. Guards check nullable/optional field shapes,
 the matching create/get envelopes, and variant constraints before generation.
 Hand-written constructors/setters live in the root `src/models/session_inputs.rs`.
+Selection bodies are guarded strict objects with required non-null fields; the
+model body reuses `SessionModelInput` rather than tolerating response extensions.
 
 Run all production checks (`--server-info --check`, `--discovery --check`,
 `--sessions --check`, and `--messages --check`) after schema/tool changes, alongside the raw probe `--check`.

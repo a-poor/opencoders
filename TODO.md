@@ -36,7 +36,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active tasks. Message history and retrieval are complete; see **Completed**.
+No active implementation goal.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -75,8 +75,6 @@ No active tasks. Message history and retrieval are complete; see **Completed**.
 
 - [ ] Implement session forking. Creation, retrieval, updates, and deletion are
   implemented with typed requests and appropriate response handling.
-- [ ] Implement model discovery, individual agent retrieval, and session
-  agent/model selection. Agent listing is implemented.
 - [ ] Implement prompt submission, delivery modes, and inbox inspection/update/
   cancellation. Keep admission distinct from execution completion.
 - [ ] Implement interruption and execution observation/waiting.
@@ -109,7 +107,7 @@ No active tasks. Message history and retrieval are complete; see **Completed**.
 - [ ] Add runnable Rust examples for prompt submission,
   event consumption, permission replies, and form replies. Use ordinary output
   or assertions, with no GUI/TUI implementation. Session listing, creation, and
-  update/deletion lifecycle and message history examples are implemented.
+  update/deletion lifecycle, model/agent configuration, and message history examples are implemented.
 - [ ] Add an example of background event consumption and recovery after
   disconnection using minimal application-owned state.
 - [ ] Add an automation example using the same API surface.
@@ -209,6 +207,10 @@ when a decision is made.
   pagination, and experimental media-reference negotiation. The v2.2.5 baseline
   verifies fixed imported history, both directions, separate type filters,
   cursor/order rejection, and empty boundary pages without model/tool execution.
+- [ ] Verify catalog changes/settlement, live absence of a default model, and
+  selection during active execution. Current v2.2.5 tests verify stored selections
+  and history markers without model calls; success does not establish availability.
+  Nullable defaults are covered by mocks. Provider execution remains unverified.
 - [ ] Confirm event ordering, connection-marker guarantees, log watermarks, and
   snapshot reconciliation without assuming gap-free global events.
 - [ ] Choose how to expose SSE IDs, log sequences, pagination, and location
@@ -218,6 +220,23 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete model and agent selection with TDD: location-aware `models().list`
+  and `default`, individual `agents().get`, and session `switch_agent`/`switch_model`.
+  Preserve envelopes, server order, repeated type filters, and caller location
+  overrides; expose typed missing-agent errors and accept only HTTP 204 for switches.
+- [x] Extend reviewed discovery/session generation with open model-type/reasoning
+  strings, required nullable default data, signed safe-integer limits, redacted
+  catalog debug output, and strict non-null selection inputs. Guard schema changes
+  and reuse shared types; no new generation command or dependency is needed.
+- [x] Verify request encoding, malformed responses, nullable defaults, typed/unknown
+  errors, unexpected statuses, and no mutation retry after disconnects. Live
+  v2.2.5/macOS arm64 checks confirm discovery, stored choices, unknown-ID acceptance,
+  omitted variant normalization, and repeated-agent/model history behavior without
+  model calls. Add `examples/configure_session.rs` and update compatibility docs.
+- [x] Validate 109 client tests, 29 generator tests, seven doctests, HTTP-only tests,
+  both Rust 1.88 builds, formatting, Clippy, docs, seven examples, all five generation
+  checks, and the disposable live smoke test. Hosted Linux validation remains pending;
+  no publishing, pushing, or automatic commit.
 - [x] Complete message history/retrieval with TDD: `sessions().messages(&id)`
   exposes typed `list(&MessageListOptions)` and `get(&message_id)` methods. Preserve
   data/cursor envelopes, server ordering, additive fields, and safe ID encoding;

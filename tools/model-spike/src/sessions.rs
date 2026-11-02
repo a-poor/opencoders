@@ -38,7 +38,15 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     // Inputs keep strict objects and their own nested types. Never reuse tolerant
     // response objects whose extension maps could be sent back as request fields.
     add_request_schemas(&mut spec)?;
-    let request = select_schemas(&spec, &["SessionCreateRequest", "SessionUpdateRequest"])?;
+    let request = select_schemas(
+        &spec,
+        &[
+            "SessionCreateRequest",
+            "SessionUpdateRequest",
+            "SessionSwitchAgentRequest",
+            "SessionSwitchModelRequest",
+        ],
+    )?;
     schema["definitions"]
         .as_object_mut()
         .unwrap()
@@ -194,6 +202,25 @@ fn add_request_schemas(spec: &mut Value) -> Result<(), Box<dyn std::error::Error
     }
     spec["components"]["schemas"]["SessionCreateRequest"] = input;
     spec["components"]["schemas"]["SessionUpdateRequest"] = update;
+    for (name, route, field, reference) in [
+        ("SessionSwitchAgentRequest", "agent", "agent", "Agent.ID"),
+        ("SessionSwitchModelRequest", "model", "model", "Model.Ref"),
+    ] {
+        let pointer = format!(
+            "/paths/~1api~1session~1{{sessionID}}~1{route}/post/requestBody/content/application~1json/schema"
+        );
+        let mut schema = spec
+            .pointer(&pointer)
+            .ok_or("session selection input missing")?
+            .clone();
+        if schema
+            != json!({"type":"object","properties":{field:{"$ref":format!("#/components/schemas/{reference}")}},"required":[field],"additionalProperties":false})
+        {
+            return Err(format!("{name} changed; review required selection input").into());
+        }
+        rename_input_refs(&mut schema, &names);
+        spec["components"]["schemas"][name] = schema;
+    }
     Ok(())
 }
 

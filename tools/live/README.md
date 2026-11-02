@@ -32,7 +32,7 @@ normal interruption. The verified archive cache remains. This isolates applicati
 state; it is not an OS sandbox or a guarantee against upstream network activity.
 
 The test checks the server PID, version, temporary path, and initially empty
-session list before writing fixtures. It creates eight empty sessions through the
+session list before writing fixtures. It creates eight initially empty sessions through the
 SDK and imports one additional transcript with seven fixed messages through raw
 HTTP solely for fixture setup. All covered operations use the SDK, and all nine
 sessions are deleted before completion. It never submits a prompt, invokes a model, or connects
@@ -50,11 +50,16 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `server.info` | Typed version/PID/paths; Basic authentication with username `opencode`; unauthenticated calls return typed HTTP 401. |
 | `location.get` | Nested query encoding, spaces/Unicode, per-call overrides, `x-opencode-directory` fallback, and query precedence over that header. |
 | `agent.list` | Nonempty typed agent list with resolved location metadata. |
+| `agent.get` | Listed agent round-trip, query/header location selection, and typed missing-agent HTTP 404. |
+| `model.list` | Typed catalog/location envelope, default chat filter, repeated type parameters, deduplication/group order, unknown-type empty lists, and directory overrides. |
+| `model.default` | Typed default-model envelope, resolved location, header fallback, and query precedence. Null default data is covered by mocks. |
 | `session.create` | Typed JSON requests/responses, titles, metadata, empty permissions, parent location precedence, missing-parent HTTP 404, `{}` defaults, and all eight fields explicitly null. |
 | `session.get` | Created-session round trips, retrieval across directories independently of the SDK default location, and typed missing-session HTTP 404. |
 | `session.list` | Real session decoding, server-wide scope, directory/search/root/child/archive filters, next/previous traversal, empty terminal page, invalid-cursor HTTP 400, and zero-limit rejection. |
 | `session.update` | Empty HTTP 204; title, metadata/permission replacement and clearing; archive/restore; omitted/null no-ops; cross-directory IDs; typed missing-session HTTP 404. |
 | `session.remove` | Empty HTTP 204; deletion of a parent, child, and grandchild while preserving unrelated sessions; repeated/missing deletion returns typed HTTP 404. |
+| `session.switchAgent` | Empty HTTP 204; stored agent choice across directories, repeated-agent history entries, acceptance of unknown agents, and typed missing-session errors. |
+| `session.switchModel` | Empty HTTP 204; stored catalog model/variant, omitted variant normalized to `default`, repeated-reference deduplication, history markers, unknown provider/model acceptance, and typed missing-session errors. |
 | `session.message.list` | Empty/populated history, newest-first default, both ordering directions and next/previous traversal, type filters, empty boundary pages, invalid cursor and cursor/order conflicts, zero-limit rejection, and missing-session errors. |
 | `session.message.get` | Every imported message round-trips, including user attachments and assistant reasoning/tool content; missing and wrong-session message errors are typed. |
 
@@ -85,8 +90,22 @@ the SDK preserves these wire states rather than rewriting null into omission.
 Create/get ignore the SDK discovery location default. See the pinned
 [session handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/session.ts).
 No retry/idempotency or execution semantics are inferred from these empty-session
-tests. Agent/model selection and explicit IDs are covered by request-shape checks,
-not live execution tests.
+tests. Explicit creation IDs are covered by request-shape checks. Selection is
+covered as stored data, without executing the selected agent or model.
+
+Model lists/defaults are current snapshots. Repeated `types` parameters are decoded
+as a list; the server deduplicates types and concatenates their model groups in
+requested order. The SDK preserves the response order and does not locally filter
+or wait for catalog changes. Custom/unknown model types remain valid wire strings.
+See the pinned [model handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/model.ts).
+
+Selection accepts unknown agent/provider/model IDs, so success does not establish
+availability or valid provider credentials. Reselecting the same agent adds another
+history entry. Omitted model variants are stored as `"default"`; repeating the same
+provider/model/variant adds no entry, while changing the variant does. The test
+asserts these markers through message history and retrieves the final session.
+See the pinned [selection implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/session.ts).
+Concurrent catalog changes and selections during execution remain unverified.
 
 For updates, omission/null leave fields unchanged; `{}` is a no-op. Metadata and
 permission lists replace existing contents rather than merging; `{}` metadata

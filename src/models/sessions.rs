@@ -621,6 +621,20 @@ pub struct SessionRevert {
     #[serde(flatten)]
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
+///`SessionSwitchAgentRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionSwitchAgentRequest {
+    pub agent: super::AgentId,
+}
+///`SessionSwitchModelRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionSwitchModelRequest {
+    pub model: SessionModelInput,
+}
 ///`SessionUpdateRequest`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
 #[serde(deny_unknown_fields)]

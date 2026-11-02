@@ -1,0 +1,13 @@
+{
+  "id": "public-name", "modelID": "provider-native-name", "providerID": "provider",
+  "type": "chat", "name": "Fixture model", "enabled": true, "status": "active",
+  "capabilities": {"tools": true, "input": ["text", "image"], "output": ["text"], "future": true},
+  "variants": [{"id": "fast", "settings": {"effort": "low"}, "headers": {"x-private": "private-variant"}, "future": 1}],
+  "time": {"released": 1, "future": 2},
+  "cost": [{"input": 0.123, "output": 0.456, "cache": {"read": 0, "write": 0}, "tier": {"type": "context", "size": 1000, "future": 3}}],
+  "limit": {"context": 10000, "input": 9000, "output": 1000, "future": 4},
+  "compatibility": {"reasoningField": "vendor_reasoning", "future": 5},
+  "settings": {"encoding": "gzip", "cache": {"warming": {"interval": "auto", "duration": "1h"}}, "vendor_setting": {"nested": true}},
+  "headers": {"authorization": "private-header"}, "body": {"key": "private-body"},
+  "future": "private-extra"
+}

@@ -2,7 +2,8 @@ use crate::{
     Client, Result, StatusCode,
     models::{
         AbsolutePath, ProjectId, RelativePath, SessionCreateRequest, SessionId, SessionResponse,
-        SessionUpdateRequest, SessionsCursor, SessionsResponse,
+        SessionSwitchAgentRequest, SessionSwitchModelRequest, SessionUpdateRequest, SessionsCursor,
+        SessionsResponse,
     },
 };
 
@@ -158,6 +159,54 @@ pub struct Sessions<'a> {
 }
 
 impl<'a> Sessions<'a> {
+    /// Select the agent for subsequent provider turns (`session.switchAgent`).
+    ///
+    /// Sends a strict JSON request and accepts HTTP 204 without decoding JSON.
+    /// Ignores the discovery location default. The server records the selection;
+    /// success does not establish availability or invoke a model. On v2.2.5 even
+    /// reselecting the same agent adds a history entry.
+    ///
+    /// # Errors
+    /// Returns encode, transport, HTTP/API, or response-size errors. A failure can
+    /// follow an applied selection. The default transport does not retry; injected
+    /// client policies remain in effect. Missing sessions expose typed errors.
+    pub async fn switch_agent(
+        &self,
+        id: &SessionId,
+        request: &SessionSwitchAgentRequest,
+    ) -> Result<()> {
+        self.client
+            .post_json_empty(
+                "api/session",
+                &[id.as_str(), "agent"],
+                "session.switchAgent",
+                request,
+            )
+            .await
+    }
+    /// Select the model/optional variant for subsequent turns (`session.switchModel`).
+    ///
+    /// Accepts HTTP 204; ignores the discovery location default. Use the catalog's
+    /// `id` and `provider_id`, not its provider-native `model_id`. Success records
+    /// a selection without proving execution readiness. Inputs cannot clear a
+    /// selection with null. On v2.2.5, omitted variants become `"default"`; repeating
+    /// the same provider/model/variant adds no history entry. Error and retry
+    /// behavior matches [`Self::switch_agent`].
+    pub async fn switch_model(
+        &self,
+        id: &SessionId,
+        request: &SessionSwitchModelRequest,
+    ) -> Result<()> {
+        self.client
+            .post_json_empty(
+                "api/session",
+                &[id.as_str(), "model"],
+                "session.switchModel",
+                request,
+            )
+            .await
+    }
+
     /// Browse projected message history for one session.
     pub fn messages(&self, id: &'a SessionId) -> crate::SessionMessages<'a> {
         crate::SessionMessages {

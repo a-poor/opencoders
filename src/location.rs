@@ -17,6 +17,13 @@ pub enum Location {
 }
 
 impl Location {
+    pub(crate) fn query(&self) -> Vec<(&'static str, String)> {
+        match self {
+            Self::Directory(directory) => vec![("location[directory]", directory.clone())],
+            Self::Unspecified => Vec::new(),
+        }
+    }
+
     /// Select a directory on the server without local path validation.
     pub fn directory(directory: impl Into<String>) -> Self {
         Self::Directory(directory.into())

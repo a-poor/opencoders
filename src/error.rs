@@ -28,7 +28,7 @@ pub enum BuildError {
 #[derive(thiserror::Error)]
 #[non_exhaustive]
 pub enum Error {
-    /// A request could not be serialized; no HTTP request was sent.
+    /// A request could not be encoded; no HTTP request was sent.
     #[error(transparent)]
     Encode(EncodeError),
     /// Sending the request or reading its body failed.
@@ -86,9 +86,9 @@ impl fmt::Debug for Error {
     }
 }
 
-/// A request serialization failure, before any HTTP send.
+/// A request encoding failure (JSON or path), before any HTTP send.
 #[derive(thiserror::Error)]
-#[error("{operation}: could not encode request JSON")]
+#[error("{operation}: could not encode request")]
 pub struct EncodeError {
     pub(crate) operation: &'static str,
     #[source]
@@ -226,6 +226,13 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// An individual agent was not found at the requested location.
+    AgentNotFound {
+        /// Raw server-reported agent ID.
+        agent_id: String,
+        /// Server-provided explanation.
+        message: String,
+    },
     /// A message is missing or does not belong to the requested session.
     MessageNotFound {
         /// Session identifier supplied by the server; not constrained by the error schema.
@@ -285,6 +292,11 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            AgentNotFoundError {
+                #[serde(rename = "agentID")]
+                agent_id: String,
+                message: String,
+            },
             MessageNotFoundError {
                 #[serde(rename = "sessionID")]
                 session_id: String,
@@ -318,6 +330,9 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::AgentNotFoundError { agent_id, message }) => {
+                Self::AgentNotFound { agent_id, message }
+            }
             Ok(Known::MessageNotFoundError {
                 session_id,
                 message_id,
@@ -359,6 +374,7 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::AgentNotFound { .. } => "AgentNotFound { .. }",
             Self::MessageNotFound { .. } => "MessageNotFound { .. }",
             Self::SessionNotFound { .. } => "SessionNotFound { .. }",
             Self::InvalidCursor { .. } => "InvalidCursor { .. }",
