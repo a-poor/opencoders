@@ -70,3 +70,4 @@ jobs:
           cargo run --locked --offline -p opencoders-model-spike -- --server-info --check
           cargo run --locked --offline -p opencoders-model-spike -- --discovery --check
           cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
+          cargo run --locked --offline -p opencoders-model-spike -- --messages --check

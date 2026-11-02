@@ -147,6 +147,10 @@ impl Client {
     }
 
     fn segment_url(&self, path: &str, segment: &str) -> Url {
+        self.segments_url(path, &[segment])
+    }
+
+    fn segments_url(&self, path: &str, segments: &[&str]) -> Url {
         let mut url = self
             .inner
             .base_url
@@ -156,8 +160,25 @@ impl Client {
         // segment, never joined as a relative URL (which could change the route).
         url.path_segments_mut()
             .expect("validated HTTP base URL")
-            .push(segment);
+            .extend(segments.iter().copied());
         url
+    }
+
+    pub(crate) async fn get_json_segments<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        segments: &[&str],
+        operation: &'static str,
+        expected: StatusCode,
+        query: &[(&str, String)],
+    ) -> Result<T> {
+        let mut url = self.segments_url(path, segments);
+        if !query.is_empty() {
+            url.query_pairs_mut()
+                .extend_pairs(query.iter().map(|(k, v)| (*k, v.as_str())));
+        }
+        self.send_json(self.request(Method::GET, url), operation, expected)
+            .await
     }
 
     pub(crate) async fn post_json<T: DeserializeOwned, B: serde::Serialize + ?Sized>(

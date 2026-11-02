@@ -1,0 +1,9 @@
+[
+  {"id":"msg_live_01","type":"user","time":{"created":1},"text":"First question","metadata":{"fixture":true},"files":[{"data":"aGk=","mime":"text/plain","source":{"type":"inline"},"name":"note.txt"}]},
+  {"id":"msg_live_02","type":"assistant","time":{"created":2,"completed":3},"agent":"build","model":{"id":"fixture","providerID":"fixture"},"content":[{"type":"text","text":"First answer"}]},
+  {"id":"msg_live_03","type":"user","time":{"created":4},"text":"Second question"},
+  {"id":"msg_live_04","type":"assistant","time":{"created":5,"completed":6},"agent":"build","model":{"id":"fixture","providerID":"fixture"},"content":[{"type":"reasoning","text":"Fixture reasoning","time":{"created":5,"completed":6}},{"type":"tool","id":"call_fixture","name":"read","time":{"created":5,"completed":6},"state":{"status":"completed","input":{"path":"fixture.txt"},"content":[{"type":"text","text":"Fixture result"}]}},{"type":"text","text":"Second answer"}]},
+  {"id":"msg_live_05","type":"user","time":{"created":7},"text":"Third question"},
+  {"id":"msg_live_06","type":"system","time":{"created":8},"text":"Fixture system message"},
+  {"id":"msg_live_07","type":"idle","time":{"created":9},"outcome":"succeeded"}
+]

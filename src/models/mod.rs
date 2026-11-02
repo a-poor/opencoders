@@ -2,12 +2,62 @@
 //!
 //! Response objects preserve additional fields in flattened `extra` maps.
 //! Generated optional fields generally accept absent or null as `None`; the
-//! `steps` and `more` adapters reject explicit null. Request objects use strict
+//! `steps`, `more`, and constrained message numeric/content adapters reject explicit
+//! null. Request objects use strict
 //! input types and [`crate::RequestField`] for nullable optional properties.
 //! Unknown enum values are decoding errors.
 
 use crate::RequestField;
 mod session_inputs;
+
+#[rustfmt::skip]
+mod messages;
+pub use messages::error::ConversionError as MessageModelConversionError;
+pub use messages::{
+    PromptAgentAttachment, PromptBase64, PromptFileAttachment, PromptFileSource,
+    PromptFileSourceVariant0Type, PromptFileSourceVariant1Type, PromptMention,
+    PromptSkillAttachment, SessionMessageAgentSelected, SessionMessageAgentSelectedTime,
+    SessionMessageAgentSelectedType, SessionMessageAssistant, SessionMessageAssistantContentItem,
+    SessionMessageAssistantFinish, SessionMessageAssistantReasoning,
+    SessionMessageAssistantReasoningTime, SessionMessageAssistantReasoningType,
+    SessionMessageAssistantRetry, SessionMessageAssistantSnapshot, SessionMessageAssistantText,
+    SessionMessageAssistantTextType, SessionMessageAssistantTime, SessionMessageAssistantTool,
+    SessionMessageAssistantToolState, SessionMessageAssistantToolTime,
+    SessionMessageAssistantToolType, SessionMessageAssistantType, SessionMessageCompaction,
+    SessionMessageCompactionCompleted, SessionMessageCompactionCompletedReason,
+    SessionMessageCompactionCompletedStatus, SessionMessageCompactionCompletedTime,
+    SessionMessageCompactionCompletedType, SessionMessageCompactionFailed,
+    SessionMessageCompactionFailedReason, SessionMessageCompactionFailedStatus,
+    SessionMessageCompactionFailedTime, SessionMessageCompactionFailedType,
+    SessionMessageCompactionRunning, SessionMessageCompactionRunningReason,
+    SessionMessageCompactionRunningStatus, SessionMessageCompactionRunningTime,
+    SessionMessageCompactionRunningType, SessionMessageIdle, SessionMessageIdleOutcome,
+    SessionMessageIdleTime, SessionMessageIdleType, SessionMessageLocationSwitched,
+    SessionMessageLocationSwitchedPrevious, SessionMessageLocationSwitchedTime,
+    SessionMessageLocationSwitchedType, SessionMessageModelSelected,
+    SessionMessageModelSelectedTime, SessionMessageModelSelectedType, SessionMessageNative,
+    SessionMessageResponse, SessionMessageShell, SessionMessageShellExit,
+    SessionMessageShellExitString, SessionMessageShellOutput, SessionMessageShellStatus,
+    SessionMessageShellTime, SessionMessageShellType, SessionMessageSkill, SessionMessageSkillTime,
+    SessionMessageSkillType, SessionMessageSynthetic, SessionMessageSyntheticTime,
+    SessionMessageSyntheticType, SessionMessageSystem, SessionMessageSystemTime,
+    SessionMessageSystemType, SessionMessageToolStateCompleted,
+    SessionMessageToolStateCompletedStatus, SessionMessageToolStateError,
+    SessionMessageToolStateErrorStatus, SessionMessageToolStateRunning,
+    SessionMessageToolStateRunningStatus, SessionMessageToolStateStreaming,
+    SessionMessageToolStateStreamingStatus, SessionMessageType, SessionMessageUser,
+    SessionMessageUserTime, SessionMessageUserType, SessionMessagesResponse,
+    SessionMessagesResponseCursor, SessionStructuredError, SessionStructuredErrorResponse, ShellId,
+    SkillId, SkillName, ToolContent, ToolFileContent, ToolFileContentType, ToolTextContent,
+    ToolTextContentType,
+};
+mod message_adapters;
+pub use message_adapters::SessionMessageInfo;
+use message_adapters::{
+    deserialize_message_attempt, deserialize_message_retry_delay, deserialize_message_status,
+    deserialize_tool_content,
+};
+
 
 #[rustfmt::skip]
 #[allow(dead_code)] // Typify emits conversion helpers unused by these selected models.

@@ -226,6 +226,15 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// A message is missing or does not belong to the requested session.
+    MessageNotFound {
+        /// Session identifier supplied by the server; not constrained by the error schema.
+        session_id: String,
+        /// Message identifier supplied by the server; not constrained by the error schema.
+        message_id: String,
+        /// Server-provided diagnostic text.
+        message: String,
+    },
     /// A session (including a requested parent) was not found.
     SessionNotFound {
         /// Raw server-reported ID; the error schema does not require the ID prefix.
@@ -276,6 +285,13 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            MessageNotFoundError {
+                #[serde(rename = "sessionID")]
+                session_id: String,
+                #[serde(rename = "messageID")]
+                message_id: String,
+                message: String,
+            },
             SessionNotFoundError {
                 #[serde(rename = "sessionID")]
                 session_id: String,
@@ -302,6 +318,15 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::MessageNotFoundError {
+                session_id,
+                message_id,
+                message,
+            }) => Self::MessageNotFound {
+                session_id,
+                message_id,
+                message,
+            },
             Ok(Known::SessionNotFoundError {
                 session_id,
                 message,
@@ -334,6 +359,7 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::MessageNotFound { .. } => "MessageNotFound { .. }",
             Self::SessionNotFound { .. } => "SessionNotFound { .. }",
             Self::InvalidCursor { .. } => "InvalidCursor { .. }",
             Self::InvalidRequest { .. } => "InvalidRequest { .. }",

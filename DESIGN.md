@@ -2,7 +2,7 @@
 
 Status: foundation implemented through `server.info()`, `location.get`, and
 `agent.list` with configurable location selection, plus session creation,
-retrieval, updates, deletion, and filtered/paginated listing. Broader API and
+retrieval, updates, deletion, filtered/paginated listing, and message history/retrieval. Broader API and
 streaming sections remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
@@ -222,6 +222,23 @@ boundary cursors even at the start/end; they can lead to empty pages. The live
 test verifies forward/backward traversal and rejects a zero limit. Maximum limits
 and consistency under concurrent session changes remain unverified.
 
+`client.sessions().messages(&SessionId)` returns a lightweight borrowed resource.
+Its `list(&MessageListOptions)` returns a `SessionMessagesResponse` data/cursor
+page; `get(&SessionMessageId)` returns a `SessionMessageResponse` data envelope.
+Both use HTTP 200, encoded path segments, existing transport policies, and no
+discovery location default. `MessageListOptions` has optional limit, order, cursor,
+and typed message-kind filters; all are sent as supplied. In v2.2.5, defaults are
+50 newest messages. A nonempty cursor plus order is rejected; retain the same type
+filter on later pages because it is not encoded in the cursor. Boundary cursors
+can lead to empty pages. The SDK does not sort, auto-page, or interpret cursors.
+
+Projected messages use the eleven-kind `SessionMessageInfo` enum, boxed payloads,
+and common `id()`/`message_type()` accessors. Nested assistant content, tool states,
+compaction states, and attachments are typed. These reads do not represent pending
+inbox items or live events. Unknown kinds fail decoding, consistently with the
+current model policy; future event streams will use their separately planned
+unknown-event fallback. Applications own message presentation and state.
+
 Use typed request structs with constructors or defaults for common cases. Provide
 lightweight ID types where they prevent mixing session, message, and other IDs.
 Preserve upstream terminology in documentation so users can map methods back to
@@ -281,6 +298,21 @@ tolerance adaptations. Guarded AST transformations replace the eight create and
 four update nullable optional fields with `RequestField<T>` and reject explicit null for the
 nested non-nullable model variant. Schema shape changes require adapter review.
 
+`--messages` generates a separate response graph in `src/models/messages.rs`,
+reusing shared IDs, location/model types, costs, and token counts. It extracts the
+single-message envelope and type filter from inline schemas. A named replacement
+avoids Typify's flattened top-level union: `SessionMessageInfo` and nested tagged
+unions use explicit decoding in `src/models/message_adapters.rs`. Guards verify
+union members and discriminators. Unknown or malformed known tags remain errors.
+The larger tool-content payload is boxed, with its generated conversion adapted.
+
+Message responses preserve extension fields and numeric precision. Guarded
+adapters enforce safe-integer shell output counts/retry delays, positive retry
+attempts, HTTP status bounds, and nonempty tool content when present. Constrained
+optional scalar/content fields reject explicit null; other generated optional
+fields follow the existing response policy. These response types are not mutation
+inputs. Tests cover every message kind and nested tool/compaction states.
+
 The public client now applies three-state fields to session creation and updates;
 the experiment also demonstrates explicit event dispatch.
 Response tolerance, full event/error coverage, numeric
@@ -322,7 +354,7 @@ The foundation implements `Encode`, `Transport`, `Http`, `Decode`, and `Response
 errors plus separate client-build failures. JSON response routes accept HTTP 200;
 session update/remove accept only HTTP 204 and do not attempt JSON decoding.
 Known validation/authentication, missing-location,
-missing-session/parent, unavailable-service, and invalid-cursor errors expose typed details;
+missing-session/parent/message, unavailable-service, and invalid-cursor errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
 Encode failures occur before a request is sent and have no HTTP status.
@@ -437,7 +469,10 @@ workflow runs the disposable server smoke test; ordinary tests skip it.
 
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
 and commit pinned in `tools/live/server.json`. Server info, location/agent discovery,
-and session creation/retrieval/listing/update/removal pass locally on macOS arm64.
+and session creation/retrieval/listing/update/removal plus message list/get pass
+locally on macOS arm64. The history test imports a fixed transcript through the
+pinned experimental import route solely for fixtures, without scheduling model
+or tool execution; history reads use the SDK. This does not expose import publicly.
 Linux is configured but awaits a workflow run. See [compatibility results](tools/live/README.md). Exercised responses
 needed no model changes; authentication and cursor semantics required clearer
 guidance. The original schema's source release remains unknown, independently of

@@ -79,9 +79,35 @@ model variant rejects explicit null. Guards check nullable/optional field shapes
 the matching create/get envelopes, and variant constraints before generation.
 Hand-written constructors/setters live in the root `src/models/session_inputs.rs`.
 
-Run all production checks (`--server-info --check`, `--discovery --check`, and
-`--sessions --check`) after schema/tool changes, alongside the raw probe `--check`.
+Run all production checks (`--server-info --check`, `--discovery --check`,
+`--sessions --check`, and `--messages --check`) after schema/tool changes, alongside the raw probe `--check`.
 Normal library builds use the checked-in output without invoking the tool.
+
+## Reviewed message models
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --messages
+cargo run --locked --offline -p opencoders-model-spike -- --messages --check
+```
+
+Output goes to the root `src/models/messages.rs`, selecting message pages, the
+inline get envelope and type filter, and their dependencies. Shared session IDs,
+locations/models, costs, and token counts reuse existing types. Responses preserve
+additive fields, non-exhaustive types, and numeric precision.
+
+Raw Typify flattens `Session.Message.Info` into optional variant fields. A named
+replacement supplies the handwritten eleven-kind `SessionMessageInfo` enum.
+Explicit tag dispatch also covers assistant content, tool states, compaction,
+and tool results; unknown tags and malformed known values are errors. Guards
+check union members and tag literals before applying these adapters. Boxed message
+payloads and the larger assistant tool variant keep enum sizes bounded.
+
+Guarded field adapters enforce shell-output safe integers, positive retry attempts,
+retry delays, HTTP status bounds, and nonempty tool content when supplied. The
+runtime adapters live in `src/models/message_adapters.rs` in the root crate.
+Optional constrained fields reject null; absent optional tool-error content is
+allowed. Message attachments and native/provider data are response models, not
+reviewed request inputs. The live test imports fixed history without model calls.
 
 ## Run the experiment
 

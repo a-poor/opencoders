@@ -157,7 +157,15 @@ pub struct Sessions<'a> {
     pub(crate) client: &'a Client,
 }
 
-impl Sessions<'_> {
+impl<'a> Sessions<'a> {
+    /// Browse projected message history for one session.
+    pub fn messages(&self, id: &'a SessionId) -> crate::SessionMessages<'a> {
+        crate::SessionMessages {
+            client: self.client,
+            session_id: id,
+        }
+    }
+
     /// Create a session with `POST /api/session` (`session.create`).
     ///
     /// Returns the full `data` envelope. An empty default request sends `{}`.

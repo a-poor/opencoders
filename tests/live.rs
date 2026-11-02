@@ -1,11 +1,11 @@
 //! Opt-in only: `python3 tools/live/run.py` owns the server, credentials, and data.
 
 use opencoders::{
-    ApiError, Client, Error, Location, ParentFilter, RequestField, SessionListOptions,
-    SessionOrder, header,
+    ApiError, Client, Error, Location, MessageListOptions, MessageOrder, ParentFilter,
+    RequestField, SessionListOptions, SessionOrder, header,
     models::{
-        PermissionEffect, PermissionRuleInput, SessionCreateRequest, SessionLocationInput,
-        SessionUpdateRequest,
+        PermissionEffect, PermissionRuleInput, SessionCreateRequest, SessionInfo,
+        SessionLocationInput, SessionMessageInfo, SessionMessageType, SessionUpdateRequest,
     },
 };
 use serde_json::json;
@@ -463,12 +463,13 @@ async fn pinned_server_discovery_and_session_pagination() {
         panic!("expected repeated-delete error")
     };
     assert_eq!(error.status(), 404);
+    verify_message_history(&client, &http, &url, &elsewhere).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())
         .await
         .unwrap();
-    assert_eq!(remaining.data.len(), 5);
+    assert_eq!(remaining.data.len(), 6);
     for session in remaining.data {
         client.sessions().remove(&session.id).await.unwrap();
     }
@@ -481,4 +482,208 @@ async fn pinned_server_discovery_and_session_pagination() {
             .data
             .is_empty()
     );
+}
+
+async fn verify_message_history(
+    client: &Client,
+    http: &reqwest::Client,
+    url: &str,
+    template: &SessionInfo,
+) {
+    let empty = client
+        .sessions()
+        .messages(&template.id)
+        .list(&MessageListOptions::default())
+        .await
+        .unwrap();
+    assert!(empty.data.is_empty());
+    assert!(empty.cursor.next.is_none());
+    let missing_message = "msg_missing".parse().unwrap();
+    let Error::Http(error) = client
+        .sessions()
+        .messages(&template.id)
+        .get(&missing_message)
+        .await
+        .unwrap_err()
+    else {
+        panic!("expected missing message")
+    };
+    assert!(matches!(
+        error.api_error(),
+        Some(ApiError::MessageNotFound { .. })
+    ));
+    assert_eq!(error.status(), 404);
+    let missing_session = "ses_missing".parse().unwrap();
+    for result in [
+        client
+            .sessions()
+            .messages(&missing_session)
+            .list(&MessageListOptions::default())
+            .await
+            .map(|_| ()),
+        client
+            .sessions()
+            .messages(&missing_session)
+            .get(&missing_message)
+            .await
+            .map(|_| ()),
+    ] {
+        let Error::Http(error) = result.unwrap_err() else {
+            panic!("expected missing session")
+        };
+        assert!(matches!(
+            error.api_error(),
+            Some(ApiError::SessionNotFound { .. })
+        ));
+    }
+
+    // Import only into this runner-owned disposable server. The pinned import
+    // handler stores projected messages directly; it does not schedule execution.
+    // These model/tool outputs are fixtures, never actual model or tool calls.
+    let fixtures: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/messages.json")).unwrap();
+    let mut info = serde_json::to_value(template).unwrap();
+    info["id"] = json!("ses_live_history");
+    let response=http.post(format!("{url}/api/experimental/session/import"))
+        .header(header::CONTENT_TYPE,"application/json")
+        .body(serde_json::to_vec(&json!({"info":info,"messages":fixtures,"location":{"directory":template.location.directory}})).unwrap())
+        .send().await.unwrap();
+    assert_eq!(response.status(), 200, "disposable history import failed");
+    let id = "ses_live_history".parse().unwrap();
+    let messages = client.sessions().messages(&id);
+    let all = messages.list(&MessageListOptions::default()).await.unwrap();
+    assert_eq!(all.data.len(), 7);
+    assert_eq!(all.data[0].id().as_str(), "msg_live_07");
+    let expected: Vec<SessionMessageInfo> = serde_json::from_value(fixtures).unwrap();
+    for message in &expected {
+        let got = messages.get(message.id()).await.unwrap().data;
+        assert_eq!(
+            serde_json::to_value(got).unwrap(),
+            serde_json::to_value(message).unwrap()
+        );
+    }
+    let foreign = client
+        .sessions()
+        .messages(&template.id)
+        .get(expected[0].id())
+        .await
+        .unwrap_err();
+    let Error::Http(error) = foreign else {
+        panic!("expected wrong-session message error")
+    };
+    assert!(matches!(
+        error.api_error(),
+        Some(ApiError::MessageNotFound { .. })
+    ));
+
+    for order in [MessageOrder::Asc, MessageOrder::Desc] {
+        let mut options = MessageListOptions::default()
+            .limit(2)
+            .order(order)
+            .message_type(SessionMessageType::User);
+        let first = messages.list(&options).await.unwrap();
+        let first_ids: Vec<_> = first
+            .data
+            .iter()
+            .map(|m| m.id().as_str().to_owned())
+            .collect();
+        assert_eq!(
+            first_ids,
+            if order == MessageOrder::Asc {
+                vec!["msg_live_01", "msg_live_03"]
+            } else {
+                vec!["msg_live_05", "msg_live_03"]
+            }
+        );
+        options.cursor = first.cursor.next;
+        options.order = None;
+        let second = messages.list(&options).await.unwrap();
+        assert_eq!(second.data.len(), 1);
+        assert_eq!(
+            second.data[0].id().as_str(),
+            if order == MessageOrder::Asc {
+                "msg_live_05"
+            } else {
+                "msg_live_01"
+            }
+        );
+        let back = messages
+            .list(
+                &options
+                    .clone()
+                    .cursor(second.cursor.previous.clone().unwrap()),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            back.data
+                .iter()
+                .map(|m| m.id().as_str().to_owned())
+                .collect::<Vec<_>>(),
+            first_ids
+        );
+        // Cursors mark boundaries even when fewer than limit items were returned.
+        options.cursor = second.cursor.next;
+        let terminal = messages.list(&options).await.unwrap();
+        assert!(terminal.data.is_empty());
+        assert!(terminal.cursor.next.is_none());
+    }
+    let first = messages
+        .list(&MessageListOptions::default().limit(1))
+        .await
+        .unwrap();
+    for options in [
+        MessageListOptions::default().cursor("invalid"),
+        MessageListOptions::default()
+            .cursor(first.cursor.next.clone().unwrap())
+            .order(MessageOrder::Asc),
+    ] {
+        let Error::Http(error) = messages.list(&options).await.unwrap_err() else {
+            panic!("expected invalid cursor")
+        };
+        assert_eq!(error.status(), 400);
+        assert!(matches!(
+            error.api_error(),
+            Some(ApiError::InvalidCursor { .. })
+        ));
+    }
+    let Error::Http(error) = messages
+        .list(&MessageListOptions::default().limit(0))
+        .await
+        .unwrap_err()
+    else {
+        panic!("expected invalid limit")
+    };
+    assert_eq!(error.status(), 400);
+    assert!(matches!(
+        error.api_error(),
+        Some(ApiError::InvalidRequest { .. })
+    ));
+    // The type filter is separate from the cursor, unlike session-list filters.
+    let filtered = messages
+        .list(
+            &MessageListOptions::default()
+                .limit(1)
+                .order(MessageOrder::Asc)
+                .message_type(SessionMessageType::User),
+        )
+        .await
+        .unwrap();
+    let unfiltered = messages
+        .list(
+            &MessageListOptions::default()
+                .limit(2)
+                .cursor(filtered.cursor.next.unwrap()),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        unfiltered.data[0].message_type(),
+        SessionMessageType::Assistant
+    );
+    let no_match = messages
+        .list(&MessageListOptions::default().message_type(SessionMessageType::Compaction))
+        .await
+        .unwrap();
+    assert!(no_match.data.is_empty());
 }

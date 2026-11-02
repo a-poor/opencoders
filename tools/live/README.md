@@ -33,8 +33,9 @@ state; it is not an OS sandbox or a guarantee against upstream network activity.
 
 The test checks the server PID, version, temporary path, and initially empty
 session list before writing fixtures. It creates eight empty sessions through the
-SDK, retrieves and updates them, and deletes them all before completion. All session
-operations use the SDK. It never submits a prompt, invokes a model, or connects
+SDK and imports one additional transcript with seven fixed messages through raw
+HTTP solely for fixture setup. All covered operations use the SDK, and all nine
+sessions are deleted before completion. It never submits a prompt, invokes a model, or connects
 to an existing server. Do not manually point its environment
 variables at your normal server. `cargo test` compiles but skips this test.
 
@@ -54,6 +55,8 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.list` | Real session decoding, server-wide scope, directory/search/root/child/archive filters, next/previous traversal, empty terminal page, invalid-cursor HTTP 400, and zero-limit rejection. |
 | `session.update` | Empty HTTP 204; title, metadata/permission replacement and clearing; archive/restore; omitted/null no-ops; cross-directory IDs; typed missing-session HTTP 404. |
 | `session.remove` | Empty HTTP 204; deletion of a parent, child, and grandchild while preserving unrelated sessions; repeated/missing deletion returns typed HTTP 404. |
+| `session.message.list` | Empty/populated history, newest-first default, both ordering directions and next/previous traversal, type filters, empty boundary pages, invalid cursor and cursor/order conflicts, zero-limit rejection, and missing-session errors. |
+| `session.message.get` | Every imported message round-trips, including user attachments and assistant reasoning/tool content; missing and wrong-session message errors are typed. |
 
 Two pagination details matter for consumers:
 
@@ -66,7 +69,7 @@ Two pagination details matter for consumers:
   rows exist. Following one can return an empty page without a next cursor.
 
 The typed responses exercised here decode without changes to existing response
-field adapters. Creation/retrieval add generated input/envelope types. This does
+field adapters. Each resource adds reviewed generated models. This does
 not establish compatibility for every optional field or operation.
 The schema's empty security declarations omit authentication requirements;
 v2.2.5 requires Basic credentials (or its pairing/session flow), not Bearer tokens.
@@ -97,6 +100,20 @@ the SDK makes no atomicity guarantee. Deletion's recursive behavior is checked
 on idle, empty sessions, not sessions with active execution or concurrent changes.
 Nonempty permission replacement is verified as stored data, not enforcement.
 
+Message history uses [`tests/fixtures/messages.json`](../../tests/fixtures/messages.json).
+The pinned [import handler and transfer service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/transfer.ts)
+store settled projected messages without scheduling execution. Assistant/model
+and tool results in the fixture are synthetic data, not real calls. Import is not
+part of the public SDK yet. History reads retain exact fixture payloads.
+
+Message pagination differs from session-list pagination: a nonempty cursor plus
+order is rejected, and the type filter must be repeated separately. The test
+checks both directions, filtering before pagination, and dropping the filter on
+a cursor request. See the pinned
+[message handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/message.ts).
+Live message snapshots during active execution, concurrent timeline changes, and
+experimental media-reference negotiation remain unverified.
+
 The existing [`openapi/provenance.json`](../../openapi/provenance.json) describes
 the original schema download, whose originating server release remains unknown.
 Its `info.version: 0.0.1` is not this server's version. Testing v2.2.5 does not
@@ -108,7 +125,7 @@ provider execution, and other platforms remain unverified.
 
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
 docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
-sets on Rust 1.88, Python runner tests, and all four checked-in generation targets.
+sets on Rust 1.88, Python runner tests, and all five checked-in generation targets.
 Regeneration pins Rust/rustfmt 1.99.1 and uses the locked dependencies and local
 schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.

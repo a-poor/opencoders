@@ -36,7 +36,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active tasks. Session updates and deletion are complete; see **Completed**.
+No active tasks. Message history and retrieval are complete; see **Completed**.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -75,8 +75,6 @@ No active tasks. Session updates and deletion are complete; see **Completed**.
 
 - [ ] Implement session forking. Creation, retrieval, updates, and deletion are
   implemented with typed requests and appropriate response handling.
-- [ ] Implement message history and message retrieval while retaining cursors
-  and relevant response metadata.
 - [ ] Implement model discovery, individual agent retrieval, and session
   agent/model selection. Agent listing is implemented.
 - [ ] Implement prompt submission, delivery modes, and inbox inspection/update/
@@ -108,10 +106,10 @@ No active tasks. Session updates and deletion are complete; see **Completed**.
 
 ### Examples and first usable release
 
-- [ ] Add runnable Rust examples for history, prompt submission,
+- [ ] Add runnable Rust examples for prompt submission,
   event consumption, permission replies, and form replies. Use ordinary output
   or assertions, with no GUI/TUI implementation. Session listing, creation, and
-  update/deletion lifecycle examples are implemented.
+  update/deletion lifecycle and message history examples are implemented.
 - [ ] Add an example of background event consumption and recovery after
   disconnection using minimal application-owned state.
 - [ ] Add an automation example using the same API surface.
@@ -207,6 +205,10 @@ when a decision is made.
   consistency during concurrent changes. v2.2.5 smoke tests confirm cursor-bound
   filters/order, boundary cursors that can lead to empty pages, and zero-limit
   rejection; see `tools/live/README.md`.
+- [ ] Verify message snapshots during active execution, timeline changes during
+  pagination, and experimental media-reference negotiation. The v2.2.5 baseline
+  verifies fixed imported history, both directions, separate type filters,
+  cursor/order rejection, and empty boundary pages without model/tool execution.
 - [ ] Confirm event ordering, connection-marker guarantees, log watermarks, and
   snapshot reconciliation without assuming gap-free global events.
 - [ ] Choose how to expose SSE IDs, log sequences, pagination, and location
@@ -216,6 +218,24 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete message history/retrieval with TDD: `sessions().messages(&id)`
+  exposes typed `list(&MessageListOptions)` and `get(&message_id)` methods. Preserve
+  data/cursor envelopes, server ordering, additive fields, and safe ID encoding;
+  expose typed missing-message errors and explicit limit/order/cursor/type filters.
+- [x] Add reviewed `--messages` generation and CI coverage. Reuse shared IDs and
+  models; dispatch all eleven timeline kinds and nested assistant/tool/compaction
+  unions explicitly. Preserve numeric precision, enforce reviewed bounds and
+  nonempty tool content, and guard schema/tag/optionality changes before adaptation.
+- [x] Verify mock decoding, request/query encoding, pagination, malformed/unknown
+  values, and HTTP errors. Extend the live v2.2.5/macOS arm64 test with seven fixed
+  imported messages, attachments, reasoning/tool records, bidirectional filtered
+  traversal, cursor/order errors, wrong-session retrieval, and empty pages.
+  Fixture import schedules no model/tool execution and is not a public SDK method.
+- [x] Add `examples/history.rs`, crate/README usage, and compatibility notes.
+  Validate 96 client tests, 27 generator tests, six doctests, the live smoke test,
+  HTTP-only tests, both Rust 1.88 builds, formatting, Clippy, docs, six examples,
+  all five regeneration checks, and actionlint. Hosted Linux checks remain pending;
+  no publishing or automatic commit.
 - [x] Complete session update/deletion with TDD: `sessions().update(&id, &request)`
   and `sessions().remove(&id)` use encoded ID paths, ignore the discovery location
   default, and accept only HTTP 204 without JSON decoding. Share deadlines, bounded

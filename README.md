@@ -2,8 +2,8 @@
 
 `opencoders` is an async Rust client for connecting to the [OpenCode v2 HTTP API](https://opencode.ai/v2/docs/api).
 
-The library currently supports server information, location/agent discovery, and
-session creation, retrieval, updates, deletion, and paginated listing. It targets developers building
+The library currently supports server information, location/agent discovery,
+session management/listing, and message history/retrieval. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -205,6 +205,54 @@ Run `cargo run --example session_lifecycle` with `OPENCODE_BASE_URL`,
 session, renames it, archives/restores it, and deletes it without a model call.
 If a later step fails, the printed session ID is available for inspection.
 
+## Message history and retrieval
+
+```rust
+use opencoders::{Client, MessageListOptions, MessageOrder,
+    models::{SessionId, SessionMessageType}};
+
+async fn history(client: &Client, id: &SessionId) -> opencoders::Result<()> {
+    let messages = client.sessions().messages(id);
+    let mut options = MessageListOptions::default().limit(20)
+        .order(MessageOrder::Desc).message_type(SessionMessageType::User);
+    let first = messages.list(&options).await?;
+    if let Some(message) = first.data.first() {
+        let retrieved = messages.get(message.id()).await?;
+        println!("{}", retrieved.data.message_type());
+    }
+    if let Some(next) = first.cursor.next {
+        options.cursor = Some(next);
+        options.order = None;
+        let second = messages.list(&options).await?;
+    }
+    Ok(())
+}
+```
+
+`list` returns `SessionMessagesResponse` with `data` and `cursor`; `get` returns
+`SessionMessageResponse` with `data`. Both preserve additive fields and use
+session/message IDs encoded as individual path segments. They ignore the SDK's
+default discovery location and do not fetch extra pages automatically.
+
+Options cover `limit`, `order`, `cursor`, and `message_type` (sent as `type`).
+Defaults omit all parameters; v2.2.5 defaults to the newest 50 messages. Follow
+either opaque cursor unchanged, **omit order and repeat the same type filter**.
+The server rejects a nonempty cursor combined with order. Message cursors carry
+ordering but not the type filter. Setting a cursor does not change other options;
+public fields can be cleared with `None`. Boundary cursors can lead to empty pages.
+
+`SessionMessageInfo` is an enum covering all eleven pinned timeline kinds, with
+`id()` and `message_type()` helpers. Match `User`, `Assistant`, or other variants
+to inspect their boxed payloads. Assistant content includes typed text, reasoning,
+and tool states; compaction states and attachments remain typed. These are
+projected history records, not live events or pending inbox items. Added object
+fields are retained; unknown tags and malformed known variants are decode errors.
+Message metadata and provider-native data may contain sensitive content.
+
+Run `cargo run --example history` with `OPENCODE_BASE_URL`, `OPENCODE_SESSION_ID`,
+and optional `OPENCODE_PASSWORD`. It reads at most three pages and retrieves one
+message by ID, without submitting input or changing the session.
+
 ## Configuration and behavior
 
 - Base URLs accept an optional reverse-proxy prefix: `https://host/opencode`
@@ -247,7 +295,8 @@ JSON-body operations set `Content-Type: application/json`, overriding defaults.
 
 HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `UnauthorizedError`, `LocationNotFoundError`, `ServiceUnavailableError`, and
-`InvalidCursorError`, and `SessionNotFoundError` (including missing parents).
+`InvalidCursorError`, `SessionNotFoundError` (including missing parents), and
+`MessageNotFoundError` (also used when a message belongs to another session).
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
 available in the raw body. Truncated or non-JSON bodies have no parsed API error.
@@ -283,7 +332,7 @@ checksums, verified behavior, and limitations. Other endpoints and event streams
 are not yet implemented.
 
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
-contains the initial experiment and reviewed server-info/discovery/session generation commands.
+contains the initial experiment and reviewed server-info/discovery/session/message generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.

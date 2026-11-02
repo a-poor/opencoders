@@ -1,7 +1,7 @@
 //! Async Rust client for the OpenCode v2 HTTP API.
 //!
 //! Supports server information, location/agent discovery, and session creation, retrieval,
-//! updates, deletion, and paginated listing. Run
+//! updates, deletion, paginated listing, and projected message history/retrieval. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -76,10 +76,31 @@
 //! # }
 //! ```
 
+//! Read a session's projected message history without submitting input:
+//! ```no_run
+//! # async fn history(client: &opencoders::Client, id: &opencoders::models::SessionId) -> opencoders::Result<()> {
+//! use opencoders::{MessageListOptions, MessageOrder, models::SessionMessageType};
+//! let messages = client.sessions().messages(id);
+//! let mut options = MessageListOptions::default().limit(20)
+//!     .order(MessageOrder::Desc).message_type(SessionMessageType::User);
+//! let first = messages.list(&options).await?;
+//! if let Some(message) = first.data.first() {
+//!     let one = messages.get(message.id()).await?;
+//! }
+//! if let Some(next) = first.cursor.next {
+//!     options.cursor = Some(next);
+//!     options.order = None; // Keep the type filter; do not combine cursor and order.
+//!     let second = messages.list(&options).await?;
+//! }
+//! # Ok(())
+//! # }
+//! ```
+
 mod agents;
 mod client;
 mod error;
 mod location;
+mod messages;
 pub mod models;
 mod request;
 mod server;
@@ -92,6 +113,7 @@ pub use error::{
     TransportError,
 };
 pub use location::{Location, Locations};
+pub use messages::{MessageListOptions, MessageOrder, SessionMessages};
 pub use request::RequestField;
 pub use reqwest::{StatusCode, header};
 pub use server::Server;
