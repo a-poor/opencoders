@@ -2,62 +2,62 @@
 
 ## Project Scope and Structure
 
-`opencoders` is a Rust 2024 library for the OpenCode v2 HTTP API, primarily serving
-GUI/TUI developers. Do not build a UI; consuming applications own rendering and
-state. The crate currently contains only starter code.
+`opencoders` is a Rust 2024 library for OpenCode v2, primarily serving GUI/TUI
+developers. Applications own rendering and UI state; do not build an interface.
 
-- `src/lib.rs`: library entry point and current unit tests. Add resource modules
-  under `src/` as implementation grows.
-- `DESIGN.md`: architecture, API constraints, and milestones.
-- `TODO.md`: active tasks, inbox, backlog, bugs, and completed work.
-- Add integration tests under `tests/` and runnable library examples under
-  `examples/` when needed; neither directory exists yet.
+- `src/lib.rs`: public library entry point, currently a scaffold.
+- `tools/model-spike/`: private workspace experiment, generated models, and tests.
+- `openapi/`: pinned schema and provenance.
+- `DESIGN.md`: architecture and milestones; `TODO.md`: tasks, inbox, and backlog.
+- Add public integration tests under `tests/` and examples under `examples/`
+  as needed.
 
 ## Build, Test, and Development Commands
 
-- `cargo build`: compile the library.
-- `cargo test`: run unit, integration, and documentation tests.
-- `cargo fmt --all -- --check`: check formatting; use `cargo fmt --all` to fix it.
-- `cargo clippy --all-targets --all-features`: lint supported targets and features.
-- `cargo doc --no-deps`: build public API documentation.
+- `cargo build --locked`: compile the root library.
+- `cargo test --workspace --locked`: test the library and generation experiment.
+- `cargo fmt --all -- --check`: check formatting; `cargo fmt --all` fixes it.
+- `cargo clippy --workspace --all-targets --all-features --locked`: lint everything.
+- `cargo doc --workspace --no-deps --locked`: build API documentation.
 
-There is no application entry point to run. CI is planned; run applicable checks
-locally before submitting changes.
+`cargo test` selects only the root crate. See
+`tools/model-spike/README.md` for regeneration and full-schema compilation checks.
 
 ## Coding Style and Architecture
 
-Use rustfmt defaults, including four-space indentation. Use `snake_case` for
-modules/functions, `PascalCase` for types, and `SCREAMING_SNAKE_CASE` for constants.
-Document public APIs and non-obvious protocol behavior.
+Use rustfmt defaults and four-space indentation. Use `snake_case` for modules and
+functions, `PascalCase` for types, and `SCREAMING_SNAKE_CASE` for constants.
+Document public APIs.
 
-Follow `DESIGN.md`: typed resource APIs, caller-owned Tokio runtime, generated wire
-models, and hand-written transport/streaming behavior. Keep generation explicit
-and reproducible; never hand-edit generated output. Preserve omitted-versus-null
-semantics and meaningful response metadata. Do not silently retry mutations.
+Follow `DESIGN.md`: typed resources, caller-owned Tokio runtime, generated wire
+models, and hand-written transport/adapters. Never hand-edit generated output.
+Preserve omitted-versus-null semantics and response metadata. Do not silently
+retry mutations. Never commit credentials or expose them in logs or fixtures.
 
-## Testing Guidelines
+## Goals and Testing
 
-Use Rust's built-in test framework; add async tests as runtime support arrives.
-Name tests after behavior, such as `prompt_preserves_delivery_mode`. No numeric
-coverage threshold is configured.
+Prefer scoped goals for substantive multi-step work. State the outcome and
+completion checks, track progress in `TODO.md`, and finish a coherent goal before
+expanding scope. Use the goal tool when the user has authorized goal-based work;
+do not invent time or token budgets.
 
-Prioritize deterministic mock-server tests for encoding, errors, pagination, SSE
-framing, cancellation, and disconnects. Add regression coverage for protocol bugs.
-Keep live-server/model tests opt-in, with pinned server versions and disposable
-data. Never commit credentials or expose them in logs or fixtures.
+Prefer TDD where behavior is testable: write a meaningful failing test, implement,
+then refactor. Research and documentation use concrete acceptance checks instead
+of artificial tests. Use Rust's test framework and behavioral names such as
+`prompt_preserves_delivery_mode`. No numeric coverage threshold is configured.
+Prioritize deterministic protocol tests and regressions. Keep live-server/model
+tests opt-in with pinned versions and disposable data.
 
-## Commit and Pull Request Guidelines
+## Commits and Pull Requests
 
-History uses short descriptive subjects, such as `Document client design and
-development backlog`. Prefer imperative summaries; no Conventional Commits prefix
-is required.
-
-Keep changes focused. PR descriptions should explain behavior, link relevant
-issues or tasks, list validation, and identify compatibility limitations.
+History uses descriptive subjects, such as `Add repository contributor
+guidelines`. Prefer imperative summaries; no Conventional Commits prefix is
+required. Keep changes focused. PRs should explain behavior, link tasks/issues,
+and report validation and compatibility limitations.
 
 ## Task Tracking and Inbox Triage
 
-Keep `TODO.md` current. Agents may triage its Inbox during updates or when asked:
-preserve intent and details, merge duplicates, and move entries into appropriate
-sections. Leave unclear entries with clarification notes. Always retain a blank
-bullet in both Inbox and Backlog. Update `DESIGN.md` when architecture changes.
+Agents may triage `TODO.md` during updates or when asked. Preserve intent/details,
+merge duplicates, and categorize entries. Leave unclear items with clarification
+notes. Retain a blank bullet in Inbox and Backlog. Update `DESIGN.md` when
+architecture changes.

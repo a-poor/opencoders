@@ -144,8 +144,16 @@ be represented entirely as `serde_json::Value`.
 ### Generated models and hand-written behavior
 
 Use a hybrid approach: generate wire models from a pinned schema and hand-write
-the ergonomic client methods, transport behavior, and stream handling. Evaluate
-generation on difficult representative schemas before committing to a tool.
+the ergonomic client methods, transport behavior, and stream handling. The
+[initial generation experiment](tools/model-spike/README.md) selects Typify 0.8.0
+with an explicit non-null JSON override: all 490 component schemas generate and
+compile, and a smaller checked-in set has behavioral tests. The public library
+does not expose these experimental models yet.
+
+The experiment demonstrates adapters for three-state update fields and explicit
+event dispatch. Production response tolerance, full event/error coverage, numeric
+constraints, and inline endpoint schemas still require review. Compilation alone
+does not establish wire compatibility or complete schema validation.
 
 The generation evaluation must cover tagged unions, nested references, optional
 and nullable fields, recursive types, and JSON encoded inside SSE data. Many
@@ -286,8 +294,8 @@ tests. Do not automatically replace the schema during normal builds or CI checks
 
 ## Decisions to resolve during implementation
 
-- Which generator produces maintainable models from this OpenAPI 3.1 schema, and
-  which transformations require a small maintained override layer?
+- How should the production generation layer enforce response tolerance, numeric
+  constraints, and complete event/error dispatch beyond the validated spike?
 - What response and request-builder shapes provide convenient calls while
   retaining location metadata, pagination, and nullable update semantics?
 - Which OpenCode release and Rust version form the initial tested baseline?

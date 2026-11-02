@@ -36,22 +36,23 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No implementation tasks are in progress yet. Start with the contract and
-generation evaluation below.
+No active implementation task. The contract/model-generation feasibility goal is
+complete; see **Completed** and `tools/model-spike/README.md` for the evidence.
+
+Suggested next goal: define production model compatibility policies and implement
+the first typed server-information request with mock-server tests.
 
 ## Now: contract and foundation (milestone 1)
 
 ### Contract and model generation
 
-- [ ] Check in an OpenAPI snapshot with its source URL, retrieval date, checksum,
-  and associated server version where available.
 - [ ] Select a pinned OpenCode server release for compatibility testing.
-- [ ] Evaluate model generation against representative messages, events, errors,
-  recursive types, optional/null fields, and SSE-encoded JSON.
-- [ ] Choose the generator and record required schema adaptations or naming
-  overrides separately from generated output.
-- [ ] Add an explicit, reproducible regeneration command and check in generated
-  Rust. Ordinary crate builds must not require network access or generation.
+- [ ] Promote the validated generation spike into a production maintainer command
+  with reviewed generated models. Ordinary crate builds must not require network
+  access or generation.
+- [ ] Apply the spike findings to production models: additive response fields,
+  complete event/error dispatch, three-state request fields, numeric constraints,
+  and inline endpoint schemas. See `tools/model-spike/README.md`.
 - [ ] Create an operation-ID inventory with supported, planned, and deferred
   status so API coverage can be tracked.
 
@@ -219,6 +220,16 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete the first contract/model-generation goal: pin the reviewed schema
+  and provenance, select Typify 0.8.0 with an explicit non-null override, and
+  document required production adaptations in `tools/model-spike/README.md`.
+  All 490 component schemas generate and compile; the reduced probe has 20
+  passing tests. The associated server release remains unknown and is recorded
+  as null in provenance; choosing a server baseline remains open.
+- [x] Validate omitted/null/value request handling and explicit event dispatch
+  through failing tests followed by working adapters. Record raw generator
+  limitations as characterization tests, not desired client behavior.
+- [x] Record scoped goals and pragmatic TDD preferences in `AGENTS.md`.
 - [x] Create the Rust library crate and add MIT/Apache-2.0 license files and the
   Cargo license declaration. Copyright placeholder cleanup remains above.
 - [x] Review the v2 HTTP API, OpenAPI schema, and official client documentation.

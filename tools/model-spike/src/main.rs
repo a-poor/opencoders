@@ -1,0 +1,69 @@
+use opencoders_model_spike::{generate, select_schemas};
+use serde_json::Value;
+use std::{env, error::Error, fs, path::Path};
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()?;
+    let mut spec: Value =
+        serde_json::from_slice(&fs::read(root.join("openapi/opencode-v2.json"))?)?;
+    let args: Vec<_> = env::args().skip(1).collect();
+    let all = args.iter().any(|arg| arg == "--all");
+    let raw = args.iter().any(|arg| arg == "--raw");
+    let check = args.iter().any(|arg| arg == "--check");
+    if args
+        .iter()
+        .any(|arg| !["--all", "--raw", "--check"].contains(&arg.as_str()))
+        || (check && (all || raw))
+    {
+        return Err("usage: model-spike [--check | --all [--raw] | --raw]".into());
+    }
+    let config: Value = serde_json::from_str(include_str!("../probes.json"))?;
+    let names: Vec<_> = if all {
+        spec["components"]["schemas"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect()
+    } else {
+        for (name, pointer) in config["inline_schemas"].as_object().unwrap() {
+            let schema = spec
+                .pointer(pointer.as_str().unwrap())
+                .ok_or("inline schema not found")?
+                .clone();
+            spec["components"]["schemas"][name] = schema;
+        }
+        for (name, schema) in config["synthetic_schemas"].as_object().unwrap() {
+            spec["components"]["schemas"][name] = schema.clone();
+        }
+        config["roots"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap().to_owned())
+            .collect()
+    };
+    let names: Vec<_> = names.iter().map(String::as_str).collect();
+    let schema = select_schemas(&spec, &names)?;
+    let output = generate(schema, !raw)?;
+    let path = root.join(if raw {
+        "target/model-spike-raw.rs"
+    } else if all {
+        "target/model-spike-all.rs"
+    } else {
+        "tools/model-spike/src/generated.rs"
+    });
+    if check {
+        if fs::read_to_string(&path)? != output {
+            return Err("generated models are stale; run model-spike without --check".into());
+        }
+        println!("Generated models match the pinned inputs");
+    } else {
+        fs::create_dir_all(path.parent().unwrap())?;
+        fs::write(&path, output)?;
+        println!("Generated {}", path.display());
+    }
+    Ok(())
+}

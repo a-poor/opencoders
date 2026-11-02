@@ -1,0 +1,44 @@
+{
+  "roots": ["ServerInfo", "MessageProbe", "EventProbe", "ErrorProbe", "SessionUpdateInput", "SseDataProbe", "RecursiveProbe", "EventLog.Synced"],
+  "inline_schemas": {
+    "SessionUpdateInput": "/paths/~1api~1session~1{sessionID}/patch/requestBody/content/application~1json/schema"
+  },
+  "synthetic_schemas": {
+    "MessageProbe": {
+      "description": "A reduced test union of two actual message variants; not the full message API.",
+      "anyOf": [
+        {"$ref": "#/components/schemas/Session.Message.User"},
+        {"$ref": "#/components/schemas/Session.Message.System"}
+      ]
+    },
+    "EventProbe": {
+      "description": "A reduced test union of two actual global event variants.",
+      "anyOf": [
+        {"$ref": "#/components/schemas/session.text.delta"},
+        {"$ref": "#/components/schemas/V2Event.server.connected"}
+      ]
+    },
+    "ErrorProbe": {
+      "anyOf": [
+        {"$ref": "#/components/schemas/InvalidRequestErrorEncoded"},
+        {"$ref": "#/components/schemas/SessionNotFoundErrorEncoded"}
+      ]
+    },
+    "SseDataProbe": {
+      "description": "The upstream contentSchema string encoding, narrowed to EventProbe for the experiment.",
+      "type": "string",
+      "contentMediaType": "application/json",
+      "contentSchema": {"$ref": "#/components/schemas/EventProbe"}
+    },
+    "RecursiveProbe": {
+      "description": "Synthetic recursion probe: the pinned upstream component graph has no cycles.",
+      "type": "object",
+      "properties": {
+        "value": {"type": "string"},
+        "next": {"anyOf": [{"$ref": "#/components/schemas/RecursiveProbe"}, {"type": "null"}]}
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    }
+  }
+}
