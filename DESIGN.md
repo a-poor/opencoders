@@ -1,6 +1,7 @@
 # opencoders design and implementation plan
 
-Status: proposed design, before implementation.
+Status: foundation implemented through typed `server.info()`; broader API and
+streaming sections remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
 audience is developers building GUI, TUI, desktop, and other interactive OpenCode
@@ -101,6 +102,19 @@ A client builder should support:
 - Connection and ordinary-request timeouts.
 - An existing `reqwest::Client` for custom TLS, proxy, and transport configuration.
 
+The initial implementation provides all of these except location configuration.
+It uses reqwest 0.13, supports Rust 1.88+, and enables HTTPS through the default
+`rustls` feature. Base URLs preserve reverse-proxy path prefixes and reject URL
+credentials, queries, and fragments. Bearer authentication and arbitrary headers
+are explicit; the library does not discover local credentials.
+
+Default connection and ordinary-request timeouts are 10 and 30 seconds,
+respectively; the request deadline includes body reads. Supplying an HTTP client
+preserves its connection, TLS, proxy, redirect, and retry policies. SDK headers
+and its request deadline override supplied defaults. Connection timeout settings
+must be configured on the supplied client; combining both settings is an error.
+Removing the SDK deadline does not remove a supplied client's own deadlines.
+
 Location defaults apply only where the route accepts a location. Session-bound
 routes and server-wide event subscriptions must retain their upstream semantics.
 Paths refer to the server's filesystem and should not require local filesystem
@@ -116,16 +130,17 @@ separate from ordinary requests. Dropping a request or stream cancels local
 consumption; it does not promise to undo a request already accepted by the server.
 Interrupting an agent is an explicit API operation.
 
-Automatic retries are disabled initially. In particular, a transport error after
+The default transport disables redirects and automatic retries. In particular, a transport error after
 prompt submission must not silently cause duplicate input. Any future retry
 policy must consider the operation's actual idempotency contract.
 
 ### Public Rust API
 
 Group operations by resource rather than exposing hundreds of methods directly
-on `Client`. For example, `client.sessions().create(request).await` illustrates
-the intended shape; exact names and signatures remain subject to the first
-implementation pass.
+on `Client`. The implemented `client.server().info().await` returns typed server
+information directly, matching the operation's unenveloped HTTP 200 body.
+`client.sessions().create(request).await` illustrates the planned shape for later
+resources; those names and signatures remain provisional.
 
 Use typed request structs with constructors or defaults for common cases. Provide
 lightweight ID types where they prevent mixing session, message, and other IDs.
@@ -147,8 +162,17 @@ Use a hybrid approach: generate wire models from a pinned schema and hand-write
 the ergonomic client methods, transport behavior, and stream handling. The
 [initial generation experiment](tools/model-spike/README.md) selects Typify 0.8.0
 with an explicit non-null JSON override: all 490 component schemas generate and
-compile, and a smaller checked-in set has behavioral tests. The public library
-does not expose these experimental models yet.
+compile, and a smaller checked-in set has behavioral tests. The raw experimental
+models remain private to that tool.
+
+The tool's `--server-info` mode now generates the public `ServerInfo` response
+models into `src/models/generated.rs`. Reviewed adaptations preserve additive
+fields in flattened `extra` maps at every object level, mark response structs
+non-exhaustive, and enforce the schema's nonnegative safe-integer PID range.
+A schema guard requires review if that range changes. Absent and null optional
+fields both decode to `None` for these response-only types; this does not settle
+the representation of future update requests. `--server-info --check` verifies
+checked-in output without modifying it.
 
 The experiment demonstrates adapters for three-state update fields and explicit
 event dispatch. Production response tolerance, full event/error coverage, numeric
@@ -185,6 +209,18 @@ protocol failures. Preserve status, operation context, structured server error
 details, and bounded diagnostic response content where useful. Unknown API errors
 and non-JSON error bodies must remain inspectable. Authentication secrets must
 not appear in default debug or tracing output.
+
+The foundation implements `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
+errors plus separate client-build failures. Only HTTP 200 is successful for
+`server.info()`. Known validation/authentication errors expose typed details;
+unknown or malformed error shapes retain their JSON and raw bytes. A body-read
+failure remains a transport error and retains the received status when available.
+
+Success bodies are capped at 8 MiB and retained diagnostic prefixes at 8 KiB by
+default, with configurable limits and explicit truncation. These bound collected
+bodies; the HTTP stack can allocate an individual chunk before the limit check.
+Default error formatting omits URLs, bodies, and sensitive source text. Explicit
+body/detail accessors and error sources may contain sensitive server data.
 
 Document compatibility against tested OpenCode server releases and the pinned
 schema. Experimental route names should remain discoverable in the Rust API and
@@ -285,7 +321,10 @@ default test suite. Use disposable server data and workspaces for those tests.
 
 CI should run formatting, Clippy, unit/protocol tests, documentation and example
 checks, supported feature combinations, and a regeneration consistency check.
-Declare and test a minimum supported Rust version once dependencies are chosen.
+The library declares Rust 1.88 as its minimum; its locked dependency build has
+been checked with that compiler. The initial client has deterministic model and
+mock HTTP tests, a compiling server-info example, and tests without default TLS
+features. A pinned live server and CI automation remain outstanding.
 
 Record endpoint coverage by upstream operation ID, including deliberate
 deferrals and protocol-specific implementations. Review schema updates as explicit
@@ -298,7 +337,7 @@ tests. Do not automatically replace the schema during normal builds or CI checks
   constraints, and complete event/error dispatch beyond the validated spike?
 - What response and request-builder shapes provide convenient calls while
   retaining location metadata, pagination, and nullable update semantics?
-- Which OpenCode release and Rust version form the initial tested baseline?
+- Which OpenCode release forms the initial tested server baseline?
 - What snapshot/event reconciliation behavior is actually guaranteed upstream,
   and which recovery steps must remain application-specific?
 - Which terminal operations belong in the earliest WebSocket feature release?

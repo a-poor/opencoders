@@ -5,9 +5,30 @@ overrides and hand-written request/event adapters. Keep generated wire types
 behind a reviewed public API. This private workspace package is a feasibility
 experiment, not the implementation of the `opencoders` client.
 
-The root crate is still a scaffold. Workspace `default-members` keeps the tool out
-of ordinary `cargo build` and `cargo test`; use `--workspace` or `-p` deliberately.
-Nothing runs generation at build time. Generated probe models are checked in.
+The root crate now exposes the first reviewed server-info models and HTTP method.
+Workspace `default-members` keeps this tool out of ordinary `cargo build` and
+`cargo test`; use `--workspace` or `-p` deliberately. Nothing runs generation at
+build time. Generated probe and production model files are checked in separately.
+
+## Reviewed server-information models
+
+This tool also provides the first production generation slice:
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --server-info
+cargo run --locked --offline -p opencoders-model-spike -- --server-info --check
+```
+
+The input is the pinned `ServerInfo` schema. Output goes to
+`src/models/generated.rs` in the root crate. `src/server_info.rs` contains the
+reviewable adaptations: preserve added fields in flattened maps at all object
+levels, mark response structs non-exhaustive, and deserialize `pid` as a bounded
+unsigned integer. A guard rejects changes to the upstream pid schema for review;
+the runtime validator lives in the root crate's `src/models/mod.rs`.
+
+These adaptations apply only to this response slice. The original raw experiment
+and its characterization tests remain unchanged. Broader model promotion is still
+a separate task.
 
 ## Run the experiment
 
@@ -79,7 +100,8 @@ generation or compilation does not prove complete JSON Schema validation.
 
 Tests named `raw_*` characterize generator limitations. They do not define the
 desired public client contract. Keep these findings distinct from client bugs:
-the root library exposes none of these experimental models yet.
+the root library uses the separately adapted server-info output, not the probe
+models.
 
 ## Alternatives and next steps
 
@@ -90,7 +112,7 @@ OpenAPI 3.0.x client-generation interface. It was screened out on documented
 scope, not executed against this schema; a full-client generator is not needed
 for the chosen architecture.
 
-Before production models are exposed:
+Before broader production models are exposed:
 
 1. Define response tolerance, unknown enum/error policy, and tag dispatch across
    the full event/error sets. Keep malformed known values as errors.

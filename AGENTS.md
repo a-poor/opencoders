@@ -5,12 +5,11 @@
 `opencoders` is a Rust 2024 library for OpenCode v2, primarily serving GUI/TUI
 developers. Applications own rendering and UI state; do not build an interface.
 
-- `src/lib.rs`: public library entry point, currently a scaffold.
-- `tools/model-spike/`: private workspace experiment, generated models, and tests.
+- `src/`: public client, transport/errors, resource methods, and generated models.
+- `tools/model-spike/`: private generation tool, experiment, and tests.
 - `openapi/`: pinned schema and provenance.
 - `DESIGN.md`: architecture and milestones; `TODO.md`: tasks, inbox, and backlog.
-- Add public integration tests under `tests/` and examples under `examples/`
-  as needed.
+- `tests/`: model and mock HTTP tests; `examples/`: runnable library usage.
 
 ## Build, Test, and Development Commands
 

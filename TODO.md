@@ -36,21 +36,19 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active implementation task. The contract/model-generation feasibility goal is
-complete; see **Completed** and `tools/model-spike/README.md` for the evidence.
-
-Suggested next goal: define production model compatibility policies and implement
-the first typed server-information request with mock-server tests.
+No active tasks. The client-foundation goal is recorded under **Completed**.
+The next candidate goal is location configuration and a representative
+location-scoped discovery method, exercising nested query encoding and envelopes.
 
 ## Now: contract and foundation (milestone 1)
 
 ### Contract and model generation
 
 - [ ] Select a pinned OpenCode server release for compatibility testing.
-- [ ] Promote the validated generation spike into a production maintainer command
-  with reviewed generated models. Ordinary crate builds must not require network
-  access or generation.
-- [ ] Apply the spike findings to production models: additive response fields,
+- [ ] Extend the reviewed `--server-info` generation path to additional models
+  and decide when to rename the private experiment into the permanent tool.
+  Ordinary crate builds must remain independent of generation and schema fetching.
+- [ ] Apply the spike findings to broader production models: additive response fields,
   complete event/error dispatch, three-state request fields, numeric constraints,
   and inline endpoint schemas. See `tools/model-spike/README.md`.
 - [ ] Create an operation-ID inventory with supported, planned, and deferred
@@ -58,29 +56,23 @@ the first typed server-information request with mock-server tests.
 
 ### Crate and transport
 
-- [ ] Replace the starter `add` function and test with the initial library modules.
-- [ ] Select dependency versions and a minimum supported Rust version; configure
-  Tokio, reqwest, Serde, and Rustls with appropriate Cargo features.
-- [ ] Implement a cheap-to-clone client and builder supporting a base URL,
-  authentication/default headers, default location, and an injected HTTP client.
-- [ ] Implement per-request overrides, correct URL/path encoding, and nested
-  location query encoding on applicable routes.
+- [ ] Add default location and per-request overrides to the client on applicable
+  routes; verify nested location query encoding and dynamic path-segment encoding.
 - [ ] Separate ordinary-request timeouts from streaming and long-running
   operations; document local cancellation versus server-side interruption.
-- [ ] Implement JSON, empty-body, and structured error response handling. Preserve
-  useful status and operation context, with bounded diagnostics and secret
-  redaction.
+- [ ] Extend response handling to endpoints with documented empty bodies and
+  multiple success statuses. Add typed API errors as new resources need them.
 - [ ] Establish request/response conventions for IDs, omitted versus null values,
   response metadata, and pagination cursors.
-- [ ] Implement server information and representative location-scoped methods to
-  exercise the transport and public API conventions.
-- [ ] Keep automatic mutation retries disabled and document ambiguous outcomes
-  after transport failures.
+- [ ] Implement representative location-scoped methods to exercise envelopes
+  and public request conventions beyond the direct `server.info()` response.
+- [ ] Document ambiguous mutation outcomes after transport failures when adding
+  write operations; keep the default transport's automatic retries disabled.
 
 ### Initial validation and repository setup
 
-- [ ] Add mock-server tests for authentication, request encoding, envelopes,
-  empty responses, malformed responses, and API/transport errors.
+- [ ] Extend mock-server coverage to nested query/request encoding, envelopes,
+  and documented empty responses as additional operations are implemented.
 - [ ] Add opt-in smoke tests against the pinned server using disposable data.
 - [ ] Add CI for formatting, Clippy, tests, documentation/examples, supported
   features, the minimum Rust version, and reproducible generation.
@@ -220,6 +212,24 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete the client-foundation goal with test-first configuration and
+  protocol coverage: cloneable `Client`/`ClientBuilder`, explicit base URL,
+  authentication/headers, deadlines, injected reqwest client, and typed
+  `server.info()`. Reverse-proxy prefixes are preserved; the default transport
+  disables redirects and retries. The starter scaffold is replaced.
+- [x] Add distinguishable transport, HTTP/API, decode, and oversized-response
+  errors with status/operation context, bounded diagnostic prefixes, safe default
+  formatting, and inspectable unknown server errors.
+- [x] Generate reviewed, non-exhaustive server-info response models with preserved
+  additive fields and validated PID bounds. Check output using
+  `cargo run -p opencoders-model-spike -- --server-info --check`.
+- [x] Select reqwest 0.13, Tokio, Serde, and optional/default Rustls; declare Rust
+  1.88 and verify the locked library build on that compiler. Add the runnable
+  `examples/server_info.rs` and configuration/error documentation.
+- [x] Validate 30 client tests, 20 generation-experiment tests, and the crate
+  documentation example; check HTTP-only builds/tests, formatting, Clippy, API
+  docs, example compilation, and both checked-in model outputs. Tests use mocks;
+  live OpenCode compatibility and CI automation remain open.
 - [x] Complete the first contract/model-generation goal: pin the reviewed schema
   and provenance, select Typify 0.8.0 with an explicit non-null override, and
   document required production adaptations in `tools/model-spike/README.md`.

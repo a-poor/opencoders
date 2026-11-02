@@ -2,6 +2,7 @@
 
 pub mod compat;
 pub mod events;
+pub mod server_info;
 #[rustfmt::skip]
 pub mod generated;
 
