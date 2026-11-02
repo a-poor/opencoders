@@ -1,7 +1,8 @@
 //! Async Rust client for the OpenCode v2 HTTP API.
 //!
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
-//! updates, deletion, paginated listing, and projected message history/retrieval. Run
+//! updates, deletion, paginated listing, projected message history, prompt admission,
+//! and pending inbox management. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -113,10 +114,26 @@
 //! # }
 //! ```
 
+//! Admit pending input without waking execution, then inspect and cancel it:
+//! ```no_run
+//! # async fn pending(client: &opencoders::Client, id: &opencoders::models::SessionId) -> opencoders::Result<()> {
+//! use opencoders::models::{SessionPromptRequest, SessionInboxDelivery, SessionInboxUpdateRequest};
+//! let admitted = client.sessions().prompt(id, &SessionPromptRequest::new("Hello")
+//!     .delivery(SessionInboxDelivery::Steer).resume(false)).await?;
+//! let inbox = client.sessions().inbox(id);
+//! let pending = inbox.list().await?;
+//! inbox.update(&admitted.data.id, &SessionInboxUpdateRequest::new(SessionInboxDelivery::Queue)).await?;
+//! inbox.cancel(&admitted.data.id).await?;
+//! // Admission is not completion. resume(false) does not pause an already running loop.
+//! # Ok(())
+//! # }
+//! ```
+
 mod agents;
 mod catalog;
 mod client;
 mod error;
+mod inbox;
 mod location;
 mod messages;
 pub mod models;
@@ -131,6 +148,7 @@ pub use error::{
     ApiError, BuildError, DecodeError, EncodeError, Error, HttpError, ResponseTooLargeError,
     TransportError,
 };
+pub use inbox::SessionInbox;
 pub use location::{Location, Locations};
 pub use messages::{MessageListOptions, MessageOrder, SessionMessages};
 pub use request::RequestField;

@@ -1,0 +1,6 @@
+[
+  {"id":"msg_user","sessionID":"ses_test","time":{"created":9007199254740993,"future":1},"type":"user","delivery":"queue","payload":{"text":"hello","files":[{"data":"aGk=","mime":"text/plain","source":{"type":"inline","future":true},"future":1}],"agents":[{"name":"build","mention":{"start":0,"end":5,"text":"@build"}}],"skills":[{"id":"skill_x","name":"example","text":"instructions"}],"metadata":{"private":"fixture"},"future":2},"future":3},
+  {"id":"msg_synthetic","sessionID":"ses_test","time":{"created":2},"type":"synthetic","delivery":"queue","payload":{"text":"synthetic","description":"fixture","metadata":{"x":1},"future":4}},
+  {"id":"msg_compaction","sessionID":"ses_test","time":{"created":3},"type":"compaction","delivery":"queue","payload":{"future":5}},
+  {"id":"msg_move","sessionID":"ses_test","time":{"created":4},"type":"move","delivery":"queue","payload":{"projectID":"project","subpath":"sub","location":{"directory":"/remote","future":6},"future":7}}
+]

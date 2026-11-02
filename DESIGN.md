@@ -3,7 +3,7 @@
 Status: foundation implemented through `server.info()`, location/agent/model discovery
 with configurable location selection, plus session creation,
 retrieval, updates, deletion, agent/model selection, filtered/paginated listing,
-and message history/retrieval. Broader API and
+message history/retrieval, prompt admission, and inbox management. Broader API and
 streaming sections remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
@@ -275,6 +275,31 @@ Keep a supported path to arbitrary JSON for plugin RPC and genuinely dynamic
 fields. Dynamic extension points should not cause otherwise known API models to
 be represented entirely as `serde_json::Value`.
 
+### Prompt admission and inbox lifecycle
+
+`sessions().prompt(&SessionId, &SessionPromptRequest)` accepts HTTP 200 and returns
+the `SessionPromptResponse` envelope with a typed admitted user item. This is
+durable admission, not execution completion. Request text is required; nullable
+optional ID/delivery/resume fields use `RequestField<T>`. Non-null optional
+attachments/metadata use `Option<T>`, preserving omitted versus empty values.
+Strict nested input models are separate from tolerant, prepared response payloads;
+the SDK passes server-resolved URIs and does no local file I/O.
+
+`sessions().inbox(&SessionId)` exposes `list`, `update`, and `cancel`. Listing keeps
+the unpaginated envelope/enqueue order and dispatches user, synthetic, compaction,
+and move items. Updates change only delivery mode; update/cancel accept HTTP 204.
+All four methods encode IDs as individual path segments, ignore discovery defaults,
+and reuse existing deadlines, limits, and the default no-retry policy.
+
+The pinned server defaults omitted/null delivery to steer and wakes execution
+unless resume is false. Queue alone does not suppress waking; resume(false) does
+not pause existing execution. Inbox steering wakes execution; queue updates do
+not. Same-mode and unavailable-item updates conflict. Unavailable cancellations
+are no-ops, while a missing session fails. Repeating a pending user ID for the same
+session returns the original payload; cross-session reuse conflicts. This is not
+a blanket idempotency promise across lifecycle states. Execution and concurrency
+remain separate validation work; current live checks admit only with resume(false).
+
 ### Generated models and hand-written behavior
 
 Use a hybrid approach: generate wire models from a pinned schema and hand-write
@@ -339,7 +364,17 @@ optional scalar/content fields reject explicit null; other generated optional
 fields follow the existing response policy. These response types are not mutation
 inputs. Tests cover every message kind and nested tool/compaction states.
 
-The public client now applies three-state fields to session creation and updates;
+`--inbox` generates `src/models/inbox.rs` for inline prompt/update requests and
+prompt/list envelopes. Shared IDs, locations, and prepared attachment response
+types reuse existing models. Guarded adapters preserve nullable request fields,
+omitted versus empty collections, and non-null optional nested inputs. The four-kind
+`SessionInboxInfo` uses explicit tag dispatch; `NonNullValue` enforces the opaque
+compaction payload constraint. A strict source decoder corrects Typify's permissive
+adjacent-tag input decoding. Responses retain added fields and numeric precision.
+Normal crate builds never run generation; CI checks the new output alongside the
+existing five generation targets.
+
+The public client now applies three-state fields to session creation, updates, and prompts;
 the experiment also demonstrates explicit event dispatch.
 Response tolerance, full event/error coverage, numeric
 constraints, and inline schemas for additional endpoints still require review. Compilation alone
@@ -378,9 +413,9 @@ not appear in default debug or tracing output.
 
 The foundation implements `Encode`, `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
 errors plus separate client-build failures. JSON response routes accept HTTP 200;
-session update/remove/switch methods accept only HTTP 204 and do not attempt JSON decoding.
+session update/remove/switch and inbox update/cancel methods accept only HTTP 204 and do not attempt JSON decoding.
 Known validation/authentication, missing-location,
-missing-agent/session/parent/message, unavailable-service, and invalid-cursor errors expose typed details;
+missing-agent/session/parent/message, conflict, unavailable-service, and invalid-cursor errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
 Encode failures occur before a request is sent and have no HTTP status.
@@ -495,10 +530,14 @@ workflow runs the disposable server smoke test; ordinary tests skip it.
 
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
 and commit pinned in `tools/live/server.json`. Server info, location/agent/model discovery,
-and session creation/retrieval/listing/update/removal/selection plus message list/get pass
+and session creation/retrieval/listing/update/removal/selection, message list/get,
+prompt admission, and inbox list/update/cancel pass
 locally on macOS arm64. The history test imports a fixed transcript through the
 pinned experimental import route solely for fixtures, without scheduling model
 or tool execution; history reads use the SDK. This does not expose import publicly.
+Prompt checks use an idle disposable session with explicit `resume(false)` and
+only queue-mode inbox updates. They verify admission/reconciliation, prepared
+inline attachments, order, conflicts, cancellation, and absent history before delivery.
 Linux is configured but awaits a workflow run. See [compatibility results](tools/live/README.md). Exercised responses
 needed no model changes; authentication and cursor semantics required clearer
 guidance. The original schema's source release remains unknown, independently of

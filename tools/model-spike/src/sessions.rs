@@ -258,7 +258,7 @@ fn nullable_request(
     Ok(input)
 }
 
-fn rename_input_refs(value: &mut Value, names: &[(&str, &str)]) {
+pub(crate) fn rename_input_refs(value: &mut Value, names: &[(&str, &str)]) {
     match value {
         Value::Object(map) => {
             if let Some(Value::String(reference)) = map.get_mut("$ref") {

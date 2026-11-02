@@ -75,8 +75,6 @@ No active implementation goal.
 
 - [ ] Implement session forking. Creation, retrieval, updates, and deletion are
   implemented with typed requests and appropriate response handling.
-- [ ] Implement prompt submission, delivery modes, and inbox inspection/update/
-  cancellation. Keep admission distinct from execution completion.
 - [ ] Implement interruption and execution observation/waiting.
 - [ ] Implement pending permission discovery, session permission requests, and
   permission replies without imposing an approval policy.
@@ -104,10 +102,11 @@ No active implementation goal.
 
 ### Examples and first usable release
 
-- [ ] Add runnable Rust examples for prompt submission,
-  event consumption, permission replies, and form replies. Use ordinary output
+- [ ] Add runnable Rust examples for event consumption, permission replies,
+  and form replies. Use ordinary output
   or assertions, with no GUI/TUI implementation. Session listing, creation, and
-  update/deletion lifecycle, model/agent configuration, and message history examples are implemented.
+  update/deletion lifecycle, model/agent configuration, message history, and
+  prompt/inbox examples are implemented.
 - [ ] Add an example of background event consumption and recovery after
   disconnection using minimal application-owned state.
 - [ ] Add an automation example using the same API surface.
@@ -211,6 +210,11 @@ when a decision is made.
   selection during active execution. Current v2.2.5 tests verify stored selections
   and history markers without model calls; success does not establish availability.
   Nullable defaults are covered by mocks. Provider execution remains unverified.
+- [ ] Verify prompt waking/execution, delivery during active runs, concurrent
+  admission/cancellation, and ID reuse after delivery/cancellation. Current live
+  checks use `resume(false)` and queue-only updates, confirming pending-ID
+  reconciliation and same-mode update conflicts. Synthetic/compaction/move inbox
+  lifecycle and experimental inbox media references also remain unverified.
 - [ ] Confirm event ordering, connection-marker guarantees, log watermarks, and
   snapshot reconciliation without assuming gap-free global events.
 - [ ] Choose how to expose SSE IDs, log sequences, pagination, and location
@@ -220,6 +224,24 @@ when a decision is made.
 
 ## Completed
 
+- [x] Complete prompt/inbox APIs with TDD: `sessions().prompt(&id, &request)` and
+  `sessions().inbox(&id).list/update/cancel`. Preserve admitted/list envelopes,
+  enqueue order, encoded IDs, and all request wire states; distinguish admission
+  from execution and pending state. Expose typed conflicts with bounded diagnostics.
+- [x] Add reviewed `--inbox` generation and CI coverage. Reuse shared IDs and
+  prepared attachment response models; keep strict URI-based inputs separate.
+  Explicitly dispatch all four inbox kinds, validate non-null opaque payloads,
+  preserve nullable/optional/empty values, and guard schema changes. Correct the
+  generator's permissive nested file-source decoding with a tested strict adapter.
+- [x] Verify request bodies, errors, response bounds, unexpected statuses, and no
+  mutation retries after disconnects. Live v2.2.5/macOS arm64 checks confirm held
+  admission, inline attachment preparation, pending-ID reconciliation, conflicts,
+  enqueue order, steer-to-queue changes, and cancellation without model calls.
+- [x] Add `examples/prompt_inbox.rs`, public usage docs, and compatibility notes.
+  Validate 119 client tests, 32 generator tests, eight doctests, HTTP-only tests,
+  both Rust 1.88 builds, formatting, Clippy, docs, eight examples, all six generation
+  checks, actionlint, and the disposable live smoke test. Hosted Linux validation
+  remains pending; no publishing, pushing, or automatic commit.
 - [x] Complete model and agent selection with TDD: location-aware `models().list`
   and `default`, individual `agents().get`, and session `switch_agent`/`switch_model`.
   Preserve envelopes, server order, repeated type filters, and caller location

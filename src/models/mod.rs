@@ -10,7 +10,23 @@
 //! names are open strings, as specified by the schema.
 
 use crate::RequestField;
+#[rustfmt::skip]
+mod inbox;
+pub use inbox::error::ConversionError as InboxModelConversionError;
+pub use inbox::{
+    PromptInputAgentAttachment, PromptInputFileAttachment, PromptInputFileSource,
+    PromptInputMention, PromptInputSkillAttachment, SessionInboxCompaction,
+    SessionInboxCompactionTime, SessionInboxCompactionType, SessionInboxDelivery, SessionInboxMove,
+    SessionInboxMovePayload, SessionInboxMoveTime, SessionInboxMoveType, SessionInboxResponse,
+    SessionInboxSynthetic, SessionInboxSyntheticPayload, SessionInboxSyntheticTime,
+    SessionInboxSyntheticType, SessionInboxUpdateRequest, SessionInboxUser,
+    SessionInboxUserPayload, SessionInboxUserTime, SessionInboxUserType, SessionPromptRequest,
+    SessionPromptResponse,
+};
+mod inbox_adapters;
+pub use inbox_adapters::{NonNullValue, SessionInboxInfo};
 mod catalog_adapters;
+mod prompt_inputs;
 mod session_inputs;
 use catalog_adapters::{
     deserialize_model_integer, deserialize_nullable_model, deserialize_optional_model_integer,

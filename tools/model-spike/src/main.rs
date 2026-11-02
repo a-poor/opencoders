@@ -9,6 +9,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut spec: Value =
         serde_json::from_slice(&fs::read(root.join("openapi/opencode-v2.json"))?)?;
     let args: Vec<_> = env::args().skip(1).collect();
+    if args == ["--inbox"] || args == ["--inbox", "--check"] {
+        let output = opencoders_model_spike::inbox::generate_inbox(&spec)?;
+        let path = root.join("src/models/inbox.rs");
+        if args.len() == 2 {
+            if fs::read_to_string(&path)? != output {
+                return Err("inbox models are stale; regenerate with --inbox".into());
+            }
+            println!("Inbox models match the pinned inputs");
+        } else {
+            fs::write(&path, output)?;
+            println!("Generated {}", path.display());
+        }
+        return Ok(());
+    }
     if args == ["--messages"] || args == ["--messages", "--check"] {
         let output = opencoders_model_spike::messages::generate_messages(&spec)?;
         let path = root.join("src/models/messages.rs");
@@ -77,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         || (check && (all || raw))
     {
         return Err(
-            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check]]".into(),
+            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check]]".into(),
         );
     }
     let config: Value = serde_json::from_str(include_str!("../probes.json"))?;

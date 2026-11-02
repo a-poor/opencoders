@@ -3,7 +3,8 @@
 `opencoders` is an async Rust client for connecting to the [OpenCode v2 HTTP API](https://opencode.ai/v2/docs/api).
 
 The library currently supports server information, location/agent/model discovery,
-session management/listing and agent/model selection, and message history/retrieval. It targets developers building
+session management/listing and agent/model selection, message history/retrieval,
+and prompt admission/inbox management. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -301,6 +302,70 @@ Run `cargo run --example history` with `OPENCODE_BASE_URL`, `OPENCODE_SESSION_ID
 and optional `OPENCODE_PASSWORD`. It reads at most three pages and retrieves one
 message by ID, without submitting input or changing the session.
 
+## Prompt submission and pending input
+
+```rust
+use opencoders::{Client, models::{SessionId, SessionPromptRequest,
+    SessionInboxDelivery, SessionInboxUpdateRequest}};
+
+async fn pending(client: &Client, id: &SessionId) -> opencoders::Result<()> {
+    let admitted = client.sessions().prompt(id, &SessionPromptRequest::new("Hello")
+        .delivery(SessionInboxDelivery::Steer).resume(false)).await?;
+    let inbox = client.sessions().inbox(id);
+    let pending = inbox.list().await?;
+    inbox.update(&admitted.data.id,
+        &SessionInboxUpdateRequest::new(SessionInboxDelivery::Queue)).await?;
+    inbox.cancel(&admitted.data.id).await?;
+    Ok(())
+}
+```
+
+`prompt` returns a `SessionPromptResponse` containing an admitted `SessionInboxUser`.
+HTTP 200 acknowledges durable admission, **not a completed assistant reply**.
+Work may already have left the inbox when the response arrives; the admission
+response does not establish that it is still pending.
+On v2.2.5, omitted/null `delivery` means `steer`; omitted/null `resume` wakes the
+agent loop. Use `resume(false)` to admit without waking it. This does not pause
+an already running loop, and `queue` delivery alone does not prevent execution.
+The pinned implementation considers steered work at step boundaries and queued
+work at idle boundaries; execution scheduling itself is not live-tested here.
+
+Text is required and can be empty. `id`, `delivery`, and `resume` use
+`RequestField<T>` for omitted/null/value states. Optional `files`, `agents`,
+`skills`, and `metadata` use `Option<T>`: `None` omits the property, while an empty
+list/map is sent unchanged; these properties reject explicit null. Nested input
+models are strict and separate from response models. File attachments take a
+server-resolved `uri`; the SDK does not read or upload a local file. The server
+prepares files and skills before admission, so returned payloads may differ from inputs.
+
+`inbox.list()` returns the full `SessionInboxResponse` envelope in enqueue order,
+without pagination. `SessionInboxInfo` distinguishes user, synthetic, compaction,
+and move items, with shared `id()`, `session_id()`, and `delivery()` helpers.
+These are pending items, distinct from projected message history. Unknown kinds
+fail decoding; known payloads retain additional fields. Opaque compaction payloads
+accept any non-null JSON through `NonNullValue`. Optional payload collections default to
+empty when omitted and serialize empty collections as absent.
+
+`inbox.update` changes only delivery mode and returns `()` for HTTP 204. Steering
+wakes execution on v2.2.5; queueing does not wake it. Updating an unavailable item,
+an item belonging to another session, or one already in the requested mode returns
+typed `ApiError::Conflict`. `inbox.cancel` accepts HTTP 204; unavailable/wrong-session
+items are no-ops, while missing sessions return 404. Cancellation does not interrupt
+already delivered work. All four operations ignore the discovery location default.
+
+With the same pending user ID and session, v2.2.5 returns the original admission
+even when the new text/delivery differs; cross-session ID reuse conflicts. This is
+not a general retry guarantee for every lifecycle state. A timeout, lost response,
+or decode error can follow admission or another applied mutation. The SDK does
+not retry; inspect pending work/history before deciding to resubmit. An injected
+HTTP client's retry/redirect policies remain in effect.
+
+Run `cargo run --example prompt_inbox` with `OPENCODE_BASE_URL`,
+`OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates a fresh session,
+admits with `resume(false)`, lists pending work, changes delivery to queue, cancels
+the item, and removes the session. It makes no model calls. Waking execution,
+delivery during active runs, and completed model responses remain unverified.
+
 ## Configuration and behavior
 
 - Base URLs accept an optional reverse-proxy prefix: `https://host/opencode`
@@ -338,7 +403,7 @@ message by ID, without submitting input or changing the session.
 `BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
 `Error::Http`, `Error::Decode`, or `Error::ResponseTooLarge`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
-methods expect exactly HTTP 200; session update/remove/switch methods expect HTTP 204 with no
+methods expect exactly HTTP 200; session update/remove/switch and inbox update/cancel methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
 too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.
@@ -347,7 +412,7 @@ HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `UnauthorizedError`, `LocationNotFoundError`, `ServiceUnavailableError`, and
 `InvalidCursorError`, `SessionNotFoundError` (including missing parents), and
 `MessageNotFoundError` (also used when a message belongs to another session), and
-`AgentNotFoundError`.
+`AgentNotFoundError`, and `ConflictError` (with an optional resource identifier).
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
 available in the raw body. Truncated or non-JSON bodies have no parsed API error.
@@ -383,7 +448,7 @@ checksums, verified behavior, and limitations. Other endpoints and event streams
 are not yet implemented.
 
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
-contains the initial experiment and reviewed server-info/discovery/session/message generation commands.
+contains the initial experiment and reviewed server-info/discovery/session/message/inbox generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.

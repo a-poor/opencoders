@@ -35,7 +35,8 @@ The test checks the server PID, version, temporary path, and initially empty
 session list before writing fixtures. It creates eight initially empty sessions through the
 SDK and imports one additional transcript with seven fixed messages through raw
 HTTP solely for fixture setup. All covered operations use the SDK, and all nine
-sessions are deleted before completion. It never submits a prompt, invokes a model, or connects
+sessions are deleted before completion. Prompt fixtures explicitly use `resume(false)`
+and inbox updates only queue work, so the test does not wake model execution or connect
 to an existing server. Do not manually point its environment
 variables at your normal server. `cargo test` compiles but skips this test.
 
@@ -62,6 +63,10 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.switchModel` | Empty HTTP 204; stored catalog model/variant, omitted variant normalized to `default`, repeated-reference deduplication, history markers, unknown provider/model acceptance, and typed missing-session errors. |
 | `session.message.list` | Empty/populated history, newest-first default, both ordering directions and next/previous traversal, type filters, empty boundary pages, invalid cursor and cursor/order conflicts, zero-limit rejection, and missing-session errors. |
 | `session.message.get` | Every imported message round-trips, including user attachments and assistant reasoning/tool content; missing and wrong-session message errors are typed. |
+| `session.prompt` | Durable admission with `resume(false)`, explicit/generated IDs, omitted/null delivery defaulting to steer, empty text, inline file preparation, agent attachments, metadata, duplicate-ID reconciliation, cross-session conflicts, and preparation/missing-session errors. |
+| `session.inbox.list` | Pending user payloads, enqueue order independent of ID order, and no projected history before delivery. Other inbox kinds are covered by fixtures/mocks. |
+| `session.inbox.update` | Empty HTTP 204 for steer-to-queue changes; order retained; same-mode, unavailable, and wrong-session items return typed HTTP 409; missing sessions return 404. |
+| `session.inbox.cancel` | Empty HTTP 204, repeated/missing/wrong-session cancellation no-ops, pending item removal without creating history, and missing-session HTTP 404. |
 
 Two pagination details matter for consumers:
 
@@ -133,6 +138,28 @@ a cursor request. See the pinned
 Live message snapshots during active execution, concurrent timeline changes, and
 experimental media-reference negotiation remain unverified.
 
+Prompt admission returns a durable pending user item, not an assistant response.
+Tests explicitly use `resume(false)` on an idle session to avoid waking execution.
+Queue delivery alone does not prevent execution; false also does not pause a loop
+that is already running. The source defaults omitted/null delivery to steer and
+omitted/null resume to waking; only the no-wake branch is exercised live.
+See the pinned [session implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/session.ts).
+
+Repeating a pending prompt ID for the same session returns the original admission,
+even when text or delivery changes. Cross-session reuse conflicts. This observation
+does not establish retry behavior after delivery/cancellation or concurrent calls.
+The SDK never retries these mutations automatically. File fixtures use inline data
+URIs; invalid URI/missing-skill preparation returns 400 without an inbox item.
+
+Inbox updates only change delivery. The pinned implementation requires a transition
+from the opposite mode, so updating to the current mode returns a conflict.
+Steering wakes execution; the live test only changes steer to queue. Cancellation
+of an unavailable item succeeds without undoing delivered work. See the pinned
+[inbox implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/inbox.ts).
+Waking, delivery during execution, already delivered/cancelled ID reuse, synthetic/
+compaction/move lifecycle, and experimental inbox media-reference negotiation remain
+unverified. Runtime ordering is not inferred from the pending-list snapshot.
+
 The existing [`openapi/provenance.json`](../../openapi/provenance.json) describes
 the original schema download, whose originating server release remains unknown.
 Its `info.version: 0.0.1` is not this server's version. Testing v2.2.5 does not
@@ -144,7 +171,7 @@ provider execution, and other platforms remain unverified.
 
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
 docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
-sets on Rust 1.88, Python runner tests, and all five checked-in generation targets.
+sets on Rust 1.88, Python runner tests, and all six checked-in generation targets.
 Regeneration pins Rust/rustfmt 1.99.1 and uses the locked dependencies and local
 schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.

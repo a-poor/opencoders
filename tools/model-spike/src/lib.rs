@@ -3,6 +3,7 @@
 pub mod compat;
 pub mod discovery;
 pub mod events;
+pub mod inbox;
 pub mod messages;
 pub mod server_info;
 pub mod sessions;

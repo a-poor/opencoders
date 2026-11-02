@@ -91,7 +91,7 @@ Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.
 
 Run all production checks (`--server-info --check`, `--discovery --check`,
-`--sessions --check`, and `--messages --check`) after schema/tool changes, alongside the raw probe `--check`.
+`--sessions --check`, `--messages --check`, and `--inbox --check`) after schema/tool changes, alongside the raw probe `--check`.
 Normal library builds use the checked-in output without invoking the tool.
 
 ## Reviewed message models
@@ -119,6 +119,29 @@ runtime adapters live in `src/models/message_adapters.rs` in the root crate.
 Optional constrained fields reject null; absent optional tool-error content is
 allowed. Message attachments and native/provider data are response models, not
 reviewed request inputs. The live test imports fixed history without model calls.
+
+## Reviewed prompt and inbox models
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --inbox
+cargo run --locked --offline -p opencoders-model-spike -- --inbox --check
+```
+
+Output goes to `src/models/inbox.rs`. The tool extracts inline prompt submission,
+inbox listing, and delivery-update contracts. Shared IDs, locations, and prepared
+attachment response models reuse existing types. Responses preserve extensions
+and number precision. `SessionInboxInfo` dispatches all four kinds explicitly;
+`NonNullValue` enforces the opaque compaction payload's non-null constraint.
+
+Prompt inputs are strict and separate from prepared response objects. Three
+nullable optional fields use `RequestField<T>`; non-null optional collections/maps
+use `Option<T>` so empty values remain distinct from omission. Nested optional
+input fields reject explicit null. A handwritten decoder rejects extra fields
+that Typify's adjacent-tag file-source decoder otherwise accepts, including an
+unexpected null `uri` on an inline source. Guards check request shapes, optionality,
+source unions, inbox tags, and opaque payload constraints before adaptation.
+Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
+`src/models/prompt_inputs.rs`. CI now verifies six generation targets.
 
 ## Run the experiment
 

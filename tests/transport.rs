@@ -7,6 +7,57 @@ use tokio::{
 use wiremock::{Mock, MockServer, ResponseTemplate, matchers::path};
 
 #[tokio::test]
+async fn prompt_and_inbox_disconnects_after_requests_are_not_retried() {
+    use opencoders::models::{
+        SessionInboxDelivery, SessionInboxUpdateRequest, SessionPromptRequest,
+    };
+    for operation in [
+        "session.prompt",
+        "session.inbox.update",
+        "session.inbox.cancel",
+    ] {
+        let prompt = SessionPromptRequest::new("private-request").resume(false);
+        let update = SessionInboxUpdateRequest::new(SessionInboxDelivery::Queue);
+        let body = match operation {
+            "session.prompt" => serde_json::to_vec(&prompt).unwrap(),
+            "session.inbox.update" => serde_json::to_vec(&update).unwrap(),
+            _ => vec![],
+        };
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            read_request_headers(&mut socket).await;
+            let mut received = vec![0; body.len()];
+            socket.read_exact(&mut received).await.unwrap();
+            assert_eq!(received, body);
+            drop(socket);
+            assert!(
+                tokio::time::timeout(Duration::from_millis(200), listener.accept())
+                    .await
+                    .is_err()
+            );
+        });
+        let client = Client::builder(format!("http://{address}"))
+            .request_timeout(Duration::from_secs(1))
+            .build()
+            .unwrap();
+        let id = "ses_test".parse().unwrap();
+        let item = "msg_test".parse().unwrap();
+        let error = match operation {
+            "session.prompt" => client.sessions().prompt(&id, &prompt).await.map(|_| ()),
+            "session.inbox.update" => client.sessions().inbox(&id).update(&item, &update).await,
+            _ => client.sessions().inbox(&id).cancel(&item).await,
+        }
+        .unwrap_err();
+        assert_eq!(error.operation(), operation);
+        assert!(matches!(error, Error::Transport(_)));
+        assert!(!format!("{error} {error:?}").contains("private-"));
+        task.await.unwrap();
+    }
+}
+
+#[tokio::test]
 async fn selection_disconnects_after_request_bodies_are_not_retried() {
     use opencoders::models::{
         SessionModelInput, SessionSwitchAgentRequest, SessionSwitchModelRequest,

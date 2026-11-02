@@ -226,6 +226,13 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// A durable input ID or pending-work transition conflicts with server state.
+    Conflict {
+        /// Optional raw resource identifier reported by the server.
+        resource: Option<String>,
+        /// Server-provided explanation.
+        message: String,
+    },
     /// An individual agent was not found at the requested location.
     AgentNotFound {
         /// Raw server-reported agent ID.
@@ -292,6 +299,10 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            ConflictError {
+                resource: Option<String>,
+                message: String,
+            },
             AgentNotFoundError {
                 #[serde(rename = "agentID")]
                 agent_id: String,
@@ -330,6 +341,7 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::ConflictError { resource, message }) => Self::Conflict { resource, message },
             Ok(Known::AgentNotFoundError { agent_id, message }) => {
                 Self::AgentNotFound { agent_id, message }
             }
@@ -374,6 +386,7 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::Conflict { .. } => "Conflict { .. }",
             Self::AgentNotFound { .. } => "AgentNotFound { .. }",
             Self::MessageNotFound { .. } => "MessageNotFound { .. }",
             Self::SessionNotFound { .. } => "SessionNotFound { .. }",

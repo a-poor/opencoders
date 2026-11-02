@@ -159,6 +159,43 @@ pub struct Sessions<'a> {
 }
 
 impl<'a> Sessions<'a> {
+    /// Durably admit input with `session.prompt`, returning its admitted user item.
+    ///
+    /// HTTP 200 acknowledges admission, not an assistant reply or execution completion.
+    /// Work may already have left the inbox when the response arrives.
+    /// On v2.2.5 omitted/null delivery means `steer`; omitted/null resume wakes the
+    /// agent loop. Set `resume(false)` to admit without waking it. This does not
+    /// pause an already running loop. Files refer to server-resolved URIs; the SDK
+    /// neither reads nor uploads local files. The discovery location default is ignored.
+    ///
+    /// # Errors
+    /// Returns encoding, transport, HTTP/API, decoding, or response-size errors.
+    /// A failure can follow successful admission. The default transport never
+    /// retries; injected HTTP-client policies remain in effect. Inspect pending
+    /// work/history before resubmitting, including when supplying an explicit ID.
+    pub async fn prompt(
+        &self,
+        id: &SessionId,
+        request: &crate::models::SessionPromptRequest,
+    ) -> Result<crate::models::SessionPromptResponse> {
+        self.client
+            .post_json_segments(
+                "api/session",
+                &[id.as_str(), "prompt"],
+                "session.prompt",
+                request,
+            )
+            .await
+    }
+
+    /// Inspect and manage durable work pending for this session.
+    pub fn inbox(&self, id: &'a SessionId) -> crate::SessionInbox<'a> {
+        crate::SessionInbox {
+            client: self.client,
+            session_id: id,
+        }
+    }
+
     /// Select the agent for subsequent provider turns (`session.switchAgent`).
     ///
     /// Sends a strict JSON request and accepts HTTP 204 without decoding JSON.
@@ -266,7 +303,7 @@ impl<'a> Sessions<'a> {
     /// Only 204 is accepted. Missing sessions/locations expose typed API errors.
     pub async fn update(&self, id: &SessionId, request: &SessionUpdateRequest) -> Result<()> {
         self.client
-            .patch_json_empty("api/session", id.as_str(), "session.update", request)
+            .patch_json_empty("api/session", &[id.as_str()], "session.update", request)
             .await
     }
 
@@ -284,7 +321,7 @@ impl<'a> Sessions<'a> {
     /// Missing sessions expose [`crate::ApiError::SessionNotFound`].
     pub async fn remove(&self, id: &SessionId) -> Result<()> {
         self.client
-            .delete_empty("api/session", id.as_str(), "session.remove")
+            .delete_empty("api/session", &[id.as_str()], "session.remove")
             .await
     }
 

@@ -199,16 +199,32 @@ impl Client {
         self.send_json(request, operation, expected).await
     }
 
+    pub(crate) async fn post_json_segments<T: DeserializeOwned, B: serde::Serialize + ?Sized>(
+        &self,
+        path: &str,
+        segments: &[&str],
+        operation: &'static str,
+        body: &B,
+    ) -> Result<T> {
+        let request = self.json_request(
+            Method::POST,
+            self.segments_url(path, segments),
+            operation,
+            body,
+        )?;
+        self.send_json(request, operation, StatusCode::OK).await
+    }
+
     pub(crate) async fn patch_json_empty<B: serde::Serialize + ?Sized>(
         &self,
         path: &str,
-        segment: &str,
+        segments: &[&str],
         operation: &'static str,
         body: &B,
     ) -> Result<()> {
         let request = self.json_request(
             Method::PATCH,
-            self.segment_url(path, segment),
+            self.segments_url(path, segments),
             operation,
             body,
         )?;
@@ -234,11 +250,11 @@ impl Client {
     pub(crate) async fn delete_empty(
         &self,
         path: &str,
-        segment: &str,
+        segments: &[&str],
         operation: &'static str,
     ) -> Result<()> {
         self.send_empty(
-            self.request(Method::DELETE, self.segment_url(path, segment)),
+            self.request(Method::DELETE, self.segments_url(path, segments)),
             operation,
         )
         .await

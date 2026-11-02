@@ -465,6 +465,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     assert_eq!(error.status(), 404);
     verify_message_history(&client, &http, &url, &elsewhere).await;
     verify_selection(&client, &fallback, &elsewhere.id, workspace, other).await;
+    verify_prompt_inbox(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())
@@ -483,6 +484,219 @@ async fn pinned_server_discovery_and_session_pagination() {
             .data
             .is_empty()
     );
+}
+
+async fn verify_prompt_inbox(
+    client: &Client,
+    id: &opencoders::models::SessionId,
+    other: &opencoders::models::SessionId,
+) {
+    use opencoders::models::{
+        PromptInputAgentAttachment, PromptInputFileAttachment, PromptInputSkillAttachment,
+        SessionInboxDelivery, SessionInboxInfo, SessionInboxUpdateRequest, SessionPromptRequest,
+    };
+    let inbox = client.sessions().inbox(id);
+    assert!(inbox.list().await.unwrap().data.is_empty());
+    // Every successful prompt explicitly suppresses waking execution. Delivery
+    // mode alone does not prevent execution, so never rely on queue for isolation.
+    let request = SessionPromptRequest::new("held prompt")
+        .id("msg_live_admission_b".parse().unwrap())
+        .delivery(SessionInboxDelivery::Queue)
+        .resume(false)
+        .files(vec![PromptInputFileAttachment::new(
+            "data:text/plain;base64,aGk=",
+        )])
+        .agents(vec![PromptInputAgentAttachment::new("build")])
+        .skills(vec![])
+        .metadata(serde_json::from_value(json!({"fixture":{"nested":true}})).unwrap());
+    let admitted = client.sessions().prompt(id, &request).await.unwrap().data;
+    assert_eq!(admitted.id.as_str(), "msg_live_admission_b");
+    assert_eq!(&admitted.session_id, id);
+    assert_eq!(admitted.delivery, SessionInboxDelivery::Queue);
+    assert_eq!(admitted.payload.text, "held prompt");
+    assert_eq!(admitted.payload.files[0].data.as_str(), "aGk=");
+    assert_eq!(admitted.payload.files[0].mime, "text/plain");
+    assert_eq!(admitted.payload.agents[0].name, "build");
+    assert_eq!(admitted.payload.metadata["fixture"], json!({"nested":true}));
+    let duplicate = client
+        .sessions()
+        .prompt(
+            id,
+            &SessionPromptRequest::new("changed text")
+                .id(admitted.id.clone())
+                .delivery(SessionInboxDelivery::Steer)
+                .resume(false),
+        )
+        .await
+        .unwrap()
+        .data;
+    assert_eq!(
+        serde_json::to_value(&duplicate).unwrap(),
+        serde_json::to_value(&admitted).unwrap()
+    );
+    assert_eq!(inbox.list().await.unwrap().data.len(), 1);
+    assert!(
+        client
+            .sessions()
+            .messages(id)
+            .list(&MessageListOptions::default())
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+
+    let conflict = client.sessions().prompt(other, &request).await.unwrap_err();
+    assert_inbox_conflict(conflict);
+    // Wrong-session cancellation is a no-op and must not remove the real item.
+    client
+        .sessions()
+        .inbox(other)
+        .cancel(&admitted.id)
+        .await
+        .unwrap();
+    assert_eq!(inbox.list().await.unwrap().data.len(), 1);
+    assert_inbox_conflict(
+        client
+            .sessions()
+            .inbox(other)
+            .update(
+                &admitted.id,
+                &SessionInboxUpdateRequest::new(SessionInboxDelivery::Queue),
+            )
+            .await
+            .unwrap_err(),
+    );
+
+    // ID order deliberately differs from enqueue order. Omitted/null delivery
+    // resolves to steer, but resume(false) still prevents waking an idle loop.
+    let omitted = client
+        .sessions()
+        .prompt(
+            id,
+            &SessionPromptRequest::new("second")
+                .id("msg_live_admission_a".parse().unwrap())
+                .resume(false),
+        )
+        .await
+        .unwrap()
+        .data;
+    assert_eq!(omitted.delivery, SessionInboxDelivery::Steer);
+    let mut null_delivery = SessionPromptRequest::new("").resume(false);
+    null_delivery.id = RequestField::Null;
+    null_delivery.delivery = RequestField::Null;
+    let nulls = client
+        .sessions()
+        .prompt(id, &null_delivery)
+        .await
+        .unwrap()
+        .data;
+    assert_eq!(nulls.delivery, SessionInboxDelivery::Steer);
+    assert_eq!(nulls.payload.text, "");
+    let listed = inbox.list().await.unwrap();
+    assert_eq!(
+        listed.data.iter().map(|item| item.id()).collect::<Vec<_>>(),
+        [&admitted.id, &omitted.id, &nulls.id]
+    );
+    assert!(
+        listed
+            .data
+            .iter()
+            .all(|item| matches!(item, SessionInboxInfo::User(_)))
+    );
+    let queued = SessionInboxUpdateRequest::new(SessionInboxDelivery::Queue);
+    inbox.update(&omitted.id, &queued).await.unwrap();
+    assert_inbox_conflict(inbox.update(&omitted.id, &queued).await.unwrap_err());
+    let listed = inbox.list().await.unwrap();
+    assert_eq!(listed.data[1].delivery(), SessionInboxDelivery::Queue);
+    assert_eq!(listed.data[1].id(), &omitted.id);
+    // Unavailable updates conflict; unavailable cancellations succeed.
+    let missing = "msg_live_missing".parse().unwrap();
+    assert_inbox_conflict(inbox.update(&missing, &queued).await.unwrap_err());
+    inbox.cancel(&missing).await.unwrap();
+    for pending in [&admitted.id, &omitted.id, &nulls.id] {
+        inbox.cancel(pending).await.unwrap();
+        inbox.cancel(pending).await.unwrap();
+        assert_inbox_conflict(inbox.update(pending, &queued).await.unwrap_err());
+    }
+    assert!(inbox.list().await.unwrap().data.is_empty());
+    assert!(
+        client
+            .sessions()
+            .messages(id)
+            .list(&MessageListOptions::default())
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+
+    // Preparation failures do not admit an item. No real files, URLs, or skills
+    // are loaded: one unsupported URI and one deliberately missing skill ID.
+    for bad in [
+        SessionPromptRequest::new("bad file")
+            .resume(false)
+            .files(vec![PromptInputFileAttachment::new("unsupported:fixture")]),
+        SessionPromptRequest::new("bad skill")
+            .resume(false)
+            .skills(vec![PromptInputSkillAttachment::new(
+                "opencoders-missing-skill".to_owned().into(),
+            )]),
+    ] {
+        let Error::Http(error) = client.sessions().prompt(id, &bad).await.unwrap_err() else {
+            panic!("expected preparation error")
+        };
+        assert_eq!(error.status(), 400);
+        assert!(matches!(
+            error.api_error(),
+            Some(ApiError::InvalidRequest { .. })
+        ));
+    }
+    assert!(inbox.list().await.unwrap().data.is_empty());
+    let missing_session = "ses_live_missing".parse().unwrap();
+    for result in [
+        client
+            .sessions()
+            .prompt(
+                &missing_session,
+                &SessionPromptRequest::new("no session").resume(false),
+            )
+            .await
+            .map(|_| ()),
+        client
+            .sessions()
+            .inbox(&missing_session)
+            .list()
+            .await
+            .map(|_| ()),
+        client
+            .sessions()
+            .inbox(&missing_session)
+            .update(&missing, &queued)
+            .await,
+        client
+            .sessions()
+            .inbox(&missing_session)
+            .cancel(&missing)
+            .await,
+    ] {
+        let Error::Http(error) = result.unwrap_err() else {
+            panic!("expected missing session")
+        };
+        assert_eq!(error.status(), 404);
+        assert!(matches!(
+            error.api_error(),
+            Some(ApiError::SessionNotFound { .. })
+        ));
+    }
+}
+
+fn assert_inbox_conflict(error: Error) {
+    let Error::Http(error) = error else {
+        panic!("expected HTTP conflict")
+    };
+    assert_eq!(error.status(), 409);
+    assert!(matches!(error.api_error(), Some(ApiError::Conflict { .. })));
 }
 
 async fn verify_selection(
