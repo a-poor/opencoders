@@ -7,8 +7,8 @@ live events and experimental session logs. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
 hosted smoke and active checks pass on macOS arm64 and Linux x86-64.
-The recorded clean 0.1.0 candidate passes package, test, CI and publish dry-run
-checks; later badge/documentation edits need a final committed package check. See
+Version 0.1.0 was published on 2026-11-03 with a verified registry archive,
+`v0.1.0` tag and successful docs.rs build, completing milestone 2. See
 [API coverage](API_COVERAGE.md) for operation-level evidence and
 [release readiness](RELEASE_READINESS.md) for the prioritized acceptance audit.
 Broader APIs remain the implementation plan.

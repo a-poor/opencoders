@@ -1,20 +1,32 @@
 # Milestone 2 release readiness
 
-Updated **2026-11-03**, against the checked-in schema and successful hosted
-OpenCode **v2.2.5 / macOS arm64 and Linux x86-64** smoke and active
-localhost-provider runs. Remote-provider behavior remains unverified.
-This tracks remaining work for the first usable release; no release or
-publication has been performed.
+**[0.1.0 was published on crates.io](https://crates.io/crates/opencoders/0.1.0)
+on 2026-11-03.** Milestone 2's first conversation-library release is complete.
+PTY support follows in milestone 3. No UI is being built.
 
-The core conversation resources and hosted functional validation are complete.
-The candidate version is **0.1.0**, matching Cargo and the README dependency;
-release notes are dated **2026-11-03**. This is the planned release date, not a
-publication record. The clean committed candidate recorded below passes package
-validation and hosted CI. Subsequent badge, documentation and maintenance-workflow
-edits still need final CI and package checks before publication.
-PTY support is
-milestone 3 and does not gate the first conversation-library release. No UI is
-being built.
+## Published artifact
+
+- Source: `d58757031d99311cd13a0bd3843b31191177bc58`, with the pushed annotated
+  [`v0.1.0` tag](https://github.com/a-poor/opencoders/tree/v0.1.0) at that commit.
+- Published archive: 116 files, 1,425,482 uncompressed bytes / 219,871 compressed
+  bytes. A download from crates.io exactly matches the validated package SHA-256:
+  `0b7a05d9fd78859c74f53b6895ac778e18a14ea6dfad2ca69c0ad340049e88d7`.
+- Registry metadata confirms version 0.1.0, `MIT OR Apache-2.0`, Rust 1.88 and
+  an unyanked version. The README dependency and changelog match the release.
+- docs.rs reports a successful build; the
+  [0.1.0 API documentation](https://docs.rs/opencoders/0.1.0/opencoders/) is live.
+
+All five [CI jobs](https://github.com/a-poor/opencoders/actions/runs/41696724738),
+the [upstream schema check](https://github.com/a-poor/opencoders/actions/runs/41697433032),
+and both Linux [smoke/active jobs](https://github.com/a-poor/opencoders/actions/runs/41697469824)
+passed on the published commit. The final clean package and publish dry run passed.
+Code, tests, manifests and dependencies are byte-identical to the fully tested
+`e86c6fa` archive below; changes are limited to README/guide text and VCS metadata.
+The new session/prompt quick start also compiles on Rust 1.88.
+
+Compatibility evidence covers OpenCode **v2.2.5 on macOS arm64 and Linux x86-64**;
+remote-provider behavior remains unverified. Earlier preparation records below
+retain their original revisions and checksums for traceability.
 
 ## Coverage and evidence
 
@@ -117,8 +129,8 @@ work; all eight sessions are deleted through the SDK. Ordinary tests compile and
 skip this fixture; the existing smoke runner still makes no model calls.
 
 The conversation workflow now has controlled live evidence. Keep unsupported or
-untested outcome paths explicit in release notes. Clean candidate validation is
-recorded below; publication remains pending.
+untested outcome paths explicit in release notes. The published artifact and final
+validation are recorded above.
 
 ### 3. Prepare the package and release notes
 
@@ -133,9 +145,9 @@ The archive includes source, all sixteen examples/support modules, tests/fixture
 README, the [usage guides](docs/README.md), [draft release notes](CHANGELOG.md),
 licenses and Cargo's generated metadata. Schema, generation, coverage/live tools,
 workflows and planning documents remain in the repository; links to them use
-repository URLs. The README uses the planned crates.io `0.1.0` dependency, as
-requested for release preparation; this is not evidence of publication. The
-changelog and release records retain the actual unreleased status.
+repository URLs. The README uses the crates.io `0.1.0` dependency. During package
+preparation, the changelog and release records identified the candidate as
+unreleased; the verified publication record is now above.
 
 Public usage review covered client/runtime ownership, resource accessors, typed
 IDs and request builders, omitted/null handling, pagination, stream policy and
@@ -236,8 +248,8 @@ Detailed platform/job evidence is in [the compatibility record](tools/live/READM
 Ordinary CI skips both live tests; only the separate compatibility runs establish
 server behavior. These results do not cover subsequent release documentation edits.
 
-Publishing and tagging are the remaining separate actions. Repository-only audit
-commits do not change the tested package source, but repackaging records their new
+For future releases, repository-only audit commits do not change the tested
+package source, but repackaging records their new
 Git revision and changes the archive checksum. At handoff, verify the clean final
 archive against the tested contents, record its actual checksum/revision, and
 confirm CI on that revision. Repeat affected checks if packaged content changes;

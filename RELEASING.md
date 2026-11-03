@@ -1,9 +1,10 @@
 # Package and release validation
 
-Version 0.1.0 is unreleased. This procedure validates a candidate without uploading
-it. See [release readiness](RELEASE_READINESS.md) for the validated clean candidate
-and hosted Linux/macOS results, and the [changelog](CHANGELOG.md) for
-consumer-facing limits.
+Version [0.1.0](https://crates.io/crates/opencoders/0.1.0) was published on
+2026-11-03 and tagged `v0.1.0`. This procedure validates future candidates without
+uploading them. See [the release record](RELEASE_READINESS.md#published-artifact)
+for the published revision, checksum and validation, and the
+[changelog](CHANGELOG.md) for consumer-facing limits.
 
 ## Archive policy
 

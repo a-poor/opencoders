@@ -78,12 +78,8 @@ No active goal.
 
 ### Examples and first usable release
 
-- [ ] Next: verify Linux CI for the badge/maintenance changes and manually dispatch
-  the schema workflow once it reaches `main`. Check the final clean package after
-  the README/guide changes; previous archive checksums describe earlier candidates.
-- [ ] Publish and tag the validated 0.1.0 candidate after explicit authorization.
-  Verify crates.io metadata and docs.rs after publication; see `RELEASING.md`.
-  The planned release date is 2026-11-03.
+Version 0.1.0 was published and tagged on 2026-11-03; see the
+[verified release record](RELEASE_READINESS.md#published-artifact).
 
 ## Soon: terminal and workspace APIs (milestone 3)
 
@@ -225,6 +221,15 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Publish [opencoders 0.1.0](https://crates.io/crates/opencoders/0.1.0) from
+  clean commit `d587570` on 2026-11-03 and push the annotated `v0.1.0` tag at that
+  revision. Verify registry metadata, the downloaded archive's exact checksum and
+  the successful [docs.rs build](https://docs.rs/opencoders/0.1.0/opencoders/).
+- [x] Verify the final README/session-prompt example on Rust 1.88 and the clean
+  package/dry run. On `d587570`, all five Linux CI jobs pass, manual schema checking
+  finds no drift, and Linux smoke/active compatibility passes. Record exact run
+  links and the published checksum in `RELEASE_READINESS.md`.
 
 - [x] Reduce ordinary CI and manual live-server workflows to Linux. Keep local
   macOS runners and historical compatibility evidence; track reconsidering hosted
