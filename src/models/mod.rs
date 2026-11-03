@@ -133,11 +133,11 @@ pub use sessions::error::ConversionError as SessionModelConversionError;
 pub use sessions::{
     FileDiffInfo, FileDiffInfoStatus, MoneyUsd, PermissionRuleInput, PermissionRulesetInput,
     RelativePath, SessionCreateRequest, SessionForkBoundary, SessionForkBoundaryVariant0Type,
-    SessionForkBoundaryVariant1Type, SessionId, SessionInfo, SessionInfoFork, SessionInfoOutcome,
-    SessionInfoTime, SessionInterruptResponse, SessionLocationInput, SessionMessageId,
-    SessionMetadata, SessionModelInput, SessionResponse, SessionRevert, SessionSwitchAgentRequest,
-    SessionSwitchModelRequest, SessionUpdateRequest, SessionsCursor, SessionsResponse,
-    SessionsResponseCursor, SnapshotId, TokenUsageInfo, TokenUsageInfoCache,
+    SessionForkBoundaryVariant1Type, SessionForkRequest, SessionId, SessionInfo, SessionInfoFork,
+    SessionInfoOutcome, SessionInfoTime, SessionInterruptResponse, SessionLocationInput,
+    SessionMessageId, SessionMetadata, SessionModelInput, SessionResponse, SessionRevert,
+    SessionSwitchAgentRequest, SessionSwitchModelRequest, SessionUpdateRequest, SessionsCursor,
+    SessionsResponse, SessionsResponseCursor, SnapshotId, TokenUsageInfo, TokenUsageInfoCache,
 };
 
 fn deserialize_optional_value<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>

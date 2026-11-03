@@ -69,8 +69,9 @@ cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
 ```
 
 Output goes to the root `src/models/sessions.rs`, selecting `SessionsResponse`,
-the inline create/get envelopes (`SessionResponse`), the inline create/update
-requests (`SessionCreateRequest` and `SessionUpdateRequest`), selection requests
+the inline create/get/fork envelopes (`SessionResponse`), the inline creation,
+update, and fork requests (`SessionCreateRequest`, `SessionUpdateRequest`, and
+`SessionForkRequest`), selection requests
 (`SessionSwitchAgentRequest` and `SessionSwitchModelRequest`),
 `SessionInterruptResponse`, and their dependencies. The interrupt response keeps
 its required boolean and additive response fields without a custom adapter.
@@ -84,10 +85,11 @@ the strict `more` adapter. Cursor omission/null both become `None`; empty string
 stay present. This response model policy does not define update-request semantics.
 
 Input definitions retain `additionalProperties: false` and use separate strict
-location/model/permission types. All eight create fields and four update fields
-use the public `RequestField<T>` adapter, preserving omission, null, and values. The nested
-model variant rejects explicit null. Guards check nullable/optional field shapes,
-the matching create/get envelopes, and variant constraints before generation.
+location/model/permission types. All eight create fields, four update fields, and
+fork `before` use the public `RequestField<T>` adapter, preserving omission, null,
+and values. The nested model variant rejects explicit null. Guards check nullable/optional field shapes,
+the matching create/get/fork envelopes, the exact fork message-ID reference, and
+variant constraints before generation.
 Hand-written constructors/setters live in the root `src/models/session_inputs.rs`.
 Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.

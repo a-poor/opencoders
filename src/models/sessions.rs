@@ -320,6 +320,14 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionForkBoundaryVaria
         value.parse()
     }
 }
+///`SessionForkRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionForkRequest {
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub before: super::RequestField<SessionMessageId>,
+}
 ///`SessionId`
 #[derive(::serde::Serialize, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[serde(transparent)]

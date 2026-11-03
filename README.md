@@ -217,6 +217,56 @@ Run `cargo run --example create_session` with `OPENCODE_BASE_URL`,
 `OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates one empty
 session, retrieves it, and leaves it on the server.
 
+## Forking sessions
+
+```rust
+use opencoders::{Client, models::{SessionId, SessionMessageId, SessionForkRequest}};
+
+async fn branch(client: &Client, source: &SessionId,
+                before: SessionMessageId) -> opencoders::Result<()> {
+    let fork = client.sessions().fork(source,
+        &SessionForkRequest::default().before(before)).await?;
+    println!("Created fork {}", fork.data.id.as_str());
+    Ok(())
+}
+```
+
+A default request sends `{}` and copies through the newest projected message.
+`before(id)` excludes that message and copies earlier history; the ID must belong
+to the source session. Public `before: RequestField<SessionMessageId>` preserves
+omitted, null, and value. Null behaves like omission on v2.2.5. An entirely empty
+source returns `InvalidRequest` with kind `empty_session`; forking before its
+first existing message succeeds with an empty fork.
+
+The result is a `SessionResponse`. On the pinned server, forks have `fork`
+provenance (`session_id` plus a `before`/`through` boundary) and **no `parentID`**.
+They appear as root sessions; deleting the source does not recursively delete
+its forks. This differs from creating an owned child with `parent_id(...)`.
+The event's `parentID` identifies the fork source, not deletion ownership.
+
+Forks use the source's location and current agent/model, metadata, permissions,
+and instruction values, even when copying an earlier boundary. They get a fresh
+ID/title/timestamps; usage resets, and archived/execution/revert state is not
+inherited. Discovery location defaults are ignored. Copied history receives new
+message IDs; compaction `keepID` references are remapped. Pending inbox items are
+not copied. Forking does not start model work.
+
+v2.2.5 copies settled history, excluding unfinished assistant, shell, and
+compaction projections. The SDK does not promise an atomic snapshot during
+concurrent execution. Active-work exclusion and instruction inheritance are
+source-reviewed; the disposable live checks cover settled fixtures and current
+agent/model/metadata/permission inheritance.
+
+The method accepts HTTP 200 and uses ordinary request deadlines and bounded
+diagnostics. Missing sessions/boundaries expose existing typed errors. A failed
+response can follow successful creation; the request has no idempotency key and
+is never automatically retried. Reconcile server state before resubmitting.
+
+Run `cargo run --example session_fork` with `OPENCODE_BASE_URL`,
+`OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates a fresh session,
+records an agent-selection history entry without model calls, creates full and
+empty forks, and removes its known fixtures. See [compatibility notes](tools/live/README.md).
+
 ## Updating and deleting sessions
 
 ```rust

@@ -212,6 +212,39 @@ transport: timeouts, disconnects, or unreadable responses may leave a successful
 created session. Callers must reconcile before retrying; a supplied ID alone does
 not establish idempotency. Injected HTTP-client policies remain caller-controlled.
 
+`client.sessions().fork(&SessionId, &SessionForkRequest)` uses the same
+`SessionResponse` envelope and ordinary bounded transport, with explicit `{}` for
+its default request. The reviewed `--sessions` generator guards the shared
+create/get/fork envelope and optional nullable `before: SessionMessageId` field.
+The handwritten setter preserves all three `RequestField` wire states.
+
+On v2.2.5 omitted/null `before` selects through the newest projected message;
+a supplied ID selects strictly before that message and must belong to the source.
+An empty source yields typed `InvalidRequest { kind: Some("empty_session"), .. }`;
+before-first is allowed and can yield empty history. `MessageNotFound` and
+`SessionNotFound` cover missing boundaries and sources.
+
+Forks are independent roots: `fork.sessionID` records origin, while `parentID` is
+absent. Removing the source does not recursively remove forks. The source location
+and current agent/model/metadata/permissions/instructions are inherited even at an
+earlier history boundary. New message IDs and title/timestamps are assigned;
+usage resets, and archived/execution/revert state and pending inbox work are not
+copied. Compaction keep-ID references are remapped to copied messages. Applications
+own any branch presentation and reconciliation; no UI state is introduced.
+
+The server copies settled projections, excluding unfinished assistant, shell,
+and compaction rows. It does not replay a retained event log to produce the fork.
+No atomic snapshot or retry/idempotency guarantee is added by this client. Lost
+responses may leave created sessions, and configured request deadlines apply to
+large copies. Successful forking does not start provider execution.
+
+Live fixtures verify default/null/explicit boundaries, before-first, ownership
+errors, current configuration, new IDs, attachment readability, compaction remaps,
+usage resets, parked inbox exclusion, independent deletion, and fork events.
+The import API itself drops unfinished rows, so active-work filtering remains
+source-reviewed; instruction inheritance, concurrent mutation, large batch copies,
+and forked retained-log behavior remain separate compatibility work.
+
 `client.sessions().update(&SessionId, &SessionUpdateRequest)` and
 `client.sessions().remove(&SessionId)` return `()` for HTTP 204 without decoding
 JSON. They share transport deadlines, bounded error handling, encoded ID paths,

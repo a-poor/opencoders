@@ -2,6 +2,33 @@ use opencoders_model_spike::sessions::generate_sessions;
 use serde_json::{Value, json};
 
 #[test]
+fn fork_adapters_require_nullable_message_boundary_and_shared_response_envelope() {
+    let spec: Value =
+        serde_json::from_str(include_str!("../../../openapi/opencode-v2.json")).unwrap();
+    let route = "/paths/~1api~1session~1{sessionID}~1fork/post";
+    let input = format!("{route}/requestBody/content/application~1json/schema");
+    for (key, value) in [
+        ("required", json!(["before"])),
+        ("additionalProperties", json!(true)),
+        (
+            "properties",
+            json!({"before":{"anyOf":[{"type":"string"},{"type":"null"}]}}),
+        ),
+    ] {
+        let mut changed = spec.clone();
+        changed.pointer_mut(&input).unwrap()[key] = value;
+        assert!(generate_sessions(&changed).is_err(), "{key}");
+    }
+    let mut changed = spec;
+    changed
+        .pointer_mut(&format!(
+            "{route}/responses/200/content/application~1json/schema"
+        ))
+        .unwrap()["required"] = json!([]);
+    assert!(generate_sessions(&changed).is_err());
+}
+
+#[test]
 fn session_adapters_require_review_when_file_diff_constraints_change() {
     let spec: Value =
         serde_json::from_str(include_str!("../../../openapi/opencode-v2.json")).unwrap();

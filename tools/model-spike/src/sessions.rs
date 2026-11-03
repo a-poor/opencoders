@@ -26,11 +26,13 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
         .pointer("/paths/~1api~1session/post/responses/200/content/application~1json/schema")
         .ok_or("session.create response missing")?
         .clone();
-    if spec.pointer(
+    for route in [
         "/paths/~1api~1session~1{sessionID}/get/responses/200/content/application~1json/schema",
-    ) != Some(&create)
-    {
-        return Err("session.create/get envelopes differ; review SessionResponse".into());
+        "/paths/~1api~1session~1{sessionID}~1fork/post/responses/200/content/application~1json/schema",
+    ] {
+        if spec.pointer(route) != Some(&create) {
+            return Err("session.create/get/fork envelopes differ; review SessionResponse".into());
+        }
     }
     spec["components"]["schemas"]["SessionResponse"] = create;
     let mut schema = select_schemas(
@@ -50,6 +52,7 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
         &[
             "SessionCreateRequest",
             "SessionUpdateRequest",
+            "SessionForkRequest",
             "SessionSwitchAgentRequest",
             "SessionSwitchModelRequest",
         ],
@@ -79,13 +82,16 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     );
     let mut syntax = syn::parse_file(&generate_with_settings(schema, &settings)?)?;
     let mut adapted_fields = 0;
-    let mut request_fields = [0, 0];
+    let mut request_fields = [0, 0, 0];
     let mut model_variant = false;
     for item in &mut syntax.items {
         match item {
             Item::Struct(item) if matches!(item.fields, syn::Fields::Named(_)) => {
                 item.attrs.push(parse_quote!(#[non_exhaustive]));
-                if item.ident == "SessionCreateRequest" || item.ident == "SessionUpdateRequest" {
+                if item.ident == "SessionCreateRequest"
+                    || item.ident == "SessionUpdateRequest"
+                    || item.ident == "SessionForkRequest"
+                {
                     // Typify defaults nullable optional properties to Option<T>.
                     // Replace those with a three-state field and skip only Omitted.
                     for field in &mut item.fields {
@@ -115,7 +121,12 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
                                 .push(parse_quote!(#[serde(rename = "parentID")]));
                         }
                         field.attrs.push(parse_quote!(#[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]));
-                        request_fields[usize::from(item.ident == "SessionUpdateRequest")] += 1;
+                        let index = match item.ident.to_string().as_str() {
+                            "SessionCreateRequest" => 0,
+                            "SessionUpdateRequest" => 1,
+                            _ => 2,
+                        };
+                        request_fields[index] += 1;
                     }
                 }
                 if item.ident == "SessionModelInput" {
@@ -157,7 +168,7 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
     if adapted_fields != 3 {
         return Err("FileDiffInfo fields changed; review the session model adapters".into());
     }
-    if request_fields != [8, 4] || !model_variant {
+    if request_fields != [8, 4, 1] || !model_variant {
         return Err("session input fields changed; review request adapters".into());
     }
     Ok(format!(
@@ -167,6 +178,17 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
 }
 
 fn add_request_schemas(spec: &mut Value) -> Result<(), Box<dyn std::error::Error>> {
+    let fork = nullable_request(
+        spec,
+        "/paths/~1api~1session~1{sessionID}~1fork/post/requestBody/content/application~1json/schema",
+        &["before"],
+    )?;
+    if fork["properties"]["before"]
+        != json!({"anyOf":[{"$ref":"#/components/schemas/Session.Message.ID"},{"type":"null"}]})
+    {
+        return Err("fork boundary changed; review message ID input adapter".into());
+    }
+    spec["components"]["schemas"]["SessionForkRequest"] = fork;
     let mut input = nullable_request(
         spec,
         "/paths/~1api~1session/post/requestBody/content/application~1json/schema",

@@ -2,10 +2,21 @@
 
 use super::{
     AgentId, PermissionEffect, PermissionRuleInput, PermissionRulesetInput, ProviderId,
-    SessionCreateRequest, SessionId, SessionLocationInput, SessionMetadata, SessionModelInput,
-    SessionSwitchAgentRequest, SessionSwitchModelRequest, SessionUpdateRequest,
+    SessionCreateRequest, SessionForkRequest, SessionId, SessionLocationInput, SessionMessageId,
+    SessionMetadata, SessionModelInput, SessionSwitchAgentRequest, SessionSwitchModelRequest,
+    SessionUpdateRequest,
 };
 use crate::RequestField;
+
+impl SessionForkRequest {
+    /// Copy settled projected history strictly before this message on v2.2.5.
+    /// The boundary message must belong to the source. Omission/null instead
+    /// copies through the newest projected message; pending inbox work is not history.
+    pub fn before(mut self, id: SessionMessageId) -> Self {
+        self.before = RequestField::Value(id);
+        self
+    }
+}
 
 impl SessionLocationInput {
     /// Select a directory on the server; no local filesystem lookup is performed.

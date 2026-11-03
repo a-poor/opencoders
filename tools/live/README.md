@@ -32,12 +32,12 @@ normal interruption. The verified archive cache remains. This isolates applicati
 state; it is not an OS sandbox or a guarantee against upstream network activity.
 
 The test checks the server PID, version, temporary path, and initially empty
-session list before writing fixtures. It creates eight initially empty sessions through the
-SDK and imports one additional transcript with seven fixed messages through raw
-HTTP solely for fixture setup. The log test also seeds captured rename events
-into the runner-owned SQLite database (details below). All covered operations use
-the SDK, and all nine
-sessions are deleted before completion. Prompt fixtures explicitly use `resume(false)`
+session list before writing fixtures. It creates eight initially empty sessions
+through the SDK, imports two additional transcripts with seven and three fixed
+messages through raw HTTP solely for fixture setup, and creates six forks through
+the SDK. The log test also seeds captured rename events into the runner-owned
+SQLite database (details below). All covered operations use the SDK, and all
+sixteen sessions are deleted before completion. Prompt fixtures explicitly use `resume(false)`
 and inbox updates only queue work, so the test does not wake model execution or connect
 to an existing server. Do not manually point its environment
 variables at your normal server. `cargo test` compiles but skips this test.
@@ -57,6 +57,7 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `model.list` | Typed catalog/location envelope, default chat filter, repeated type parameters, deduplication/group order, unknown-type empty lists, and directory overrides. |
 | `model.default` | Typed default-model envelope, resolved location, header fallback, and query precedence. Null default data is covered by mocks. |
 | `session.create` | Typed JSON requests/responses, titles, metadata, empty permissions, parent location precedence, missing-parent HTTP 404, `{}` defaults, and all eight fields explicitly null. |
+| `session.fork` | Default/null full history; exclusive and before-first boundaries; empty/missing/wrong-session errors; current location/configuration inheritance; root/provenance distinction, new message IDs, attachment readability, reset usage/archive state, parked inbox exclusion, compaction keep-ID remapping, fork events, and independent source/fork deletion. |
 | `session.get` | Created-session round trips, retrieval across directories independently of the SDK default location, and typed missing-session HTTP 404. |
 | `session.list` | Real session decoding, server-wide scope, directory/search/root/child/archive filters, next/previous traversal, empty terminal page, invalid-cursor HTTP 400, and zero-limit rejection. |
 | `session.update` | Empty HTTP 204; title, metadata/permission replacement and clearing; archive/restore; omitted/null no-ops; cross-directory IDs; typed missing-session HTTP 404. |
@@ -89,6 +90,19 @@ retains terminal forms in memory for ten minutes; the smoke run checks immediate
 terminal retrieval, not timed expiry or survival across restart/location teardown.
 Concurrent replies/cancellations and resumption of actual waiting tools remain
 unverified. Snapshot discovery and live events do not provide durable form history.
+
+Fork semantics are reviewed against the pinned [session service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session.ts)
+and [projector](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/projector.ts).
+The service uses the latest source configuration/instructions while copying only
+settled projected history before/through the selected message. Fork provenance
+is separate from parent/child ownership; forks are independent roots.
+
+The [import path](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/transfer.ts)
+drops unfinished assistant/shell/compaction entries before storing fixtures, so
+these checks do not verify fork filtering during real active execution. Instruction
+inheritance, concurrent mutation, copies crossing the 500-row batch boundary,
+and retained-log replay on forks remain unverified live. The test imports no
+running work and makes no provider, shell, or compaction calls.
 
 Two pagination details matter for consumers:
 

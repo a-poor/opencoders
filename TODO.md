@@ -72,12 +72,6 @@ No active implementation goal.
 
 ## Next: interactive conversation APIs (milestone 2)
 
-### Core resources
-
-- [ ] Implement session forking. Creation, retrieval, updates, and deletion are
-  implemented with typed requests and appropriate response handling.
-- [ ] Add protocol tests for these resource methods and unknown server errors.
-
 ### Events and session logs
 
 - [ ] Verify retained logs across server restarts and forked sessions using a
@@ -210,6 +204,11 @@ when a decision is made.
   lifetime across location reload/server restart. Current live fixtures manually
   evaluate requests without executing tools; they confirm reply batching, saved
   allow effects, configured-deny precedence, and session/location ownership.
+- [ ] Verify fork instruction inheritance, active assistant/shell/compaction
+  exclusion during actual execution, concurrent mutations, and copies exceeding
+  the 500-row batch size. The import fixture path filters unfinished rows before
+  storing them. Settled history, boundaries, compaction references, usage reset,
+  current configuration, inbox exclusion, and independent ownership are live-tested.
 - [ ] Verify form terminal expiry, restart/location teardown, concurrent settlement,
   and resumption of actual waiting tools. Manual v2.2.5 fixtures cover discovery,
   all field kinds, validation/default/condition/hidden semantics, answering and
@@ -223,6 +222,25 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Complete typed session forking with TDD: `sessions().fork(&id, &request)`,
+  strict generated `SessionForkRequest`, omitted/null/value `before` semantics,
+  shared response/provenance types, and generator guards for message IDs and the
+  create/get/fork envelope. Preserve encoded IDs, bounded diagnostics, typed
+  errors, ordinary deadlines, and no automatic mutation retries.
+- [x] Verify forks against disposable v2.2.5/macOS arm64 without model calls:
+  full/null/exclusive/before-first history, missing/empty/foreign-boundary errors,
+  new message IDs, inherited current configuration/location, reset archive/usage,
+  pending inbox exclusion, attachment readability, compaction keep-ID remapping,
+  fork events, root/provenance distinction, and survival after source deletion.
+- [x] Add `examples/session_fork.rs` plus usage/design/compatibility notes. Explain
+  that fork provenance is separate from parent/child ownership, copies use
+  projected history, and failures can follow successful creation. Record active
+  execution/instruction/concurrency/batch-size/retained-log validation gaps.
+- [x] Validate 191 client tests, 39 generator tests, fourteen doctests/examples,
+  HTTP-only tests, both Rust 1.88 builds, strict Clippy, docs, formatting, all nine
+  generation checks, eight runner tests, and the pinned live smoke test. All
+  sixteen live fixture sessions are removed. No automatic commit.
 
 - [x] Complete the typed form lifecycle goal with TDD: location-aware
   `forms().list/list_at` and `sessions().forms(&id).list/get/create/reply/cancel`.

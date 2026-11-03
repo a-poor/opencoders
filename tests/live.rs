@@ -11,6 +11,9 @@ use opencoders::{
 use serde_json::json;
 use std::{collections::BTreeSet, env, path::PathBuf, time::Duration};
 
+#[path = "support/forks.rs"]
+mod forks;
+
 fn required(name: &str) -> String {
     env::var(name).unwrap_or_else(|_| panic!("{name} missing; use python3 tools/live/run.py"))
 }
@@ -464,6 +467,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     };
     assert_eq!(error.status(), 404);
     verify_message_history(&client, &http, &url, &elsewhere).await;
+    forks::verify(&client, &http, &url, &ids[1].parse().unwrap(), &elsewhere).await;
     verify_selection(&client, &fallback, &elsewhere.id, workspace, other).await;
     verify_prompt_inbox(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     verify_execution(&client, &ids[1].parse().unwrap()).await;

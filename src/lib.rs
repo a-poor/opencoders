@@ -29,6 +29,18 @@
 //! # }
 //! ```
 //!
+//! Fork an existing session's settled projected history:
+//! ```no_run
+//! # async fn fork(client: &opencoders::Client, source: &opencoders::models::SessionId) -> opencoders::Result<()> {
+//! use opencoders::models::SessionForkRequest;
+//! let fork = client.sessions().fork(source, &SessionForkRequest::default()).await?;
+//! // Use .before(message_id) for an exclusive boundary. Empty sources fail.
+//! // Fork provenance does not imply parent/child deletion ownership on v2.2.5.
+//! // A lost response can leave a created fork; no automatic retry is performed.
+//! # Ok(())
+//! # }
+//! ```
+//!
 //! Select a directory on the server, with optional per-call overrides:
 //! ```no_run
 //! # async fn discovery() -> Result<(), Box<dyn std::error::Error>> {

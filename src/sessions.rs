@@ -1,9 +1,9 @@
 use crate::{
     Client, Result, StatusCode,
     models::{
-        AbsolutePath, ProjectId, RelativePath, SessionCreateRequest, SessionId, SessionResponse,
-        SessionSwitchAgentRequest, SessionSwitchModelRequest, SessionUpdateRequest, SessionsCursor,
-        SessionsResponse,
+        AbsolutePath, ProjectId, RelativePath, SessionCreateRequest, SessionForkRequest, SessionId,
+        SessionResponse, SessionSwitchAgentRequest, SessionSwitchModelRequest,
+        SessionUpdateRequest, SessionsCursor, SessionsResponse,
     },
 };
 
@@ -271,6 +271,45 @@ impl<'a> Sessions<'a> {
     pub async fn create(&self, request: &SessionCreateRequest) -> Result<SessionResponse> {
         self.client
             .post_json("api/session", "session.create", StatusCode::OK, request)
+            .await
+    }
+
+    /// Fork settled projected history into a new session (`session.fork`).
+    ///
+    /// Omitted/null `before` copies through the newest projected message; a value
+    /// excludes that boundary message. v2.2.5 skips unfinished assistant, shell,
+    /// and compaction entries. Copied messages receive new IDs. Pending inbox work
+    /// is not copied, and this call does not start model execution.
+    ///
+    /// The fork uses the source's location and current configuration/instructions,
+    /// even for an earlier boundary; discovery location defaults are ignored.
+    /// On v2.2.5 the result has `fork` provenance and no `parentID`, so removing the
+    /// source does not recursively remove this independent session. Usage resets.
+    /// Returns the full `data` envelope, including extension fields.
+    ///
+    /// # Errors
+    /// An empty source returns [`crate::ApiError::InvalidRequest`] with kind
+    /// `empty_session`; an explicit missing/wrong-session boundary returns
+    /// [`crate::ApiError::MessageNotFound`]. Forking before the first existing
+    /// message is allowed and creates an empty fork. Missing sources expose
+    /// [`crate::ApiError::SessionNotFound`].
+    ///
+    /// Only HTTP 200 is accepted. Ordinary deadlines and bounded diagnostics apply;
+    /// encode, transport, HTTP/API, decode, or response-size errors may occur.
+    /// A failed response can follow successful creation. No automatic retry or
+    /// idempotency key is provided; injected HTTP-client policies remain effective.
+    pub async fn fork(
+        &self,
+        id: &SessionId,
+        request: &SessionForkRequest,
+    ) -> Result<SessionResponse> {
+        self.client
+            .post_json_segments(
+                "api/session",
+                &[id.as_str(), "fork"],
+                "session.fork",
+                request,
+            )
             .await
     }
 
