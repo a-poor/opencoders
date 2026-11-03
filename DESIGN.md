@@ -5,10 +5,10 @@ server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events and experimental session logs. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
-active execution, waiting tools and controlled observer recovery on v2.2.5/macOS;
-the intended crate archive passes local build/test and publish dry-run checks.
-Milestone 2 still needs hosted live-server validation and final release revision
-checks. See
+active execution, waiting tools and controlled observer recovery on v2.2.5;
+hosted smoke and active checks pass on macOS arm64 and Linux x86-64.
+The intended crate archive passes local build/test and publish dry-run checks.
+Milestone 2 still needs final release revision checks. See
 [API coverage](API_COVERAGE.md) for operation-level evidence and
 [release readiness](RELEASE_READINESS.md) for the prioritized acceptance audit.
 Broader APIs remain the implementation plan.
@@ -786,8 +786,9 @@ OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hash
 and commit pinned in `tools/live/server.json`. Server info, location/agent/model discovery,
 and session creation/retrieval/listing/update/removal/selection, message list/get,
 prompt admission, inbox list/update/cancel, and idle interruption/waiting pass
-locally on macOS arm64. The history test imports a fixed transcript through the
-pinned experimental import route solely for fixtures, without scheduling model
+on macOS arm64 and Linux x86-64 in the hosted smoke workflow. The history test
+imports a fixed transcript through the pinned experimental import route solely
+for fixtures, without scheduling model
 or tool execution; history reads use the SDK. This does not expose import publicly.
 Smoke prompt checks use an idle disposable session with explicit `resume(false)` and
 only queue-mode inbox updates. They verify admission/reconciliation, prepared
@@ -798,7 +799,8 @@ output, interruption, outcomes, waiting-tool resumption and controlled observer
 recovery through the SDK, without real credentials or paid calls. Its scoped
 configuration denies other providers/tools; application-state isolation is not
 an OS sandbox.
-Linux is configured but awaits a workflow run. See [compatibility results](tools/live/README.md).
+The active fixture also passes on both hosted platforms. See
+[compatibility results](tools/live/README.md#hosted-validation).
 The unfiltered observer exposed an instruction-update delta bug: the generated
 value now uses a checked scalar enum for a hash or `"removed"`, guarded against
 schema drift, instead of an incorrect flattened object. Authentication and cursor

@@ -38,7 +38,9 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active goal.
+- [ ] Commit the hosted-validation records and finalize the 0.1.0 candidate.
+  Validate a clean committed archive, run the publish dry run, and push/wait for
+  CI. Record revisions and checksums; publication and tagging remain separate.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -65,9 +67,6 @@ No active goal.
 
 - [ ] Extend mock-server coverage as additional operations are implemented,
   following the existing JSON body, empty-response, and mutation retry checks.
-- [ ] Next goal: dispatch **Pinned server compatibility** with `active_execution`
-  enabled and verify smoke/active jobs on Linux/macOS. Ordinary hosted CI passed
-  for `e0bd6de`; hosted live-server execution remains unverified on both platforms.
 
 ## Next: interactive conversation APIs (milestone 2)
 
@@ -81,12 +80,9 @@ No active goal.
 
 ### Examples and first usable release
 
-- [ ] Finalize release date/version and verify the README dependency version when
-  release gates pass. Repeat the package checks from a clean final revision;
-  current evidence is an unpublished working-tree archive. See `RELEASING.md`.
-- [ ] Verify milestone 2 acceptance criteria and release-candidate checks from
-  `RELEASE_READINESS.md`, including hosted Linux/macOS CI/live runs, before
-  declaring the first usable conversation-library release ready.
+- [ ] Publish and tag 0.1.0 after clean candidate validation and explicit
+  authorization. Verify crates.io metadata and docs.rs after publication;
+  see `RELEASING.md`. The planned release date is 2026-11-03.
 
 ## Soon: terminal and workspace APIs (milestone 3)
 
@@ -144,9 +140,6 @@ the additional API surface. Move an item into a milestone when it is prioritized
 - [ ] Reduce repeated contract details between `docs/` and `DESIGN.md`, keeping
   guides focused on usage and design focused on rationale. README is now a
   minimal entry point; duplication caused stale coverage statements during review.
-- [ ] Review the pinned checkout action's Node.js runtime version. CI run
-  `41669812365` warns that its Node.js 20 action is being forced onto Node.js 24;
-  update to a reviewed maintained action release and pin its commit.
 -
 
 ## Bugs
@@ -228,6 +221,24 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Verify hosted OpenCode v2.2.5 smoke and all eight active execution/recovery
+  scenarios on Linux x86-64 and macOS arm64 on 2026-11-03. All four jobs pass in
+  [run 41680124254](https://github.com/a-poor/opencoders/actions/runs/41680124254)
+  for `75f0f2a`, and all seven ordinary CI jobs pass in
+  [run 41679740026](https://github.com/a-poor/opencoders/actions/runs/41679740026).
+  No SDK changes were needed. Update the coverage baseline and compatibility/
+  readiness records; remote providers, overflow and restart remain unverified.
+- [x] Review and pin checkout v7.0.1 (`3d3c42e5`) using Node.js 24 in both
+  workflows. Commit/push as `75f0f2a`, validate with actionlint, and rerun hosted
+  CI and compatibility successfully after the update. Final logs have no
+  action-runtime deprecation warnings.
+- [x] Validate the updated 116-file working-tree package based on `75f0f2a`:
+  fresh extracted default/HTTP-only tests (231 each; two live tests ignored),
+  Rust 1.88 library/examples in both modes, warning-free API docs, and crates.io
+  publish dry run. The dry-run archive matches the tested checksum recorded in
+  `RELEASE_READINESS.md`. Coverage/tests, actionlint, formatting and 266 repository
+  links/anchors pass. Evidence/docs remain reviewable; no publication or tag.
 
 - [x] Replace the roughly 1,000-line README with a 54-line entry point: crates.io
   `0.1.0` installation, a read-only quick start, pinned API provenance and licenses.

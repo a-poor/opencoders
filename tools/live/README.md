@@ -53,12 +53,14 @@ cargo test --locked --test live_active --no-run
 python3 tools/live/active.py
 ```
 
-Local run: **2026-11-03, macOS arm64, OpenCode 2.2.5, Rust 1.99.1**.
+Verified **2026-11-03, macOS arm64 and Linux x86-64, OpenCode 2.2.5,
+Rust 1.99.1** in the [hosted runs](#hosted-validation), in addition to the local
+macOS run.
 All eight scenarios in [`tests/live_active.rs`](../../tests/live_active.rs) pass,
 including the [recovery cases](../../tests/support/live_recovery.rs).
 Ordinary `cargo test` compiles and skips this test. The manual compatibility
-workflow has a separate `active_execution` checkbox, off by default; hosted and
-Linux execution remain unverified.
+workflow has a separate `active_execution` checkbox, off by default; enable it
+to include these checks.
 
 [`active.py`](active.py) reuses the smoke runner's checksum-pinned archive,
 environment allowlist, ephemeral password, loopback port allocation and process
@@ -155,9 +157,9 @@ orchestration API was added.
 
 ## Verified smoke behavior
 
-Local run: **2026-11-02, macOS arm64, OpenCode 2.2.5, Rust 1.99.1**. The full
-smoke test passes. Linux is configured in the manual workflow but live-server
-execution has not yet been exercised there or on either hosted platform.
+The full smoke test passes on **macOS arm64 and Linux x86-64, OpenCode 2.2.5,
+Rust 1.99.1**, in the [hosted runs](#hosted-validation) on **2026-11-03**.
+The earlier local macOS run passed on 2026-11-02.
 
 | Operation | Observed and asserted |
 | --- | --- |
@@ -428,10 +430,11 @@ provider execution is covered separately above.
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
 docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
 sets on Rust 1.88, Python runner tests, and all nine generation checks.
-All seven jobs passed for commit `e0bd6de` on 2026-11-03 in
-[run 41669812365](https://github.com/a-poor/opencoders/actions/runs/41669812365).
-These jobs skip the two live tests; they do not extend the server compatibility
-baseline beyond the recorded local macOS runs.
+All seven jobs passed for commit `75f0f2a9e67b06c0e4b80dd7134cac03b060d01e`
+on 2026-11-03 in
+[run 41679740026](https://github.com/a-poor/opencoders/actions/runs/41679740026).
+These jobs skip the two live tests; server compatibility is established separately
+by the manual workflow below.
 Regeneration pins Rust/rustfmt 1.99.1 and uses the locked dependencies and local
 schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.
@@ -440,6 +443,31 @@ separate optional check.
 runs the smoke runner on Linux x86-64 and macOS arm64. Its optional
 `active_execution` input adds the active localhost fixture on both platforms.
 No model secrets are needed.
+
+### Hosted validation
+
+On **2026-11-03**, [run 41677452946](https://github.com/a-poor/opencoders/actions/runs/41677452946)
+passed all four smoke/active jobs for documentation commit
+`a2a389c0990988deff39a00a0dd62dde306bead9`, with `active_execution=true`.
+The runners used Linux x86-64 (`ubuntu-latest`) and macOS arm64 (`macos-14`),
+Rust 1.99.1, and the checksum-pinned OpenCode v2.2.5 archives. Each active job
+passed all eight scenarios: output, interruption, failure, permission, question,
+cancellation feedback, text recovery and form recovery. The smoke test uses no
+model calls; the active test uses only the scripted localhost provider.
+
+After updating the pinned checkout action, all four jobs passed again for
+`75f0f2a9e67b06c0e4b80dd7134cac03b060d01e` in
+[run 41680124254](https://github.com/a-poor/opencoders/actions/runs/41680124254),
+also with `active_execution=true`:
+
+| Platform | Smoke | Active execution and recovery |
+| --- | --- | --- |
+| Linux x86-64 (`ubuntu-latest`) | [Pass](https://github.com/a-poor/opencoders/actions/runs/41680124254/job/126071258156) | [Pass, eight scenarios](https://github.com/a-poor/opencoders/actions/runs/41680124254/job/126071258171) |
+| macOS arm64 (`macos-14`) | [Pass](https://github.com/a-poor/opencoders/actions/runs/41680124254/job/126071257635) | [Pass, eight scenarios](https://github.com/a-poor/opencoders/actions/runs/41680124254/job/126071258361) |
+
+These results establish the documented fixture behavior on those two platforms,
+not remote-provider compatibility, server-overflow handling or restart recovery.
+
 Both workflows use read-only repository permissions and a pinned checkout action.
 Validate workflow edits with `actionlint`; runner checks use:
 

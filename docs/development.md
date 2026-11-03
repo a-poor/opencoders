@@ -26,16 +26,18 @@ examples are built by the checks and contact a real server only when invoked.
 
 The pinned schema and provenance live in [`openapi/`](https://github.com/a-poor/opencoders/tree/main/openapi). The implemented
 operations also pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
-arm64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
+arm64 and Linux x86-64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
 see [compatibility details and CI](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md) for prerequisites, release
 checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded
 fixtures because the stock CLI disables retention. Run `python3 tools/live/active.py`
 separately for active execution with a scripted localhost provider and disposable
 tools: streaming, interruption, failure and permission/form resumption pass on the
-same macOS baseline. It also verifies controlled disconnect/reconnect and snapshot
+same two platforms. It also verifies controlled disconnect/reconnect and snapshot
 recovery using the background observer. It uses no real credentials or paid calls.
-Remote providers, server overflow, restart recovery and live-server compatibility
-on Linux remain unverified.
+Hosted smoke and active jobs passed on both platforms on 2026-11-03; see the
+[recorded runs](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md#hosted-validation).
+Remote providers, server overflow, restart recovery and other platforms remain
+unverified.
 
 ## Coverage and generation
 

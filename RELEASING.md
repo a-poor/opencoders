@@ -1,8 +1,8 @@
 # Package and release validation
 
 Version 0.1.0 is unreleased. This procedure validates a candidate without uploading
-it. See [release readiness](RELEASE_READINESS.md) for the outstanding hosted
-Linux/macOS live-server checks and the [changelog](CHANGELOG.md) for
+it. See [release readiness](RELEASE_READINESS.md) for hosted Linux/macOS results
+and the remaining final-revision checks, and the [changelog](CHANGELOG.md) for
 consumer-facing limits.
 
 ## Archive policy

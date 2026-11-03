@@ -10,9 +10,9 @@ is inferred to work solely because models exist or a raw fixture calls it.
 
 Schema SHA-256: `2fdcda59d6c37f5dac904ab7b7aff05fb98465e23eb0fe8d3b9767151ad391de`. The schema's producing server release
 is unknown; see [provenance](openapi/README.md). Reviewed live evidence uses
-OpenCode **2.2.5** on **macOS arm64**, last verified **2026-11-03**;
+OpenCode **2.2.5** on **macOS arm64 and Linux x86-64**, last verified **2026-11-03**;
 commit `9bbb8ce18c80f099e0e448775f59d965ead40a21`. [Compatibility notes](tools/live/README.md)
-record the verified scope. Linux/hosted CI evidence remains pending.
+record the verified scope, hosted runs and remaining limitations.
 
 - **Supported:** a public resource method and protocol tests exist. Live scope and limitations are separate below.
 - **Planned:** assigned to a design milestone; no public method yet and no release/date commitment.

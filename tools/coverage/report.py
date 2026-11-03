@@ -194,7 +194,7 @@ def render(root, data):
         "is unknown; see [provenance](openapi/README.md). Reviewed live evidence uses",
         f"OpenCode **{baseline['version']}** on **{baseline['platform']}**, last verified **{baseline['verified_on']}**;",
         f"commit `{baseline['commit']}`. [Compatibility notes](tools/live/README.md)",
-        "record the verified scope. Linux/hosted CI evidence remains pending.", "",
+        "record the verified scope, hosted runs and remaining limitations.", "",
         "- **Supported:** a public resource method and protocol tests exist. Live scope and limitations are separate below.",
         "- **Planned:** assigned to a design milestone; no public method yet and no release/date commitment.",
         "- **Deferred:** no current implementation commitment; each entry records why.", "",

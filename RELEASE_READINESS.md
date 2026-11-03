@@ -1,14 +1,16 @@
 # Milestone 2 release readiness
 
-Updated **2026-11-03**, against the checked-in schema, the recorded OpenCode
-**v2.2.5 / macOS arm64** smoke run and a new active localhost-provider run.
-This does not establish live-server compatibility on Linux or with remote
-providers. It tracks remaining work for the first usable release; no release or
+Updated **2026-11-03**, against the checked-in schema and successful hosted
+OpenCode **v2.2.5 / macOS arm64 and Linux x86-64** smoke and active
+localhost-provider runs. Remote-provider behavior remains unverified.
+This tracks remaining work for the first usable release; no release or
 publication has been performed.
 
-The core conversation resources are implemented, but **milestone 2 is not yet
-complete**. Package metadata and draft release notes are prepared; hosted
-live-server validation and the final release revision review remain. PTY support is
+The core conversation resources and hosted functional validation are complete.
+The candidate version is **0.1.0**, matching Cargo and the README dependency;
+release notes are dated **2026-11-03**. This is the planned release date, not a
+publication record. Package validation from the clean committed candidate and
+its hosted CI are the remaining checks. PTY support is
 milestone 3 and does not gate the first conversation-library release. No UI is
 being built.
 
@@ -99,8 +101,8 @@ It retains all sessions and does not equate admission/idleness with success.
 An explicit `--execute` invocation is required to run it against a server.
 
 Completed the separate [`tools/live/active.py`](tools/live/active.py) fixture:
-eight active scenarios pass on v2.2.5/macOS arm64 using twelve scripted localhost
-provider requests, disposable state and no real credentials/paid calls. It verifies
+eight active scenarios pass on v2.2.5/macOS arm64 and Linux x86-64 using twelve
+scripted localhost provider requests, disposable state and no real credentials/paid calls. It verifies
 text deltas versus snapshots, active interruption and provider cancellation,
 success/failure/interrupted outcomes, permission-approved reading, and question
 answer/cancellation-feedback resumption. Each checks settlement and empty pending
@@ -108,8 +110,8 @@ work; all eight sessions are deleted through the SDK. Ordinary tests compile and
 skip this fixture; the existing smoke runner still makes no model calls.
 
 The conversation workflow now has controlled live evidence. Keep unsupported or
-untested outcome paths explicit in release notes; package preparation and hosted
-validation still gate release readiness.
+untested outcome paths explicit in release notes; final revision review and clean
+package validation still gate release readiness.
 
 ### 3. Prepare the package and release notes
 
@@ -165,18 +167,44 @@ for that check. Repository links/anchors and archive-relative documentation link
 resolve. These documentation checks do not replace the final clean-revision test
 and publish-dry-run procedure above.
 
+After hosted validation, the updated working-tree candidate based on `75f0f2a`
+was checked on **2026-11-03, macOS arm64, Rust 1.99.1**:
+
+- The 116-file archive builds and contains the current source, guides, fixtures
+  and licenses: 1,424,099 uncompressed bytes / 219,416 compressed bytes. Its
+  normalized manifest has no workspace/path dependencies or build script.
+- Extracted tests in a fresh directory pass in both default and HTTP-only modes:
+  217 library/integration tests plus 14 doctests each, with both live tests ignored.
+  Rust 1.88 checks pass for the library and all sixteen examples in both modes;
+  extracted API documentation builds with warnings denied.
+- The crates.io publish dry run passes and explicitly aborts the upload. Its
+  archive matches the tested package, SHA-256
+  `d611f39a2e2b309c6c1b3652ddae62b107104dca41e6d50d02a9c71b0190bf8c`.
+
+This archive includes uncommitted compatibility-documentation updates and records
+`dirty: true`; it is not a clean release artifact. Formatting, workflow lint,
+the coverage report and its eight tests, and 266 repository links/anchors pass.
+Final release edits and their clean revision still need the package procedure.
+
 ### 4. Collect release-candidate validation
 
-Hosted [CI run 41669812365](https://github.com/a-poor/opencoders/actions/runs/41669812365)
-passed all seven jobs for pushed commit `e0bd6de` on 2026-11-03: default and
-HTTP-only tests on Linux/macOS, quality checks, Rust 1.88 library checks and all
-nine generation checks. This is evidence for that commit; later documentation
-edits have separate local checks. CI emits a non-failing checkout-action Node.js
-runtime deprecation warning, tracked in `TODO.md`.
+Hosted validation passed on **2026-11-03** for pushed commit
+`75f0f2a9e67b06c0e4b80dd7134cac03b060d01e`:
 
-Recommended next goal: dispatch **Pinned server compatibility** with
-`active_execution` enabled and collect smoke/active results on Linux/macOS.
-Ordinary CI skips both live tests; its success does not establish server behavior.
+| Workflow | Result |
+| --- | --- |
+| [CI 41679740026](https://github.com/a-poor/opencoders/actions/runs/41679740026) | All seven jobs pass: default and HTTP-only tests on Linux/macOS, quality checks, Rust 1.88 library checks and all nine generation checks. |
+| [Pinned server compatibility 41680124254](https://github.com/a-poor/opencoders/actions/runs/41680124254) | All four jobs pass with `active_execution=true`: smoke and eight active scenarios on both Linux x86-64 and macOS arm64, using OpenCode v2.2.5 and Rust 1.99.1. |
+
+The documentation revision `a2a389c` also passed
+[ordinary CI](https://github.com/a-poor/opencoders/actions/runs/41676975364) and
+[all four compatibility jobs](https://github.com/a-poor/opencoders/actions/runs/41677452946)
+before the action update. No SDK fixes were required. Commit `75f0f2a` updates
+both workflows to the reviewed, commit-pinned checkout v7.0.1 using Node.js 24.
+The final CI and compatibility logs contain no action-runtime deprecation warnings.
+Detailed platform/job evidence is in [the compatibility record](tools/live/README.md#hosted-validation).
+Ordinary CI skips both live tests; only the separate compatibility runs establish
+server behavior. These results do not cover subsequent release documentation edits.
 
 After the implementation work, run the repository checks on the intended release
 revision: workspace and HTTP-only tests, Rust 1.88 library builds, formatting,
@@ -184,10 +212,11 @@ strict Clippy, warning-free docs, examples, all nine generation checks, coverage
 inventory/tests and live-runner tests. The workflows already encode most checks;
 the coverage checker is now included in the quality job.
 
-Run the manual pinned compatibility workflow on Linux x86-64 and macOS arm64.
-Hosted live-server execution on both platforms remains unverified. Repeat the
-package check after final changes and record revision/platform/results with the
-release. Publishing remains a separate action.
+Review and commit the evidence updates, finalize the changelog date/version, then
+repeat package validation from the clean intended release revision. Confirm CI
+on that revision and rerun live compatibility if SDK, fixture, workflow or baseline
+changes warrant it. Record revision/platform/results with the release. Publishing
+remains a separate action.
 
 ## Limits to retain in release documentation
 
