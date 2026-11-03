@@ -38,9 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-- [ ] Commit the hosted-validation records and finalize the 0.1.0 candidate.
-  Validate a clean committed archive, run the publish dry run, and push/wait for
-  CI. Record revisions and checksums; publication and tagging remain separate.
+No active goal.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -80,7 +78,7 @@ blank bullet at the end so the next note is easy to add.
 
 ### Examples and first usable release
 
-- [ ] Publish and tag 0.1.0 after clean candidate validation and explicit
+- [ ] Next: publish and tag the validated 0.1.0 candidate after explicit
   authorization. Verify crates.io metadata and docs.rs after publication;
   see `RELEASING.md`. The planned release date is 2026-11-03.
 
@@ -221,6 +219,14 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Commit/push hosted-validation records and finalize candidate `e86c6fa`:
+  version 0.1.0 and planned changelog date 2026-11-03, matching the README.
+  [CI 41686406437](https://github.com/a-poor/opencoders/actions/runs/41686406437)
+  passes all seven jobs. The clean 116-file archive passes fresh extracted tests
+  in both modes (231 each; two live tests ignored), stable/MSRV example checks,
+  warning-free docs and a publish dry run without `--allow-dirty`. Record the
+  exact checksum/revision in `RELEASE_READINESS.md`. No publication or tag.
 
 - [x] Verify hosted OpenCode v2.2.5 smoke and all eight active execution/recovery
   scenarios on Linux x86-64 and macOS arm64 on 2026-11-03. All four jobs pass in

@@ -7,8 +7,8 @@ live events and experimental session logs. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
 hosted smoke and active checks pass on macOS arm64 and Linux x86-64.
-The intended crate archive passes local build/test and publish dry-run checks.
-Milestone 2 still needs final release revision checks. See
+The clean 0.1.0 candidate passes package, test, CI and publish dry-run checks.
+Milestone 2's conversation-library candidate is ready for publication. See
 [API coverage](API_COVERAGE.md) for operation-level evidence and
 [release readiness](RELEASE_READINESS.md) for the prioritized acceptance audit.
 Broader APIs remain the implementation plan.

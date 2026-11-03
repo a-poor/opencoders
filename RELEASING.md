@@ -1,8 +1,8 @@
 # Package and release validation
 
 Version 0.1.0 is unreleased. This procedure validates a candidate without uploading
-it. See [release readiness](RELEASE_READINESS.md) for hosted Linux/macOS results
-and the remaining final-revision checks, and the [changelog](CHANGELOG.md) for
+it. See [release readiness](RELEASE_READINESS.md) for the validated clean candidate
+and hosted Linux/macOS results, and the [changelog](CHANGELOG.md) for
 consumer-facing limits.
 
 ## Archive policy
@@ -72,8 +72,10 @@ produce a docs.rs build. See Cargo's official
 
 ## Release handoff
 
-Confirm hosted CI and dispatch the **Pinned server compatibility** workflow with
-`active_execution` enabled, which runs both smoke and active jobs on Linux/macOS.
+Confirm hosted CI on the intended revision. Recorded live compatibility evidence
+can be reused when the SDK, fixtures, workflows and server baseline are unchanged;
+otherwise dispatch **Pinned server compatibility** with `active_execution` enabled
+to run both smoke and active jobs on Linux/macOS.
 Update the changelog date, confirm the README dependency matches the release
 version, and rerun package validation after those final edits. Publishing and creating a version tag are
 separate, explicit actions; this procedure does neither. After an authorized publication, verify registry

@@ -9,8 +9,8 @@ publication has been performed.
 The core conversation resources and hosted functional validation are complete.
 The candidate version is **0.1.0**, matching Cargo and the README dependency;
 release notes are dated **2026-11-03**. This is the planned release date, not a
-publication record. Package validation from the clean committed candidate and
-its hosted CI are the remaining checks. PTY support is
+publication record. The clean committed candidate passes package validation and
+hosted CI and is ready for an authorized publication. PTY support is
 milestone 3 and does not gate the first conversation-library release. No UI is
 being built.
 
@@ -110,8 +110,8 @@ work; all eight sessions are deleted through the SDK. Ordinary tests compile and
 skip this fixture; the existing smoke runner still makes no model calls.
 
 The conversation workflow now has controlled live evidence. Keep unsupported or
-untested outcome paths explicit in release notes; final revision review and clean
-package validation still gate release readiness.
+untested outcome paths explicit in release notes. Clean candidate validation is
+recorded below; publication remains pending.
 
 ### 3. Prepare the package and release notes
 
@@ -184,9 +184,32 @@ was checked on **2026-11-03, macOS arm64, Rust 1.99.1**:
 This archive includes uncommitted compatibility-documentation updates and records
 `dirty: true`; it is not a clean release artifact. Formatting, workflow lint,
 the coverage report and its eight tests, and 266 repository links/anchors pass.
-Final release edits and their clean revision still need the package procedure.
+The clean candidate results below supersede this working-tree package for release
+readiness.
 
 ### 4. Collect release-candidate validation
+
+Clean candidate **`e86c6fab8a3cf3a2fd43fcdb667f82aa44dcaea1`** finalizes 0.1.0
+and the planned 2026-11-03 changelog date. Cargo, the lockfile and the README agree
+on the version. Validation on **2026-11-03, macOS arm64**:
+
+| Check | Result |
+| --- | --- |
+| [CI 41686406437](https://github.com/a-poor/opencoders/actions/runs/41686406437) | All seven jobs pass for the candidate: Linux/macOS default and HTTP-only tests, quality, Rust 1.88 and generation. |
+| Clean archive | `cargo package --locked --offline` passes without `--allow-dirty`. VCS metadata records `e86c6fa` with no dirty flag; 116 files, 1,423,949 uncompressed bytes / 219,350 compressed bytes. |
+| Extracted tests | Fresh directory outside the checkout; default and HTTP-only each pass 217 library/integration tests and 14 doctests, with the two live tests ignored. |
+| Examples/MSRV/docs | All sixteen examples pass both feature modes on Rust 1.99.1; library/examples pass both on Rust 1.88. API docs build with warnings denied. |
+| Clean publish dry run | Passes without `--allow-dirty`; Cargo aborts upload. The resulting archive matches the tested package exactly. |
+| Repository consistency | Formatting, coverage report/eight tests, version/date consistency and 266 documentation links/anchors pass. |
+
+Tested clean archive SHA-256:
+`15ee6c6a802f7f46ce5a60d3c2d9a4ceefdb6d06d4b523debb446224580061ad`.
+The normalized manifest has no workspace/path dependencies or build script.
+The archive contains the intended sources, guides, examples, fixtures and licenses.
+
+The candidate changes documentation and coverage-report wording only. Its SDK,
+test fixtures, live runners, workflows and server baseline are unchanged from the
+successful hosted compatibility revision below, so those live results still apply.
 
 Hosted validation passed on **2026-11-03** for pushed commit
 `75f0f2a9e67b06c0e4b80dd7134cac03b060d01e`:
@@ -206,17 +229,12 @@ Detailed platform/job evidence is in [the compatibility record](tools/live/READM
 Ordinary CI skips both live tests; only the separate compatibility runs establish
 server behavior. These results do not cover subsequent release documentation edits.
 
-After the implementation work, run the repository checks on the intended release
-revision: workspace and HTTP-only tests, Rust 1.88 library builds, formatting,
-strict Clippy, warning-free docs, examples, all nine generation checks, coverage
-inventory/tests and live-runner tests. The workflows already encode most checks;
-the coverage checker is now included in the quality job.
-
-Review and commit the evidence updates, finalize the changelog date/version, then
-repeat package validation from the clean intended release revision. Confirm CI
-on that revision and rerun live compatibility if SDK, fixture, workflow or baseline
-changes warrant it. Record revision/platform/results with the release. Publishing
-remains a separate action.
+Publishing and tagging are the remaining separate actions. Repository-only audit
+commits do not change the tested package source, but repackaging records their new
+Git revision and changes the archive checksum. At handoff, verify the clean final
+archive against the tested contents, record its actual checksum/revision, and
+confirm CI on that revision. Repeat affected checks if packaged content changes;
+rerun live compatibility if SDK, fixture, workflow or baseline changes warrant it.
 
 ## Limits to retain in release documentation
 
