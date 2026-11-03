@@ -2,7 +2,7 @@
 //!
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, projected message history, prompt admission,
-//! and pending inbox management. Run
+//! pending inbox management, and live event subscriptions. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -129,11 +129,32 @@
 //! # }
 //! ```
 
+//! Consume a caller-owned, global live subscription:
+//! ```no_run
+//! # async fn events(client: &opencoders::Client) -> opencoders::Result<()> {
+//! use opencoders::{EventOptions, models::Event};
+//! let mut stream = client.events().subscribe(&EventOptions::default()
+//!     .types(["session.text.delta", "session.renamed"])).await?;
+//! while let Some(message) = stream.next().await {
+//!     if let Event::SessionTextDelta(event) = message?.event {
+//!         println!("{}", event.data.delta);
+//!     }
+//! }
+//! // Reopen explicitly and refresh snapshots after observation stops.
+//! # Ok(())
+//! # }
+//! ```
+
 mod agents;
 mod catalog;
 mod client;
 mod error;
+mod events;
 mod inbox;
+mod sse;
+mod stream_error;
+pub use events::{EventMessage, EventOptions, EventStream, Events};
+pub use stream_error::{StreamError, StreamErrorKind};
 mod location;
 mod messages;
 pub mod models;

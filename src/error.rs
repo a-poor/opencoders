@@ -43,18 +43,23 @@ pub enum Error {
     /// A success body exceeded the configured byte limit.
     #[error(transparent)]
     ResponseTooLarge(ResponseTooLargeError),
+    /// A live subscription failed; errors terminate the stream.
+    #[error(transparent)]
+    Stream(crate::StreamError),
 }
 
 impl Error {
     /// Whether the underlying request or response-body read timed out.
     pub fn is_timeout(&self) -> bool {
         matches!(self, Self::Transport(error) if error.is_timeout())
+            || matches!(self, Self::Stream(error) if matches!(error.kind(), crate::StreamErrorKind::HandshakeTimeout | crate::StreamErrorKind::IdleTimeout))
     }
 
     /// HTTP status, when response headers were received.
     pub fn status(&self) -> Option<StatusCode> {
         match self {
             Self::Encode(_) => None,
+            Self::Stream(error) => error.status(),
             Self::Transport(error) => error.status(),
             Self::Http(error) => Some(error.status()),
             Self::Decode(error) => Some(error.status()),
@@ -65,6 +70,7 @@ impl Error {
     /// Upstream operation ID, for example `server.info`.
     pub fn operation(&self) -> &'static str {
         match self {
+            Self::Stream(error) => error.operation(),
             Self::Encode(error) => error.operation(),
             Self::Transport(error) => error.operation(),
             Self::Http(error) => error.operation(),
@@ -77,6 +83,7 @@ impl Error {
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Stream(error) => fmt::Debug::fmt(error, f),
             Self::Encode(error) => error.fmt(f),
             Self::Transport(error) => error.fmt(f),
             Self::Http(error) => fmt::Debug::fmt(error, f),

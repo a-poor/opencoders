@@ -4,7 +4,7 @@
 
 The library currently supports server information, location/agent/model discovery,
 session management/listing and agent/model selection, message history/retrieval,
-and prompt admission/inbox management. It targets developers building
+prompt admission/inbox management, and live event subscriptions. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -366,6 +366,73 @@ admits with `resume(false)`, lists pending work, changes delivery to queue, canc
 the item, and removes the session. It makes no model calls. Waking execution,
 delivery during active runs, and completed model responses remain unverified.
 
+## Live events
+
+```rust
+use opencoders::{Client, EventOptions, models::Event};
+
+async fn observe(client: &Client) -> opencoders::Result<()> {
+    let mut events = client.events().subscribe(&EventOptions::default()
+        .types(["session.text.delta", "session.renamed"])).await?;
+    while let Some(message) = events.next().await {
+        match message?.event {
+            Event::SessionTextDelta(event) => println!("{}", event.data.delta),
+            Event::SessionRenamed(event) => println!("{}", event.data.title),
+            Event::Unknown(raw) => { /* Preserve or inspect future event kinds. */ }
+            _ => {}
+        }
+    }
+    // EOF means observation stopped. Refresh authoritative state before reopening.
+    Ok(())
+}
+```
+
+`events().subscribe` opens `GET /api/event`, spanning all server locations and
+ignoring the SDK's default directory. Filters send repeated `types` parameters;
+an empty list requests everything. The initial `server.connected` marker arrives
+even with filters. No model calls are needed to subscribe. Run the read-only
+`cargo run --example events` with `OPENCODE_BASE_URL`, optional
+`OPENCODE_PASSWORD`, and optional `OPENCODE_EVENT_TYPE`; stop it with Ctrl-C.
+
+`models::Event` covers 52 kinds: connection/RPC, session lifecycle and selections,
+inbox, execution, steps, text/reasoning, tools, retries, compaction, permissions,
+and forms. The exact set is in [event-roots.json](tools/model-spike/event-roots.json).
+Envelope/payload types live in `models::events`. Other kinds, including currently
+unimplemented native events, retain their complete JSON in `Event::Unknown`.
+Malformed implemented kinds produce `Error::Decode`. Nested closed enums remain
+strict. IDs, timestamps, durable metadata, locations, and object extensions are
+retained. Optional nulls generally normalize to omission; constrained optional
+integers and nonempty collections reject null.
+
+`EventMessage` separates JSON payloads from SSE metadata (`id`, `event_name`,
+`retry`). An SSE ID is not a durable sequence or JSON event ID. Retry hints are
+informational. The pinned server sends data-only frames and heartbeat comments;
+this API does not synthesize `Last-Event-ID`, replay, or reconnect automatically.
+
+Each `EventStream` owns an independent connection and implements `Stream` plus
+an inherent async `next()`. No background task or event queue is created. Dropping
+or calling `close()` releases the subscription; it does not interrupt server work.
+Cancelling a pending `next()` retains parser/read state. Clean EOF returns `None`;
+a failure returns one error then `None`. A slow reader can overflow the server's
+queue and lose its connection. Recover by reopening and refreshing authoritative
+snapshots; snapshot ordering/deduplication and durable replay remain separate work.
+
+The handshake deadline defaults to 30 seconds, including bounded HTTP error-body
+reads. Body inactivity timeout is opt-in; heartbeat bytes count as activity.
+Ordinary `request_timeout` and `max_response_bytes` do not apply. Injected reqwest
+deadlines still apply. `max_event_bytes` defaults to 8 MiB per SSE block, including
+comments/ignored fields and treating CRLF as one terminator. Invalid UTF-8 uses
+replacement characters, which can expand strings by up to 3×; the HTTP stack's
+current chunk allocation is outside this budget. Error diagnostics retain at most
+`max_error_body_bytes` (8 KiB by default).
+
+The decoder handles fragmented UTF-8, BOM, CR/LF/CRLF, multiline data, comments,
+IDs, and retry hints. Unterminated events at EOF are discarded. A special
+`effect/http-api/stream/failure` frame becomes `Error::Stream`, as do handshake/
+idle timeouts, invalid content types, and oversized frames. Default error formatting
+is redacted; event/model `Debug` and explicit diagnostic access can contain private
+conversation data.
+
 ## Configuration and behavior
 
 - Base URLs accept an optional reverse-proxy prefix: `https://host/opencode`
@@ -373,11 +440,11 @@ delivery during active runs, and completed model responses remain unverified.
   Supply the server base, without an `/api` suffix. URL credentials, queries, and
   fragments are rejected; use headers for authentication.
 - Client clones share the transport. The default transport has a 10-second
-  connection timeout, a 30-second request deadline including body reads, and no
+  connection timeout, a 30-second ordinary request deadline including body reads, and no
   redirects or automatic retries.
 - `http_client` accepts a configured `reqwest::Client`. Its DNS, proxy, TLS,
   redirect, retry, and connection policies remain in effect. SDK headers and the
-  SDK request timeout override transport defaults. Configure connection timeouts
+  SDK ordinary request timeout override transport defaults. Configure connection timeouts
   on the injected client; combining it with `connect_timeout` returns a build
   error. `without_request_timeout` removes only the SDK deadline.
 - The default `rustls` feature enables HTTPS. `--no-default-features` supports
@@ -401,7 +468,7 @@ delivery during active runs, and completed model responses remain unverified.
 ## Errors
 
 `BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
-`Error::Http`, `Error::Decode`, or `Error::ResponseTooLarge`. Use `operation()`,
+`Error::Http`, `Error::Decode`, `Error::ResponseTooLarge`, or `Error::Stream`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
 methods expect exactly HTTP 200; session update/remove/switch and inbox update/cancel methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
@@ -444,11 +511,11 @@ The pinned schema and provenance live in [`openapi/`](openapi/). The implemented
 operations also pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
 arm64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
 see [compatibility details and CI](tools/live/README.md) for prerequisites, release
-checksums, verified behavior, and limitations. Other endpoints and event streams
-are not yet implemented.
+checksums, verified behavior, and limitations. Durable session logs and other endpoints remain unimplemented; live model execution
+and server-overflow behavior are not yet exercised.
 
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
-contains the initial experiment and reviewed server-info/discovery/session/message/inbox generation commands.
+contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.

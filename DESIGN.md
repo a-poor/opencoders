@@ -3,8 +3,8 @@
 Status: foundation implemented through `server.info()`, location/agent/model discovery
 with configurable location selection, plus session creation,
 retrieval, updates, deletion, agent/model selection, filtered/paginated listing,
-message history/retrieval, prompt admission, and inbox management. Broader API and
-streaming sections remain the implementation plan.
+message history/retrieval, prompt admission, inbox management, and live event
+subscriptions. Broader APIs and durable session logs remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
 audience is developers building GUI, TUI, desktop, and other interactive OpenCode
@@ -258,8 +258,7 @@ Projected messages use the eleven-kind `SessionMessageInfo` enum, boxed payloads
 and common `id()`/`message_type()` accessors. Nested assistant content, tool states,
 compaction states, and attachments are typed. These reads do not represent pending
 inbox items or live events. Unknown kinds fail decoding, consistently with the
-current model policy; future event streams will use their separately planned
-unknown-event fallback. Applications own message presentation and state.
+current model policy; live event streams have a separate unknown-event fallback. Applications own message presentation and state.
 
 Use typed request structs with constructors or defaults for common cases. Provide
 lightweight ID types where they prevent mixing session, message, and other IDs.
@@ -433,20 +432,38 @@ some are needed for the core session experience.
 
 ## Streaming and interactive state
 
-Expose asynchronous streams with items shaped as `Result<Event, Error>` and
-equivalent types for session log items. Preserve SSE identifiers and relevant
-log watermark information alongside decoded data where necessary for recovery.
+`client.events().subscribe(&EventOptions)` implements global, live-only
+`event.subscribe`. Repeated type filters preserve caller values; an empty list
+requests all events. Location defaults do not scope this route. Each call owns
+an independent connection and returns `EventStream`, implementing
+`Stream<Item = Result<EventMessage>>` and an inherent async `next()`.
 
-For the first implementation, each explicit subscription owns its connection.
-Cloning a client shares the HTTP pool, not an implicit event subscription. A UI
-can consume one stream in a background task and distribute updates to its views.
-A shared subscription facility can follow if consumer experience justifies it;
-it would need explicit buffering, subscriber lifetime, and lag behavior.
+Generated `models::events` envelopes cover the 52 reviewed kinds listed in
+`tools/model-spike/event-roots.json`; `models::Event` dispatches tags explicitly.
+Unimplemented/future kinds retain raw JSON. Malformed implemented kinds fail.
+Nested inbox, status, and form unions use explicit dispatch; checked wrappers
+preserve safe integers, durable versions, and nonempty collections. SSE ID, event
+name, and retry hints remain separate from the JSON event and durable metadata.
 
-Streaming must handle chunk boundaries, multiline SSE data, comments/heartbeats,
-invalid payloads, clean EOF, and upstream failure events. Avoid unbounded internal
-queues. A slow consumer and a lost connection must be visible to the application.
-Do not reconnect silently and imply that the live feed is continuous.
+Subscriptions are caller-driven, with no background task, queue, reconnect, or
+replay. Closing/dropping releases the connection without interrupting execution;
+cancelling one pending read preserves partial decoder state. EOF yields `None`;
+errors yield once then terminate. Cloning a client shares the HTTP pool. A UI can
+own a background consumer and distribute updates itself.
+
+SSE framing handles arbitrary chunks, UTF-8 replacement, BOM, CR/LF/CRLF,
+multiline data, comments, and metadata. EOF discards unfinished events. Blocks
+are bounded (8 MiB default, including ignored fields, counting CRLF once); decoded
+replacement characters may expand up to 3× and HTTP chunk allocations remain
+outside that limit. Diagnostics use the client's bounded prefix limit. A server
+failure frame is terminal, with redacted default diagnostics.
+
+The handshake timeout defaults to 30 seconds and covers headers/error-body reads.
+Body inactivity timeout is opt-in and resets on bytes, including heartbeats.
+Ordinary request deadlines/response limits do not apply; injected HTTP-client
+policies still apply. No automatic retry or `Last-Event-ID` is synthesized.
+The server's bounded feed can overflow for slow consumers; no continuity is
+promised, and overflow-specific signaling is not yet live-tested.
 
 Library usage examples and documentation should demonstrate a recovery lifecycle:
 

@@ -2,6 +2,7 @@
 
 pub mod compat;
 pub mod discovery;
+pub mod event_models;
 pub mod events;
 pub mod inbox;
 pub mod messages;

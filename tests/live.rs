@@ -466,6 +466,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     verify_message_history(&client, &http, &url, &elsewhere).await;
     verify_selection(&client, &fallback, &elsewhere.id, workspace, other).await;
     verify_prompt_inbox(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
+    verify_events(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())
@@ -479,6 +480,103 @@ async fn pinned_server_discovery_and_session_pagination() {
         client
             .sessions()
             .list(&SessionListOptions::default())
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+}
+
+async fn verify_events(
+    client: &Client,
+    id: &opencoders::models::SessionId,
+    other: &opencoders::models::SessionId,
+) {
+    use opencoders::{
+        EventOptions, EventStream,
+        models::{Event, SessionPromptRequest},
+    };
+    async fn next(stream: &mut EventStream) -> opencoders::EventMessage {
+        tokio::time::timeout(Duration::from_secs(5), stream.next())
+            .await
+            .expect("live event deadline")
+            .expect("live feed closed")
+            .expect("live event failed")
+    }
+    // The client has a default directory. Events still span server locations.
+    let options = EventOptions::default().types([
+        "session.renamed",
+        "session.inbox.enqueued",
+        "session.inbox.cancelled",
+    ]);
+    let mut first = client.events().subscribe(&options).await.unwrap();
+    let mut second = client
+        .events()
+        .subscribe(&EventOptions::default().types(["session.renamed"]))
+        .await
+        .unwrap();
+    for stream in [&mut first, &mut second] {
+        let marker = next(stream).await;
+        assert!(matches!(marker.event, Event::ServerConnected(_)));
+        assert_eq!(marker.event_name, "message");
+        assert!(marker.id.is_none());
+    }
+    for (session, title) in [(id, "SSE first location"), (other, "SSE second location")] {
+        client
+            .sessions()
+            .update(session, &SessionUpdateRequest::default().title(title))
+            .await
+            .unwrap();
+        for stream in [&mut first, &mut second] {
+            let message = next(stream).await;
+            let Event::SessionRenamed(event) = message.event else {
+                panic!("expected rename")
+            };
+            assert_eq!(&event.data.session_id, session);
+            assert_eq!(event.data.title, title);
+            assert!(event.durable.seq.0.get() > 0);
+        }
+    }
+    let item = client
+        .sessions()
+        .prompt(
+            id,
+            &SessionPromptRequest::new("SSE pending fixture").resume(false),
+        )
+        .await
+        .unwrap()
+        .data;
+    let Event::SessionInboxEnqueued(event) = next(&mut first).await.event else {
+        panic!("expected enqueue")
+    };
+    assert_eq!(&event.data.session_id, id);
+    assert_eq!(event.data.inbox_id, item.id);
+    client.sessions().inbox(id).cancel(&item.id).await.unwrap();
+    assert!(matches!(
+        next(&mut first).await.event,
+        Event::SessionInboxCancelled(_)
+    ));
+    drop(first);
+    client
+        .sessions()
+        .update(
+            other,
+            &SessionUpdateRequest::default().title("SSE surviving subscription"),
+        )
+        .await
+        .unwrap();
+    // A filtered subscription must skip the preceding inbox events.
+    let Event::SessionRenamed(event) = next(&mut second).await.event else {
+        panic!("expected filtered rename")
+    };
+    assert_eq!(event.data.title, "SSE surviving subscription");
+    second.close();
+    assert!(second.next().await.is_none());
+    assert!(
+        client
+            .sessions()
+            .inbox(id)
+            .list()
             .await
             .unwrap()
             .data

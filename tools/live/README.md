@@ -63,6 +63,7 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.switchModel` | Empty HTTP 204; stored catalog model/variant, omitted variant normalized to `default`, repeated-reference deduplication, history markers, unknown provider/model acceptance, and typed missing-session errors. |
 | `session.message.list` | Empty/populated history, newest-first default, both ordering directions and next/previous traversal, type filters, empty boundary pages, invalid cursor and cursor/order conflicts, zero-limit rejection, and missing-session errors. |
 | `session.message.get` | Every imported message round-trips, including user attachments and assistant reasoning/tool content; missing and wrong-session message errors are typed. |
+| `event.subscribe` | Independent filtered SSE subscriptions, connected markers, typed renames across directories, inbox enqueue/cancel events, filter exclusion, and continued observation after dropping another subscription. |
 | `session.prompt` | Durable admission with `resume(false)`, explicit/generated IDs, omitted/null delivery defaulting to steer, empty text, inline file preparation, agent attachments, metadata, duplicate-ID reconciliation, cross-session conflicts, and preparation/missing-session errors. |
 | `session.inbox.list` | Pending user payloads, enqueue order independent of ID order, and no projected history before delivery. Other inbox kinds are covered by fixtures/mocks. |
 | `session.inbox.update` | Empty HTTP 204 for steer-to-queue changes; order retained; same-mode, unavailable, and wrong-session items return typed HTTP 409; missing sessions return 404. |
@@ -160,18 +161,28 @@ Waking, delivery during execution, already delivered/cancelled ID reuse, synthet
 compaction/move lifecycle, and experimental inbox media-reference negotiation remain
 unverified. Runtime ordering is not inferred from the pending-list snapshot.
 
+The live feed is global and live-only. The pinned [handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/event.ts)
+sends an initial connected event and heartbeat comments; its [feed](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/event-feed.ts)
+uses data-only SSE frames and a bounded subscriber queue. Live tests confirm
+connected markers despite filters and independent streams across locations, then
+observe no-wake inbox admission/cancellation. They do not exercise provider
+execution, heartbeat timing, slow-consumer overflow, or reconnect reconciliation.
+Fragmentation, heartbeats, EOF, transport failures, protocol failure frames, and
+timeouts are deterministic mock/socket tests. The declared failure-frame contract
+does not establish how every server disconnect or overflow will be signaled.
+
 The existing [`openapi/provenance.json`](../../openapi/provenance.json) describes
 the original schema download, whose originating server release remains unknown.
 Its `info.version: 0.0.1` is not this server's version. Testing v2.2.5 does not
 retroactively identify that schema's source release. Concurrent session changes,
-maximum page sizes, project/subpath filtering, explicit-null discovery queries, SSE,
+maximum page sizes, project/subpath filtering, explicit-null discovery queries, durable session logs,
 provider execution, and other platforms remain unverified.
 
 ## CI
 
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
 docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
-sets on Rust 1.88, Python runner tests, and all six checked-in generation targets.
+sets on Rust 1.88, Python runner tests, and all seven checked-in generation targets.
 Regeneration pins Rust/rustfmt 1.99.1 and uses the locked dependencies and local
 schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.

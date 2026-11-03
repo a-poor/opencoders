@@ -755,6 +755,9 @@ name = "opencoders"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "bytes",
+ "futures-core",
+ "futures-util",
  "regress",
  "reqwest",
  "serde",

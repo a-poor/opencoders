@@ -141,7 +141,29 @@ that Typify's adjacent-tag file-source decoder otherwise accepts, including an
 unexpected null `uri` on an inline source. Guards check request shapes, optionality,
 source unions, inbox tags, and opaque payload constraints before adaptation.
 Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
-`src/models/prompt_inputs.rs`. CI now verifies six generation targets.
+`src/models/prompt_inputs.rs`. CI verifies seven generation targets, including the event path below.
+
+## Reviewed live-event models
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --events
+cargo run --locked --offline -p opencoders-model-spike -- --events --check
+```
+
+`event-roots.json` records the 52 selected wire kinds, component schemas, and
+public variants. `src/event_models.rs` emits root `src/models/events.rs`, including
+explicit outer and nested inbox/status/form tag dispatch. Other kinds remain raw
+JSON; malformed selected kinds fail decoding. This production path is separate
+from the original two-kind experiment in `src/events.rs`.
+
+Shared response types are reused. `Location.Ref` stays distinct from the public
+location reference. Guarded scalar conversions enforce safe integers and exact
+durable versions; nonempty array wrappers avoid Typify's tuple representation.
+Optional constrained values reject null. Event fixtures exercise every selected
+kind; nested union tests verify required fields and extension retention. The
+generator rejects changed root tags, RPC patterns, unreviewed numeric constraints,
+and nonempty-array/tagged-union shapes. Generation remains offline and explicit.
+
 
 ## Run the experiment
 

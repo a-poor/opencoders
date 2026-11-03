@@ -1,0 +1,762 @@
+[
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.status",
+    "data": {
+      "sessionID": "ses_fixture",
+      "status": {
+        "type": "idle"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "rpc.fixture",
+    "location": {
+      "directory": "fixture"
+    },
+    "data": {}
+  },
+  {
+    "id": "evt__fixture",
+    "type": "server.connected",
+    "data": {}
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "form.cancelled",
+    "data": {
+      "id": "frm__fixture",
+      "sessionID": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "form.created",
+    "data": {
+      "form": {
+        "id": "frm__fixture",
+        "sessionID": "fixture",
+        "title": "fixture",
+        "fields": [
+          {
+            "key": "fixture",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "form.replied",
+    "data": {
+      "id": "frm__fixture",
+      "sessionID": "fixture",
+      "answer": {}
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "permission.asked",
+    "data": {
+      "id": "per_fixture",
+      "sessionID": "ses_fixture",
+      "action": "fixture",
+      "resources": []
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "permission.replied",
+    "data": {
+      "sessionID": "ses_fixture",
+      "requestID": "per_fixture",
+      "reply": "once"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.agent.selected",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "agent": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.archived",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.compaction.delta",
+    "data": {
+      "sessionID": "ses_fixture",
+      "text": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.compaction.ended",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "reason": "auto",
+      "text": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.compaction.failed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "reason": "auto",
+      "error": {
+        "type": "fixture",
+        "message": "fixture"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.compaction.started",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "reason": "auto"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.created",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "projectID": "fixture",
+      "location": {
+        "directory": "fixture"
+      },
+      "slug": "fixture",
+      "version": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.deleted",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 2
+    },
+    "data": {
+      "sessionID": "ses_fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.execution.failed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "error": {
+        "type": "fixture",
+        "message": "fixture"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.execution.interrupted",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "reason": "user"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.execution.started",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.execution.succeeded",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.forked",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 2
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "parentID": "ses_fixture",
+      "boundary": {
+        "type": "before",
+        "messageID": "msg__fixture"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.idle",
+    "data": {
+      "sessionID": "ses_fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.inbox.cancelled",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "inboxID": "msg__fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.inbox.delivered",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "inboxID": "msg__fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.inbox.delivery.changed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "inboxID": "msg__fixture",
+      "delivery": "steer"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.inbox.enqueued",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "inboxID": "msg__fixture",
+      "item": {
+        "type": "user",
+        "payload": {
+          "text": "fixture"
+        },
+        "delivery": "steer"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.metadata.updated",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "metadata": {}
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.model.selected",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "model": {
+        "id": "fixture",
+        "providerID": "fixture"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.moved",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "location": {
+        "directory": "fixture"
+      },
+      "projectID": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.permissions",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "permissions": []
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.reasoning.delta",
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "ordinal": 0,
+      "delta": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.reasoning.ended",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "ordinal": 0,
+      "text": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.reasoning.started",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "ordinal": 0
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.renamed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "title": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.retry.scheduled",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "attempt": 1,
+      "at": 0,
+      "error": {
+        "type": "fixture",
+        "message": "fixture"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.step.ended",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "finish": "stop",
+      "cost": 1,
+      "tokens": {
+        "input": 1,
+        "output": 1,
+        "reasoning": 1,
+        "cache": {
+          "read": 1,
+          "write": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.step.failed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "error": {
+        "type": "fixture",
+        "message": "fixture"
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.step.started",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "agent": "fixture",
+      "model": {
+        "id": "fixture",
+        "providerID": "fixture"
+      },
+      "started": 0
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.step.streamed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.text.delta",
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "ordinal": 0,
+      "delta": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.text.ended",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "ordinal": 0,
+      "text": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.text.started",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "ordinal": 0
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.tool.called",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "id": "fixture",
+      "input": {},
+      "executed": false
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.tool.failed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 2
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "id": "fixture",
+      "error": {
+        "type": "fixture",
+        "message": "fixture"
+      },
+      "executed": false
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.tool.input.delta",
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "id": "fixture",
+      "delta": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.tool.input.ended",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "id": "fixture",
+      "text": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.tool.input.started",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "id": "fixture",
+      "name": "fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.tool.progress",
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "id": "fixture",
+      "metadata": {}
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.tool.success",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 2
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "assistantMessageID": "msg__fixture",
+      "id": "fixture",
+      "content": [
+        {
+          "type": "text",
+          "text": "fixture"
+        }
+      ],
+      "executed": false
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.unarchived",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture"
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.usage.updated",
+    "data": {
+      "sessionID": "ses_fixture",
+      "cost": 1,
+      "tokens": {
+        "input": 1,
+        "output": 1,
+        "reasoning": 1,
+        "cache": {
+          "read": 1,
+          "write": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "evt__fixture",
+    "created": 1,
+    "type": "session.viewed",
+    "durable": {
+      "aggregateID": "fixture",
+      "seq": 0,
+      "version": 1
+    },
+    "data": {
+      "sessionID": "ses_fixture",
+      "idle": 1
+    }
+  }
+]

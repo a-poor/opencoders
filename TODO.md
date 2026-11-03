@@ -53,8 +53,8 @@ No active implementation goal.
 
 ### Crate and transport
 
-- [ ] Separate ordinary-request timeouts from streaming and long-running
-  operations; document local cancellation versus server-side interruption.
+- [ ] Choose timeout behavior for long-running execution/wait operations.
+  Live subscriptions already have separate handshake and idle deadlines.
 - [ ] Extend response handling to endpoints with multiple success statuses.
   Empty HTTP 204 responses are supported. Add typed API errors as resources need them.
 - [ ] Apply the established request/ID and omitted/null/value conventions to
@@ -83,30 +83,20 @@ No active implementation goal.
 
 ### Events and session logs
 
-- [ ] Implement global event subscriptions returning typed asynchronous streams,
-  including event filters and connection markers.
-- [ ] Model text/reasoning deltas, tool activity, session lifecycle, permissions,
-  and forms needed by interactive consumers.
-- [ ] Add an unknown-event fallback retaining raw data; keep malformed known
-  events distinguishable as decoding errors.
-- [ ] Implement SSE framing, comments/heartbeats, multiline data, EOF, and the
-  upstream stream-failure event.
 - [ ] Implement durable session log reads with exclusive `after` sequences,
   optional following, SSE identifiers, and synchronization markers.
-- [ ] Verify independent subscription lifetimes, drop cancellation, bounded
-  buffering, and visible disconnect/lag behavior.
-- [ ] Test fragmented SSE frames, failure events, unknown variants, cancellation,
-  disconnection, and durable replay boundaries.
+- [ ] Test durable replay boundaries and synchronization markers.
+- [ ] Exercise server queue overflow/slow-consumer behavior against the pinned
+  implementation; deterministic tests already cover visible failures and EOF.
 - [ ] Verify snapshot/event ordering and recovery behavior against upstream;
   document which steps remain the consuming application's responsibility.
 
 ### Examples and first usable release
 
-- [ ] Add runnable Rust examples for event consumption, permission replies,
-  and form replies. Use ordinary output
+- [ ] Add runnable Rust examples for permission replies and form replies. Use ordinary output
   or assertions, with no GUI/TUI implementation. Session listing, creation, and
   update/deletion lifecycle, model/agent configuration, message history, and
-  prompt/inbox examples are implemented.
+  prompt/inbox and live event examples are implemented.
 - [ ] Add an example of background event consumption and recovery after
   disconnection using minimal application-owned state.
 - [ ] Add an automation example using the same API surface.
@@ -223,6 +213,29 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Complete live event subscriptions with TDD: `events().subscribe(&options)`
+  returns an independent `EventStream`, with repeated type filters, SSE metadata,
+  separate handshake/idle deadlines, explicit close/drop cancellation, and one
+  terminal error or clean EOF. No background queue, retry, replay, or UI.
+- [x] Generate 52 reviewed event kinds through `--events`, with strict dispatch,
+  raw fallback for other kinds, preserved envelope/extensions, safe integers,
+  exact durable versions, and nonempty content/form fields. Validate every kind
+  with fixtures and guard generation adapters against schema drift.
+- [x] Implement bounded incremental SSE framing, BOM/UTF-8 and CR/LF/CRLF handling,
+  comments, multiline data, metadata persistence, partial-event EOF discard, and
+  protocol failure frames. Test fragmented streams, heartbeat/timeout behavior,
+  injected transport deadlines, cancelled reads, and independent connection cleanup.
+- [x] Verify filtered global feeds, connected markers, cross-location renames,
+  inbox admission/cancellation, and surviving subscriptions on disposable
+  OpenCode v2.2.5/macOS arm64 without model calls. Add `examples/events.rs`, usage,
+  architecture/compatibility notes, and the seventh CI generation check.
+- [x] Validate 141 client tests, 33 generator tests, nine doctests/examples,
+  HTTP-only tests, both Rust 1.88 builds, formatting, Clippy, docs, all seven
+  generation checks, actionlint, runner tests, and the live smoke test. Durable
+  logs/recovery, overflow-specific live behavior, and hosted Linux checks remain
+  tracked separately. No automatic commit.
+
 
 - [x] Complete prompt/inbox APIs with TDD: `sessions().prompt(&id, &request)` and
   `sessions().inbox(&id).list/update/cancel`. Preserve admitted/list envelopes,

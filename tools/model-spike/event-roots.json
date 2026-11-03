@@ -1,0 +1,262 @@
+[
+  {
+    "schema": "SessionStatusUpdated",
+    "variant": "SessionStatus",
+    "type": "session.status"
+  },
+  {
+    "schema": "V2Event.rpc",
+    "variant": "Rpc",
+    "type": "rpc.*"
+  },
+  {
+    "schema": "V2Event.server.connected",
+    "variant": "ServerConnected",
+    "type": "server.connected"
+  },
+  {
+    "schema": "form.cancelled",
+    "variant": "FormCancelled",
+    "type": "form.cancelled"
+  },
+  {
+    "schema": "form.created",
+    "variant": "FormCreated",
+    "type": "form.created"
+  },
+  {
+    "schema": "form.replied",
+    "variant": "FormReplied",
+    "type": "form.replied"
+  },
+  {
+    "schema": "permission.asked",
+    "variant": "PermissionAsked",
+    "type": "permission.asked"
+  },
+  {
+    "schema": "permission.replied",
+    "variant": "PermissionReplied",
+    "type": "permission.replied"
+  },
+  {
+    "schema": "session.agent.selected",
+    "variant": "SessionAgentSelected",
+    "type": "session.agent.selected"
+  },
+  {
+    "schema": "session.archived",
+    "variant": "SessionArchived",
+    "type": "session.archived"
+  },
+  {
+    "schema": "session.compaction.delta",
+    "variant": "SessionCompactionDelta",
+    "type": "session.compaction.delta"
+  },
+  {
+    "schema": "session.compaction.ended",
+    "variant": "SessionCompactionEnded",
+    "type": "session.compaction.ended"
+  },
+  {
+    "schema": "session.compaction.failed",
+    "variant": "SessionCompactionFailed",
+    "type": "session.compaction.failed"
+  },
+  {
+    "schema": "session.compaction.started",
+    "variant": "SessionCompactionStarted",
+    "type": "session.compaction.started"
+  },
+  {
+    "schema": "session.created",
+    "variant": "SessionCreated",
+    "type": "session.created"
+  },
+  {
+    "schema": "session.deleted",
+    "variant": "SessionDeleted",
+    "type": "session.deleted"
+  },
+  {
+    "schema": "session.execution.failed",
+    "variant": "SessionExecutionFailed",
+    "type": "session.execution.failed"
+  },
+  {
+    "schema": "session.execution.interrupted",
+    "variant": "SessionExecutionInterrupted",
+    "type": "session.execution.interrupted"
+  },
+  {
+    "schema": "session.execution.started",
+    "variant": "SessionExecutionStarted",
+    "type": "session.execution.started"
+  },
+  {
+    "schema": "session.execution.succeeded",
+    "variant": "SessionExecutionSucceeded",
+    "type": "session.execution.succeeded"
+  },
+  {
+    "schema": "session.forked",
+    "variant": "SessionForked",
+    "type": "session.forked"
+  },
+  {
+    "schema": "session.idle",
+    "variant": "SessionIdle",
+    "type": "session.idle"
+  },
+  {
+    "schema": "session.inbox.cancelled",
+    "variant": "SessionInboxCancelled",
+    "type": "session.inbox.cancelled"
+  },
+  {
+    "schema": "session.inbox.delivered",
+    "variant": "SessionInboxDelivered",
+    "type": "session.inbox.delivered"
+  },
+  {
+    "schema": "session.inbox.delivery.changed",
+    "variant": "SessionInboxDeliveryChanged",
+    "type": "session.inbox.delivery.changed"
+  },
+  {
+    "schema": "session.inbox.enqueued",
+    "variant": "SessionInboxEnqueued",
+    "type": "session.inbox.enqueued"
+  },
+  {
+    "schema": "session.metadata.updated",
+    "variant": "SessionMetadataUpdated",
+    "type": "session.metadata.updated"
+  },
+  {
+    "schema": "session.model.selected",
+    "variant": "SessionModelSelected",
+    "type": "session.model.selected"
+  },
+  {
+    "schema": "session.moved",
+    "variant": "SessionMoved",
+    "type": "session.moved"
+  },
+  {
+    "schema": "session.permissions",
+    "variant": "SessionPermissions",
+    "type": "session.permissions"
+  },
+  {
+    "schema": "session.reasoning.delta",
+    "variant": "SessionReasoningDelta",
+    "type": "session.reasoning.delta"
+  },
+  {
+    "schema": "session.reasoning.ended",
+    "variant": "SessionReasoningEnded",
+    "type": "session.reasoning.ended"
+  },
+  {
+    "schema": "session.reasoning.started",
+    "variant": "SessionReasoningStarted",
+    "type": "session.reasoning.started"
+  },
+  {
+    "schema": "session.renamed",
+    "variant": "SessionRenamed",
+    "type": "session.renamed"
+  },
+  {
+    "schema": "session.retry.scheduled",
+    "variant": "SessionRetryScheduled",
+    "type": "session.retry.scheduled"
+  },
+  {
+    "schema": "session.step.ended",
+    "variant": "SessionStepEnded",
+    "type": "session.step.ended"
+  },
+  {
+    "schema": "session.step.failed",
+    "variant": "SessionStepFailed",
+    "type": "session.step.failed"
+  },
+  {
+    "schema": "session.step.started",
+    "variant": "SessionStepStarted",
+    "type": "session.step.started"
+  },
+  {
+    "schema": "session.step.streamed",
+    "variant": "SessionStepStreamed",
+    "type": "session.step.streamed"
+  },
+  {
+    "schema": "session.text.delta",
+    "variant": "SessionTextDelta",
+    "type": "session.text.delta"
+  },
+  {
+    "schema": "session.text.ended",
+    "variant": "SessionTextEnded",
+    "type": "session.text.ended"
+  },
+  {
+    "schema": "session.text.started",
+    "variant": "SessionTextStarted",
+    "type": "session.text.started"
+  },
+  {
+    "schema": "session.tool.called",
+    "variant": "SessionToolCalled",
+    "type": "session.tool.called"
+  },
+  {
+    "schema": "session.tool.failed",
+    "variant": "SessionToolFailed",
+    "type": "session.tool.failed"
+  },
+  {
+    "schema": "session.tool.input.delta",
+    "variant": "SessionToolInputDelta",
+    "type": "session.tool.input.delta"
+  },
+  {
+    "schema": "session.tool.input.ended",
+    "variant": "SessionToolInputEnded",
+    "type": "session.tool.input.ended"
+  },
+  {
+    "schema": "session.tool.input.started",
+    "variant": "SessionToolInputStarted",
+    "type": "session.tool.input.started"
+  },
+  {
+    "schema": "session.tool.progress",
+    "variant": "SessionToolProgress",
+    "type": "session.tool.progress"
+  },
+  {
+    "schema": "session.tool.success",
+    "variant": "SessionToolSuccess",
+    "type": "session.tool.success"
+  },
+  {
+    "schema": "session.unarchived",
+    "variant": "SessionUnarchived",
+    "type": "session.unarchived"
+  },
+  {
+    "schema": "session.usage.updated",
+    "variant": "SessionUsageUpdated",
+    "type": "session.usage.updated"
+  },
+  {
+    "schema": "session.viewed",
+    "variant": "SessionViewed",
+    "type": "session.viewed"
+  }
+]

@@ -9,6 +9,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut spec: Value =
         serde_json::from_slice(&fs::read(root.join("openapi/opencode-v2.json"))?)?;
     let args: Vec<_> = env::args().skip(1).collect();
+    if args == ["--events"] || args == ["--events", "--check"] {
+        let output = opencoders_model_spike::event_models::generate_events(&spec)?;
+        let path = root.join("src/models/events.rs");
+        if args.len() == 2 {
+            if fs::read_to_string(&path)? != output {
+                return Err("event models are stale; regenerate with --events".into());
+            }
+            println!("Event models match the pinned inputs");
+        } else {
+            fs::write(&path, output)?;
+            println!("Generated {}", path.display());
+        }
+        return Ok(());
+    }
     if args == ["--inbox"] || args == ["--inbox", "--check"] {
         let output = opencoders_model_spike::inbox::generate_inbox(&spec)?;
         let path = root.join("src/models/inbox.rs");
@@ -91,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         || (check && (all || raw))
     {
         return Err(
-            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check]]".into(),
+            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check] | --events [--check]]".into(),
         );
     }
     let config: Value = serde_json::from_str(include_str!("../probes.json"))?;

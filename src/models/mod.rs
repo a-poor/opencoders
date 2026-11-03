@@ -9,6 +9,13 @@
 //! Unknown closed enum values are decoding errors. Model types and reasoning-field
 //! names are open strings, as specified by the schema.
 
+/// Generated live-event envelopes and their payloads.
+#[rustfmt::skip]
+pub mod events;
+pub use events::Event;
+mod event_adapters;
+pub use event_adapters::{EventInteger, EventVersion, NonEmptyEventItems};
+
 use crate::RequestField;
 #[rustfmt::skip]
 mod inbox;

@@ -31,6 +31,88 @@ struct Inner {
 }
 
 impl Client {
+    /// Subscribe to global, live-only server events.
+    pub fn events(&self) -> crate::Events<'_> {
+        crate::Events { client: self }
+    }
+
+    pub(crate) async fn open_event_response(
+        &self,
+        options: &crate::EventOptions,
+    ) -> Result<(reqwest::Response, usize)> {
+        use crate::{StreamError, StreamErrorKind};
+        const OP: &str = "event.subscribe";
+        let mut url = self
+            .inner
+            .base_url
+            .join("api/event")
+            .expect("validated base URL");
+        if !options.types.is_empty() {
+            url.query_pairs_mut()
+                .extend_pairs(options.types.iter().map(|value| ("types", value)));
+        }
+        let mut status = None;
+        let handshake = async {
+            let headers =
+                HeaderMap::from_iter([(ACCEPT, HeaderValue::from_static("text/event-stream"))]);
+            let mut response = self
+                .request(Method::GET, url)
+                .headers(headers)
+                .send()
+                .await
+                .map_err(|source| Error::Transport(TransportError::new(OP, None, source)))?;
+            let code = response.status();
+            status = Some(code);
+            if code != StatusCode::OK {
+                let limit = self.inner.max_error_body_bytes;
+                let mut body = Vec::new();
+                let mut truncated = false;
+                while let Some(chunk) = response.chunk().await.map_err(|source| {
+                    Error::Transport(TransportError::new(OP, Some(code), source))
+                })? {
+                    let remaining = limit - body.len();
+                    body.extend_from_slice(&chunk[..remaining.min(chunk.len())]);
+                    if chunk.len() > remaining {
+                        truncated = true;
+                        break;
+                    }
+                }
+                return Err(Error::Http(Box::new(HttpError::new(
+                    OP, code, body, truncated,
+                ))));
+            }
+            let valid = response
+                .headers()
+                .get(CONTENT_TYPE)
+                .and_then(|v| v.to_str().ok())
+                .is_some_and(|v| {
+                    v.split(';')
+                        .next()
+                        .unwrap_or("")
+                        .trim()
+                        .eq_ignore_ascii_case("text/event-stream")
+                });
+            if !valid {
+                return Err(Error::Stream(StreamError::new(
+                    StreamErrorKind::InvalidContentType,
+                    Some(code),
+                )));
+            }
+            Ok((response, self.inner.max_error_body_bytes))
+        };
+        if let Some(timeout) = options.handshake_timeout {
+            match tokio::time::timeout(timeout, handshake).await {
+                Ok(result) => result,
+                Err(_) => Err(Error::Stream(StreamError::new(
+                    StreamErrorKind::HandshakeTimeout,
+                    status,
+                ))),
+            }
+        } else {
+            handshake.await
+        }
+    }
+
     /// Construct a client with defaults. See [`ClientBuilder`] for configuration.
     pub fn new(base_url: impl Into<String>) -> std::result::Result<Self, BuildError> {
         Self::builder(base_url).build()
