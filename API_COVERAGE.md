@@ -33,7 +33,7 @@ Protocol links identify representative tests; their files also contain error/bou
 | --- | --- | --- | --- | --- |
 | `agent.get` | `GET /api/agent/{agentID}` | [Agents::get / get_at](src/agents.rs#L21) | [discovery_preserves_envelopes_defaults_overrides_and_repeated_types](tests/selection.rs#L19) | [catalog](#evidence-catalog) |
 | `agent.list` | `GET /api/agent` | [Agents::list / list_at](src/agents.rs#L55) | [default_location_applies_only_to_location_aware_routes](tests/discovery.rs#L48) | [discovery](#evidence-discovery) |
-| `event.subscribe` | `GET /api/event` | [Events::subscribe](src/events.rs#L81) | [subscription_uses_explicit_filters_headers_and_preserves_sse_metadata](tests/events.rs#L16) | [events](#evidence-events) |
+| `event.subscribe` | `GET /api/event` | [Events::subscribe](src/events.rs#L81) | [subscription_uses_explicit_filters_headers_and_preserves_sse_metadata](tests/events.rs#L16), [explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations](tests/background_session.rs#L231) | [events](#evidence-events) |
 | `experimental.session.log` | `GET /api/experimental/session/{sessionID}/log` | [Sessions::experimental_log](src/session_log.rs#L97) | [log_encodes_explicit_queries_and_segments_and_retains_markers_and_sse_ids](tests/session_log.rs#L19) | [log](#evidence-log) |
 | `experimental.session.wait` | `POST /api/experimental/session/{sessionID}/wait` | [Sessions::experimental_wait](src/execution.rs#L98) | [wait_posts_without_a_body_query_or_location_and_accepts_only_204](tests/execution.rs#L72) | [execution](#evidence-execution) |
 | `form.list` | `GET /api/form` | [Forms::list / list_at](src/forms.rs#L18) | [forms_use_location_for_discovery_and_session_paths_for_lifecycle](tests/forms.rs#L265) | [forms](#evidence-forms) |
@@ -239,8 +239,8 @@ The smoke run checks independent filtered SSE subscriptions, connected markers, 
 
 - **Live assertions:** [verify_events](tests/live.rs#L1472).
 - **Source-reviewed only:** The pinned global feed is live-only, sends heartbeat comments and uses a bounded subscriber queue.
-- **Still unverified live:** Active model-output delivery, heartbeat timing, server slow-consumer overflow and reconnect/snapshot reconciliation. Framing, EOF, failures and deadlines have deterministic protocol tests.
-- **Examples:** [events](examples/events.rs).
+- **Still unverified live:** Active model-output delivery, heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live ordering.
+- **Examples:** [events](examples/events.rs), [background_session](examples/background_session.rs).
 
 ### Evidence: execution
 

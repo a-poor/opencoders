@@ -665,6 +665,55 @@ idle timeouts, invalid content types, and oversized frames. Default error format
 is redacted; event/model `Debug` and explicit diagnostic access can contain private
 conversation data.
 
+## Background session observation
+
+[`examples/background_session.rs`](examples/background_session.rs) demonstrates
+a background reader and minimal application-owned state without a UI framework.
+With `OPENCODE_BASE_URL` and `OPENCODE_SESSION_ID` set (and optionally
+`OPENCODE_PASSWORD`), run:
+
+```sh
+cargo run --example background_session
+```
+
+The read-only example runs for 30 seconds with at most three connection attempts.
+It opens the live subscription before fetching session, recent-history, inbox,
+permission and form snapshots. It refreshes those snapshots every second and
+after every explicit reconnect. History is one page of at most 50 messages;
+the response's opaque cursor remains available for caller-controlled pagination.
+Each snapshot response is limited to 1 MiB. The views are separate reads, not an
+atomic snapshot or a complete transcript.
+
+The [example's state and task code](examples/support/session_observer.rs) shows
+the integration policy:
+
+- A reader task feeds a bounded queue of 32 events, with a 64 KiB SSE block limit.
+  When the queue fills, the reader closes and reports lag through its task result,
+  independently of the full queue. These limits exclude HTTP chunk allocation
+  and decoded-object overhead; they are not a process-memory cap.
+- Relevant events invalidate snapshots. Text deltas update only a separate
+  256-character preview of the latest fragment, associated with its message ID.
+  They are never appended to saved history. Previews may overlap, repeat or miss
+  output; the example prints counts rather than conversation content.
+- Events buffered before/during a refresh request another refresh instead of
+  patching the new snapshot. This avoids duplicate text and stale overwrites.
+  Unknown or unhandled transient kinds conservatively invalidate the view;
+  unknown payloads are counted without being retained by the example.
+- EOF, lag and errors leave the last successful snapshot visibly stale. Partial
+  refresh results are not published. The caller explicitly reconnects, subscribes
+  and refreshes again; no SSE ID, log watermark or retry hint supplies continuity.
+- Shutdown cancels and joins the reader. Dropping the connection aborts it as a
+  fallback, rather than detaching a task. Cancelling local observation does not
+  interrupt server execution or reply to pending requests.
+
+[`tests/background_session.rs`](tests/background_session.rs) uses controlled
+HTTP/SSE fixtures to verify missed-change convergence, overlapping snapshots,
+incremental previews, queue overflow, failed/cancelled refreshes and independent
+shutdown. Convergence is demonstrated after changes settle; concurrent server
+reads are still not atomic. This is mock-tested application policy, not a live
+validation of model output, server overflow, or reconnect ordering on v2.2.5.
+The SDK itself still creates no tasks, queues or automatic reconnect loop.
+
 ## Experimental durable session logs
 
 ```rust

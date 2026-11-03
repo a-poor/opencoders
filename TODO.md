@@ -83,14 +83,8 @@ No active implementation goal.
 
 ### Examples and first usable release
 
-- [ ] Next goal: add a background session observer example using minimal
-  application-owned state. Demonstrate bounded buffering, cancellation, visible
-  stream failures/lag, explicit reconnect and snapshot refresh; test convergence
-  after missed events without promising atomic snapshot/event ordering. See
-  `RELEASE_READINESS.md` for completion checks. Existing `examples/session_log.rs`
-  demonstrates explicit resumption/refresh without a background task.
-- [ ] Add a bounded automation example using the same APIs: admit input, observe
-  progress and inspect history/pending work after waiting. Distinguish admission,
+- [ ] Next goal: add a bounded automation example using the same APIs: admit
+  input, observe progress and inspect history/pending work after waiting. Distinguish admission,
   idleness and successful completion; document deadlines and cleanup.
 - [ ] Extend opt-in compatibility testing to active incremental output,
   interruption/settlement and actual permission/form tool resumption. Investigate
@@ -235,6 +229,25 @@ when a decision is made.
 
 ## Completed
 
+- [x] Add `examples/background_session.rs` with example-owned state and a bounded
+  background SSE reader. Subscribe before reading session, one recent history
+  page and inbox/permission/form snapshots; refresh periodically and after
+  explicit reconnects. Keep bounded text-fragment previews separate from history
+  and treat buffered/unknown events as invalidations rather than snapshot patches.
+- [x] Report lag/EOF/errors independently of the full event queue, retain stale
+  snapshots on failure, publish only complete fetch bundles, and abort/join the
+  reader on shutdown. Add nine deterministic HTTP/SSE tests for missed-change
+  convergence, snapshot overlap, scoped previews, full queues including during
+  refresh, failures/cancellation and independent task lifetime. No UI, public
+  state store, model calls or automatic mutation retries.
+- [x] Update README/design/readiness and coverage evidence for the observer. Its
+  recovery policy is mock-tested; live concurrent ordering, active model output
+  and server queue overflow remain unverified. Validate 200 client tests in
+  default/HTTP-only configurations, 39 generator tests, fourteen doctests, all
+  fifteen examples on Rust 1.88 with both configurations, strict Clippy,
+  formatting, warning-free docs, coverage checks/eight checker tests and local
+  documentation links.
+  No new live-server run or automatic commit of this example.
 - [x] Audit all 169 pinned operations: 35 supported with public methods/protocol
   references, 129 planned (34 milestone 3, 95 milestone 4), and 5 explicit
   deferrals. Keep live scope, source-reviewed findings and unverified behavior

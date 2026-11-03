@@ -1,6 +1,6 @@
 # Milestone 2 release readiness
 
-Audit: **2026-11-02**, against the checked-in schema and the recorded OpenCode
+Audit and observer follow-up: **2026-11-02**, against the checked-in schema and the recorded OpenCode
 **v2.2.5 / macOS arm64** smoke run. This audit does not rerun that server test or
 establish Linux compatibility. It proposes the remaining work for the first
 usable release; no release or publication has been performed.
@@ -38,22 +38,23 @@ The criteria below come from [DESIGN.md](DESIGN.md#implementation-milestones).
 | Criterion | Present evidence | Remaining gap |
 | --- | --- | --- |
 | Session listing and history | Runnable examples, protocol tests and imported settled transcripts on the pinned server. | Concurrent/active snapshots are not validated. |
-| Incremental output | Typed live SSE, parser/failure/deadline tests and manual mutation events. | No integrated background consumer or active model-output run. |
+| Incremental output | Typed SSE plus the background observer's bounded transient previews, with deterministic HTTP/SSE tests. | No active model-output run. Previews are not reconstructed transcripts. |
 | Permission/form replies | Typed lifecycle APIs, six form field kinds, reply effects and manual live fixtures. | No real waiting-tool resumption after a reply. |
 | Execution outcomes | Prompt admission, pending inbox control, interruption and bounded waits. | Live prompts are parked with `resume(false)`; interrupts/waits exercise idle sessions. Wait returning does not prove prompt success. |
-| Recovery after disconnection | Explicit log cursors, finite/follow reads, snapshot-refresh example and mock failure handling. | No integrated disconnect/reconnect reconciliation demonstration; stock v2.2.5 CLI retains no event payloads. |
+| Recovery after disconnection | Background observer and deterministic missed-change, overlap, lag, cancellation and reconnect tests; explicit log cursors remain available separately. | Live reconnect ordering/overflow remains unverified; stock v2.2.5 CLI retains no event payloads. |
 | Library use outside a UI | Individual examples share the same client and runtime. | A complete bounded automation example remains to be written. |
 
 ## Prioritized completion plan
 
 ### 1. Demonstrate application-owned event state and recovery
 
-Next goal: add a small **background session observer example**, with behavioral
-tests for its reconciliation logic. Use the existing API and caller-owned Tokio
-runtime. Keep state in the example, without a GUI/TUI dependency or a public
-state-store abstraction.
+Completed as [`examples/background_session.rs`](examples/background_session.rs),
+with example-owned state and [behavioral tests](tests/background_session.rs).
+It uses the existing API and caller-owned Tokio runtime, without a GUI/TUI
+dependency or public state-store abstraction. Its bounded queue reports failure
+out of band; snapshots and transient text previews remain separate.
 
-Completion checks:
+Implemented checks (deterministic fixtures, not a new live-server claim):
 
 - Read an initial session/history/pending-request snapshot and consume relevant
   events without describing the combination as an atomic snapshot.
@@ -71,6 +72,9 @@ natural retention across restart/forks remains open; it need not block a release
 whose documented recovery path relies on refreshed snapshots.
 
 ### 2. Demonstrate bounded automation and active execution
+
+Recommended next goal: the bounded automation example and deterministic outcome
+tests below. Active provider/tool compatibility can then be a separate scoped goal.
 
 Add an automation example that creates/selects a session, admits input, observes
 progress, waits with a deadline and inspects resulting history/pending work.

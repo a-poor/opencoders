@@ -595,6 +595,17 @@ cancelling one pending read preserves partial decoder state. EOF yields `None`;
 errors yield once then terminate. Cloning a client shares the HTTP pool. A UI can
 own a background consumer and distribute updates itself.
 
+`examples/background_session.rs` demonstrates that application boundary with a
+bounded reader task and a separate example-only state module. It refreshes a
+session, one recent history page and pending inbox/permission/form snapshots;
+typed text fragments remain bounded transient previews, never history patches.
+Buffered events invalidate refreshed state rather than being reapplied over it.
+Queue overflow, EOF and failures mark the last successful bundle stale; explicit
+reconnection subscribes before refreshing again. Shutdown joins the reader and
+drop aborts it as a fallback. Deterministic tests establish convergence after
+quiescence and cancellation/lag behavior; live ordering and active model output
+remain unverified. No state-store or reconnect policy is added to the public SDK.
+
 SSE framing handles arbitrary chunks, UTF-8 replacement, BOM, CR/LF/CRLF,
 multiline data, comments, and metadata. EOF discards unfinished events. Blocks
 are bounded (8 MiB default, including ignored fields, counting CRLF once); decoded

@@ -55,10 +55,11 @@
         "The pinned global feed is live-only, sends heartbeat comments and uses a bounded subscriber queue."
       ],
       "unverified": [
-        "Active model-output delivery, heartbeat timing, server slow-consumer overflow and reconnect/snapshot reconciliation. Framing, EOF, failures and deadlines have deterministic protocol tests."
+        "Active model-output delivery, heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live ordering."
       ],
       "examples": [
-        "examples/events.rs"
+        "examples/events.rs",
+        "examples/background_session.rs"
       ]
     },
     "execution": {
@@ -376,6 +377,11 @@
           "file": "tests/events.rs",
           "anchor": "fn subscription_uses_explicit_filters_headers_and_preserves_sse_metadata(",
           "label": "subscription_uses_explicit_filters_headers_and_preserves_sse_metadata"
+        },
+        {
+          "file": "tests/background_session.rs",
+          "anchor": "fn explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations(",
+          "label": "explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations"
         }
       ],
       "evidence": "events"
