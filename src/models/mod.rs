@@ -12,7 +12,19 @@
 /// Generated live-event envelopes and their payloads.
 #[rustfmt::skip]
 pub mod events;
-pub use events::{Event, EventLogSynced};
+pub use events::{
+    Event, EventLogSynced, PermissionId, PermissionReply, PermissionSource, PermissionSourceType,
+};
+#[rustfmt::skip]
+#[allow(dead_code)] // Typify emits a conversion-error helper unused by these models.
+mod permissions;
+pub use permissions::{
+    PermissionRequest, PermissionRequestListResponse, PermissionSourceInput,
+    SessionPermissionCreateRequest, SessionPermissionCreateResponse,
+    SessionPermissionCreateResponseData, SessionPermissionListResponse,
+    SessionPermissionReplyRequest, SessionPermissionResponse,
+};
+mod permission_inputs;
 mod session_log_adapters;
 pub use session_log_adapters::SessionLogItem;
 mod event_adapters;

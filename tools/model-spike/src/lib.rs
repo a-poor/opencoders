@@ -6,6 +6,7 @@ pub mod event_models;
 pub mod events;
 pub mod inbox;
 pub mod messages;
+pub mod permissions;
 pub mod server_info;
 pub mod sessions;
 #[rustfmt::skip]

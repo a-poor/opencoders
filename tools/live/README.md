@@ -73,6 +73,10 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.inbox.cancel` | Empty HTTP 204, repeated/missing/wrong-session cancellation no-ops, pending item removal without creating history, and missing-session HTTP 404. |
 | `session.interrupt` | HTTP 200 with `interrupted: false` on idle sessions; omitted/false/true resume on empty sessions, true leaves queued input parked, omitted/false leave held steering input pending; typed missing-session HTTP 404. |
 | `experimental.session.wait` | HTTP 204 on idle sessions, including sessions with held queue/steer input; no input is delivered or started; typed missing-session HTTP 404. |
+| `permission.request.list` | Resolved location/data envelope; ordered pending requests across sessions; per-call directory, header fallback, query precedence, and missing-location HTTP 404. |
+| `session.permission.create` | Immediate allow/deny/ask results; only ask appears as pending; explicit/generated/null ID and null agent, tool source, metadata, resource order, save patterns, and missing-session errors. |
+| `session.permission.list/get` | Session ownership and pending snapshots; missing/resolved/wrong-session request errors. |
+| `session.permission.reply` | Once resolves one; reject resolves the session batch; always saves project rules when patterns exist and resolves matching pending requests in another session at the same location. Empty/absent patterns save nothing; configured denies win. Empty/null/nonempty feedback accepted; repeated/wrong-session replies fail. |
 
 Two pagination details matter for consumers:
 
@@ -176,6 +180,28 @@ Fragmentation, heartbeats, EOF, transport failures, protocol failure frames, and
 timeouts are deterministic mock/socket tests. The declared failure-frame contract
 does not establish how every server disconnect or overflow will be signaled.
 
+### Permission request scope and reply effects
+
+The pinned [permission service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/permission.ts)
+evaluates agent/session rules and saved project rules, creating an in-memory pending
+request only for ask. The [HTTP handlers](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/permission.ts)
+enforce session ownership for get/reply. Reject affects the whole session's pending
+batch; always with save patterns re-evaluates pending requests at that location
+after saving project allow rules. Configured denies retain precedence.
+
+All permission fixtures are manually created for idle disposable sessions with
+explicit rules under `opencoders.live.*`. No tool/model waits on their replies.
+The test observes permission asked/replied events, verifies once versus batch
+rejection, preserves other sessions/locations, and exercises saved-rule effects
+across two sessions at one location. Saved rules are confined to the runner's
+temporary database, which is removed with the server. No user configuration changes.
+
+Null create ID/agent and reply feedback are accepted by v2.2.5. Duplicate pending
+ID rejection is source-reviewed, not exercised live. Plugin evaluation hooks,
+parallel reply races/partial failures, actual tool resumption, and reload/restart
+behavior are not validated by these fixtures. Pending lists must be refreshed;
+they do not establish history, durability, or execution completion.
+
 ### Interruption and wait semantics
 
 The pinned [execution service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/execution.ts)
@@ -244,7 +270,7 @@ provider execution, and other platforms remain unverified.
 
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
 docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
-sets on Rust 1.88, Python runner tests, and all seven checked-in generation targets.
+sets on Rust 1.88, Python runner tests, and all eight checked-in generation targets.
 Regeneration pins Rust/rustfmt 1.99.1 and uses the locked dependencies and local
 schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.

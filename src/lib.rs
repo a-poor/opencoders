@@ -2,7 +2,7 @@
 //!
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, projected message history, prompt admission,
-//! pending inbox management, interruption/waiting, live event subscriptions, and experimental session logs. Run
+//! pending inbox management, interruption/waiting, permissions, live event subscriptions, and experimental session logs. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -145,6 +145,21 @@
 //! # }
 //! ```
 
+//! Discover pending permissions and apply a caller-selected decision:
+//! ```no_run
+//! # async fn answer(client: &opencoders::Client, session: &opencoders::models::SessionId,
+//! # request: &opencoders::models::PermissionId, decision: opencoders::models::PermissionReply) -> opencoders::Result<()> {
+//! use opencoders::models::SessionPermissionReplyRequest;
+//! let pending = client.permissions().list().await?;
+//! let permissions = client.sessions().permissions(session);
+//! let current = permissions.get(request).await?;
+//! permissions.reply(request, &SessionPermissionReplyRequest::new(decision)).await?;
+//! // Reject affects the session's pending batch; Always can save project rules
+//! // and resolve matching requests in other sessions at the same location.
+//! # Ok(())
+//! # }
+//! ```
+
 //! Consume a caller-owned, global live subscription:
 //! ```no_run
 //! # async fn events(client: &opencoders::Client) -> opencoders::Result<()> {
@@ -185,6 +200,8 @@ mod events;
 mod execution;
 pub use execution::{SessionInterruptOptions, SessionWaitOptions};
 mod inbox;
+mod permissions;
+pub use permissions::{Permissions, SessionPermissions};
 mod session_log;
 mod sse;
 mod sse_stream;

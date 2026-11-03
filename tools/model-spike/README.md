@@ -143,7 +143,7 @@ that Typify's adjacent-tag file-source decoder otherwise accepts, including an
 unexpected null `uri` on an inline source. Guards check request shapes, optionality,
 source unions, inbox tags, and opaque payload constraints before adaptation.
 Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
-`src/models/prompt_inputs.rs`. CI verifies seven generation targets, including the event path below.
+`src/models/prompt_inputs.rs`. CI verifies eight generation targets, including the event and permission paths below.
 
 ## Reviewed live-event models
 
@@ -177,6 +177,25 @@ watermark optionality, durable envelopes, and the shared content replacement.
 The generated marker description qualifies the upstream wording with the verified
 retention limitation. Generation remains offline and explicit.
 
+
+## Reviewed permission models
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --permissions
+cargo run --locked --offline -p opencoders-model-spike -- --permissions --check
+```
+
+The output `src/models/permissions.rs` includes pending request/list/get envelopes,
+immediate create results, and strict create/reply inputs. Shared permission IDs,
+reply enums, and response sources reuse existing event types; effect, agent,
+session, and location types also remain shared. Responses preserve extensions.
+
+Guards check create/reply field sets, optionality, and the strict tool-source
+shape. Adapters use `RequestField<T>` for create id/agent and reply message, and
+`Option<T>` with non-null decoding for save/metadata/source. Explicit empty input
+collections remain present. Response collections default to empty and omit empty
+values on serialization, consistent with event payloads. Constructors live in
+`src/models/permission_inputs.rs`; no local approval policy is generated.
 
 ## Run the experiment
 

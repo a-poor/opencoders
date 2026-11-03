@@ -333,6 +333,42 @@ calls. Active provider interruption, cleanup ordering, and concurrent resumption
 remain unverified live; mocks exercise both acknowledgement booleans, cancellation,
 deadlines, disconnections, and response/error contracts.
 
+### Permission requests and replies
+
+`client.permissions().list/list_at` returns location-scoped pending discovery with
+the resolved location/data envelope and server ordering. It follows the established
+default/per-call/unspecified location rules. `sessions().permissions(&id)` exposes
+`list`, `get`, `create`, and `reply`, resolving the session's location on the server
+independently of SDK discovery defaults. IDs remain individual encoded segments.
+
+Creation returns an immediate typed `allow`/`deny`/`ask` result, not a completed
+action or approval wait. Only ask creates a pending request. Pending requests are
+location-service memory; successful replies and snapshot lists are not durable
+history. Live events retain shared permission IDs/reply/source types. Missing,
+resolved, and wrong-session requests expose `ApiError::PermissionNotFound`.
+
+On v2.2.5 once resolves one request; reject also rejects the session's pending batch
+with nonempty feedback. Always with nonempty save patterns stores project allow
+rules and re-evaluates pending requests at that location, including other sessions.
+Without save patterns it saves nothing. Configured denies beat saved allows.
+Applications choose decisions and refresh pending state after these broader effects;
+the SDK imposes no policy and does not manage saved rules in this goal.
+
+The eighth generation target (`--permissions`) extracts endpoint envelopes/inputs,
+reuses reviewed scalar/event types, preserves response extensions, and separates
+strict tool-source inputs from tolerant responses. Guarded adapters preserve three
+states for create id/agent and reply message, while optional non-null save/metadata/
+source distinguish omission from empty values and reject null. All methods share
+ordinary deadlines, bounded errors, and the default no-retry policy. Errors can
+follow applied effects; caller-supplied IDs are not an idempotency promise.
+
+Disposable live tests cover immediate decisions, discovery location/header
+precedence, session ownership, once/reject/always, saved-rule effects and deny
+precedence, nullable inputs, and permission events without model/tool execution.
+The example rejects its own manually created request in a fresh session. Actual
+tool resumption, plugin hooks, concurrent decisions, and reload/restart lifetime
+remain separate compatibility work.
+
 ### Generated models and hand-written behavior
 
 Use a hybrid approach: generate wire models from a pinned schema and hand-write

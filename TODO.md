@@ -76,8 +76,6 @@ No active implementation goal.
 
 - [ ] Implement session forking. Creation, retrieval, updates, and deletion are
   implemented with typed requests and appropriate response handling.
-- [ ] Implement pending permission discovery, session permission requests, and
-  permission replies without imposing an approval policy.
 - [ ] Implement pending form discovery and session form lifecycle/replies.
 - [ ] Add protocol tests for these resource methods and unknown server errors.
 
@@ -93,10 +91,10 @@ No active implementation goal.
 
 ### Examples and first usable release
 
-- [ ] Add runnable Rust examples for permission replies and form replies. Use ordinary output
+- [ ] Add a runnable Rust example for form replies. Use ordinary output
   or assertions, with no GUI/TUI implementation. Session listing, creation, and
   update/deletion lifecycle, model/agent configuration, message history, and
-  prompt/inbox, interruption/waiting, live event, and explicit log resumption
+  prompt/inbox, permission requests/replies, interruption/waiting, live event, and explicit log resumption
   examples are implemented.
 - [ ] Add an example of background event consumption using minimal
   application-owned state. Explicit log resumption and snapshot refresh are
@@ -127,6 +125,8 @@ No active implementation goal.
 - [ ] Implement remaining session operations such as commands, skills, synthetic
   messages, compaction, revert, context/diff, import/export, and instructions.
 - [ ] Implement configuration, project, command, skill, and reference APIs.
+- [ ] Implement saved-permission listing/update/removal. Request replies can save
+  project allow rules, but their management APIs are not yet exposed.
 - [ ] Implement provider, integration, and credential management APIs.
 - [ ] Implement MCP management/resources and client-hosted MCP WebSockets.
 - [ ] Implement plugin management and generic plugin RPC calls/events with typed
@@ -211,6 +211,11 @@ when a decision is made.
   repeated interruption during stopping/settlement, resume-true steering/control
   execution, concurrent admissions, and waits through successor runs. These are
   source-reviewed; current live checks cover only idle and parked-input behavior.
+- [ ] Verify permission/plugin evaluation, concurrent replies and partial batch
+  failures, actual tool resumption/feedback, duplicate pending IDs, and pending
+  lifetime across location reload/server restart. Current live fixtures manually
+  evaluate requests without executing tools; they confirm reply batching, saved
+  allow effects, configured-deny precedence, and session/location ownership.
 - [ ] Verify snapshot reconciliation during concurrent execution and disconnection.
   Captured log watermarks are not atomic REST snapshot boundaries or retention
   guarantees; sequences can have gaps and a future `after` can exceed the marker.
@@ -219,6 +224,26 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Complete permission request APIs with TDD: location-aware
+  `permissions().list/list_at` and `sessions().permissions(&id).list/get/create/reply`.
+  Preserve envelopes, server order, input wire states, encoded IDs, typed
+  `PermissionNotFound`, bounded diagnostics, and the default no-retry policy.
+- [x] Add reviewed `--permissions` generation and the eighth CI generation check.
+  Reuse event IDs/reply/source models and existing effect/session/location types;
+  keep strict inputs separate from tolerant responses. Guard nullable/optional
+  adapters and tool-source shape; provide explicit input constructors.
+- [x] Verify allow/deny/ask evaluation, pending ownership/location isolation,
+  once/reject/always, batch rejection, cross-session saved-rule effects, deny
+  precedence, nullable inputs, and live permission events on disposable
+  v2.2.5/macOS arm64 without model/tool execution. Record the source-reviewed and
+  live-tested boundaries; keep approval policy application-owned.
+- [x] Add `examples/permissions.rs` and usage/design/compatibility documentation.
+  Validate 176 client tests, 36 generator tests, twelve doctests/examples,
+  HTTP-only tests, both Rust 1.88 builds, formatting, Clippy, docs, all eight
+  generation checks, eight runner tests, actionlint, and the live smoke test.
+  Actual tool resumption, concurrency/reload behavior, saved-rule management,
+  and hosted Linux checks remain tracked separately. No automatic commit.
 
 - [x] Complete session execution control with TDD: `sessions().interrupt(&id,
   &options)` preserves resume omission/false/true and returns the generated

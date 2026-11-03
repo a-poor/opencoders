@@ -4,7 +4,7 @@
 
 The library currently supports server information, location/agent/model discovery,
 session management/listing and agent/model selection, message history/retrieval,
-prompt admission/inbox management, interruption/waiting, live event subscriptions,
+prompt admission/inbox management, interruption/waiting, permission requests/replies, live event subscriptions,
 and experimental session logs. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
@@ -423,6 +423,72 @@ Pass `-- --interrupt` to explicitly request a stop first. Live checks cover idle
 and parked-input behavior without model calls; active interruption/cleanup and
 resumption during provider execution remain unverified against a live server.
 
+## Permission requests and replies
+
+```rust
+use opencoders::{Client, models::{PermissionId, PermissionReply, SessionId,
+    SessionPermissionReplyRequest}};
+
+async fn answer(client: &Client, session: &SessionId, request: &PermissionId,
+    decision: PermissionReply) -> opencoders::Result<()> {
+    let permissions = client.sessions().permissions(session);
+    let pending = permissions.get(request).await?;
+    println!("{}: {:?}", pending.data.action, pending.data.resources);
+    // The application supplies the decision, after presenting the request.
+    permissions.reply(request, &SessionPermissionReplyRequest::new(decision)).await
+}
+```
+
+`client.permissions().list()` discovers pending requests at the client's default
+location; `list_at(Location)` overrides it for one call. The result retains
+`location`, ordered `data`, and additional fields. `Location::Unspecified` omits
+the query without removing caller location headers.
+
+`client.sessions().permissions(&id)` exposes `list`, `get`, `create`, and `reply`.
+These use the session's server location and ignore the SDK discovery default.
+Lists are snapshots without pagination. Missing, resolved, or wrong-session
+requests return typed `ApiError::PermissionNotFound`; rediscover pending state
+when another client or reply may have resolved the request.
+
+`create(&SessionPermissionCreateRequest::new(action, resources))` evaluates an
+action and returns the full `{ data: { id, effect } }` envelope. HTTP 200 can mean
+`allow`, `deny`, or `ask`; only `ask` creates a pending request. Creation does not
+execute the named action or wait for approval. Pending requests are held in memory
+by the location's permission service, not durable session history.
+
+Replies accept HTTP 204. On the tested v2.2.5 server:
+
+| Decision | Effect |
+| --- | --- |
+| `Once` | Resolves this request without saving rules. |
+| `Reject` | Rejects this and all other pending requests in the same session; nonempty feedback applies to the batch. |
+| `Always` | Resolves this request and, if its `save` patterns are nonempty, saves project allow rules and resolves other now-allowed requests at this location, including other sessions. With no patterns it saves nothing. |
+
+Configured denies still take precedence over saved allows. A successful reply
+can unblock server work; it does not report that work's outcome. Saved-rule
+management and UI approval policy remain outside these methods.
+
+Create `id`/`agent` and reply `message` use `RequestField<T>` to preserve omission,
+null, and a value; the pinned server treats null like omission. Optional non-null
+`save`, `metadata`, and `source` use `Option<T>`; explicit empty collections are
+sent. `PermissionSourceInput::tool(message_id, id)` keeps strict input fields
+separate from tolerant response sources. Permission IDs and reply enums reuse
+the types in live permission events. Response extensions are retained; optional
+response collections default to empty and omit empty values on serialization.
+
+All calls use ordinary deadlines and bounded diagnostics. No automatic retries
+are performed; creation/replies can take effect before a failure reaches the
+caller, and supplying an ID is not an idempotency guarantee. Duplicate pending
+IDs are rejected by the pinned implementation. Dropping a request future does
+not undo server-side effects. Injected HTTP-client policies remain in effect.
+
+Run `cargo run --example permissions` with `OPENCODE_BASE_URL`,
+`OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates a fresh session,
+evaluates a demonstration action, inspects/rejects its own pending request, and
+removes that session. It submits no prompt or tool call and saves no allow rules.
+Live tests also cover saved rules and cross-session effects in disposable data;
+actual tool resumption, plugins, races, and restart behavior remain unverified.
+
 ## Live events
 
 ```rust
@@ -597,7 +663,8 @@ checkpoint storage, and snapshot reconciliation remain application decisions. Tr
 `BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
 `Error::Http`, `Error::Decode`, `Error::ResponseTooLarge`, or `Error::Stream`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
-methods expect exactly HTTP 200; session update/remove/switch/wait and inbox update/cancel methods expect HTTP 204 with no
+methods expect exactly HTTP 200; session update/remove/switch/wait, permission reply,
+and inbox update/cancel methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
 too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.
@@ -606,7 +673,7 @@ HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `UnauthorizedError`, `LocationNotFoundError`, `ServiceUnavailableError`, and
 `InvalidCursorError`, `SessionNotFoundError` (including missing parents), and
 `MessageNotFoundError` (also used when a message belongs to another session), and
-`AgentNotFoundError`, and `ConflictError` (with an optional resource identifier).
+`AgentNotFoundError`, `PermissionNotFoundError`, and `ConflictError` (with an optional resource identifier).
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
 available in the raw body. Truncated or non-JSON bodies have no parsed API error.
@@ -643,7 +710,7 @@ fixtures because the stock CLI disables retention; live model execution and serv
 behavior are not yet exercised.
 
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
-contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event generation commands.
+contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event/permission generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.

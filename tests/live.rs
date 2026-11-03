@@ -469,6 +469,18 @@ async fn pinned_server_discovery_and_session_pagination() {
     verify_execution(&client, &ids[1].parse().unwrap()).await;
     verify_events(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     verify_session_logs(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
+    verify_permissions(
+        &client,
+        &fallback,
+        [
+            &ids[1].parse().unwrap(),
+            &ids[2].parse().unwrap(),
+            &elsewhere.id,
+        ],
+        workspace,
+        other,
+    )
+    .await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())
@@ -487,6 +499,330 @@ async fn pinned_server_discovery_and_session_pagination() {
             .data
             .is_empty()
     );
+}
+
+async fn verify_permissions(
+    client: &Client,
+    fallback: &Client,
+    ids: [&opencoders::models::SessionId; 3],
+    workspace: &str,
+    other: &str,
+) {
+    use opencoders::{
+        EventOptions,
+        models::{
+            PermissionReply, PermissionSourceInput, SessionId, SessionPermissionCreateRequest,
+            SessionPermissionReplyRequest,
+        },
+    };
+    for id in ids {
+        client
+            .sessions()
+            .update(
+                id,
+                &SessionUpdateRequest::default().permissions(vec![
+                    PermissionRuleInput::new("opencoders.live.*", PermissionEffect::Ask, "*"),
+                    PermissionRuleInput::new("opencoders.live.allow", PermissionEffect::Allow, "*"),
+                    PermissionRuleInput::new("opencoders.live.deny", PermissionEffect::Deny, "*"),
+                ]),
+            )
+            .await
+            .unwrap();
+    }
+    let p = client.sessions().permissions(ids[0]);
+    let sibling = client.sessions().permissions(ids[1]);
+    let remote = client.sessions().permissions(ids[2]);
+    let mut events = client
+        .events()
+        .subscribe(&EventOptions::default().types(["permission.asked", "permission.replied"]))
+        .await
+        .unwrap();
+    for (action, effect) in [
+        ("opencoders.live.allow", PermissionEffect::Allow),
+        ("opencoders.live.deny", PermissionEffect::Deny),
+    ] {
+        let result = p
+            .create(&SessionPermissionCreateRequest::new(
+                action,
+                vec!["a".into()],
+            ))
+            .await
+            .unwrap();
+        assert_eq!(result.data.effect, effect);
+        assert!(p.list().await.unwrap().data.is_empty());
+        assert_permission_missing(p.get(&result.data.id).await.unwrap_err());
+    }
+    let mut request = SessionPermissionCreateRequest::new(
+        "opencoders.live.ask",
+        vec!["file + 雪".into(), "file + 雪".into()],
+    )
+    .id("per_live_first".parse().unwrap())
+    .save(vec![])
+    .metadata(serde_json::from_value(json!({"fixture":true})).unwrap())
+    .source(PermissionSourceInput::tool(
+        "unprefixed-message",
+        "unprefixed-tool",
+    ));
+    request.agent = RequestField::Null;
+    let first = p.create(&request).await.unwrap().data;
+    assert_eq!(first.effect, PermissionEffect::Ask);
+    let got = p.get(&first.id).await.unwrap().data;
+    assert_eq!(got.resources, request.resources);
+    assert_eq!(got.metadata["fixture"], true);
+    assert_eq!(got.source.unwrap().message_id, "unprefixed-message");
+    let mut null_id = SessionPermissionCreateRequest::new("opencoders.live.ask", vec!["b".into()]);
+    null_id.id = RequestField::Null;
+    let second = p.create(&null_id).await.unwrap().data;
+    let third = sibling
+        .create(&SessionPermissionCreateRequest::new(
+            "opencoders.live.ask",
+            vec!["c".into()],
+        ))
+        .await
+        .unwrap()
+        .data;
+    let outside = remote
+        .create(&SessionPermissionCreateRequest::new(
+            "opencoders.live.ask",
+            vec!["d".into()],
+        ))
+        .await
+        .unwrap()
+        .data;
+    let listed = client.permissions().list().await.unwrap();
+    assert_eq!(listed.location.directory.as_str(), workspace);
+    assert_eq!(
+        listed
+            .data
+            .iter()
+            .map(|r| r.id.as_str())
+            .collect::<Vec<_>>(),
+        [first.id.as_str(), second.id.as_str(), third.id.as_str()]
+    );
+    assert_eq!(
+        client
+            .permissions()
+            .list_at(Location::directory(other))
+            .await
+            .unwrap()
+            .data[0]
+            .id,
+        outside.id
+    );
+    assert_eq!(
+        fallback
+            .permissions()
+            .list_at(Location::Unspecified)
+            .await
+            .unwrap()
+            .data[0]
+            .id,
+        outside.id
+    );
+    assert_eq!(fallback.permissions().list().await.unwrap().data.len(), 3);
+    assert_eq!(p.list().await.unwrap().data.len(), 2);
+    assert_permission_missing(sibling.get(&first.id).await.unwrap_err());
+    assert_permission_missing(
+        sibling
+            .reply(
+                &first.id,
+                &SessionPermissionReplyRequest::new(PermissionReply::Reject),
+            )
+            .await
+            .unwrap_err(),
+    );
+    assert_eq!(p.list().await.unwrap().data.len(), 2);
+    p.reply(
+        &first.id,
+        &SessionPermissionReplyRequest::new(PermissionReply::Once).message(""),
+    )
+    .await
+    .unwrap();
+    assert_permission_missing(p.get(&first.id).await.unwrap_err());
+    assert_permission_missing(
+        p.reply(
+            &first.id,
+            &SessionPermissionReplyRequest::new(PermissionReply::Once),
+        )
+        .await
+        .unwrap_err(),
+    );
+    assert_eq!(p.list().await.unwrap().data.len(), 1);
+    let fourth = p
+        .create(&SessionPermissionCreateRequest::new(
+            "opencoders.live.ask",
+            vec!["e".into()],
+        ))
+        .await
+        .unwrap()
+        .data;
+    p.reply(
+        &second.id,
+        &SessionPermissionReplyRequest::new(PermissionReply::Reject).message("fixture feedback"),
+    )
+    .await
+    .unwrap();
+    assert!(p.list().await.unwrap().data.is_empty());
+    assert_permission_missing(p.get(&fourth.id).await.unwrap_err());
+    assert_eq!(sibling.list().await.unwrap().data.len(), 1);
+    assert_eq!(remote.list().await.unwrap().data.len(), 1);
+    let mut reply = SessionPermissionReplyRequest::new(PermissionReply::Reject);
+    reply.message = RequestField::Null;
+    sibling.reply(&third.id, &reply).await.unwrap();
+    remote.reply(&outside.id, &reply).await.unwrap();
+
+    // All requests are manually created fixtures; no running tool/model is waiting.
+    // Saved allow rules only touch the runner-owned temporary database/project.
+    let save = SessionPermissionCreateRequest::new("opencoders.live.saved", vec!["saved/a".into()])
+        .save(vec!["saved/*".into()]);
+    let saved = p.create(&save).await.unwrap().data;
+    let matching = sibling
+        .create(&SessionPermissionCreateRequest::new(
+            "opencoders.live.saved",
+            vec!["saved/b".into()],
+        ))
+        .await
+        .unwrap()
+        .data;
+    let unmatched = sibling
+        .create(&SessionPermissionCreateRequest::new(
+            "opencoders.live.saved",
+            vec!["elsewhere".into()],
+        ))
+        .await
+        .unwrap()
+        .data;
+    p.reply(
+        &saved.id,
+        &SessionPermissionReplyRequest::new(PermissionReply::Always),
+    )
+    .await
+    .unwrap();
+    assert_permission_missing(sibling.get(&matching.id).await.unwrap_err());
+    assert_eq!(sibling.list().await.unwrap().data[0].id, unmatched.id);
+    assert_eq!(
+        p.create(&save).await.unwrap().data.effect,
+        PermissionEffect::Allow
+    );
+    sibling
+        .reply(
+            &unmatched.id,
+            &SessionPermissionReplyRequest::new(PermissionReply::Reject),
+        )
+        .await
+        .unwrap();
+    for save in [None, Some(vec![])] {
+        let mut req =
+            SessionPermissionCreateRequest::new("opencoders.live.unsaved", vec!["a".into()]);
+        req.save = save;
+        let before = p.create(&req).await.unwrap().data;
+        p.reply(
+            &before.id,
+            &SessionPermissionReplyRequest::new(PermissionReply::Always),
+        )
+        .await
+        .unwrap();
+        let after = p.create(&req).await.unwrap().data;
+        assert_eq!(after.effect, PermissionEffect::Ask);
+        p.reply(
+            &after.id,
+            &SessionPermissionReplyRequest::new(PermissionReply::Reject),
+        )
+        .await
+        .unwrap();
+    }
+    // Configured denies still win over project-saved allow rules.
+    client
+        .sessions()
+        .update(
+            ids[0],
+            &SessionUpdateRequest::default().permissions(vec![PermissionRuleInput::new(
+                "opencoders.live.saved",
+                PermissionEffect::Deny,
+                "*",
+            )]),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        p.create(&save).await.unwrap().data.effect,
+        PermissionEffect::Deny
+    );
+    for id in ids {
+        assert!(
+            client
+                .sessions()
+                .permissions(id)
+                .list()
+                .await
+                .unwrap()
+                .data
+                .is_empty()
+        );
+    }
+    let missing: SessionId = "ses_permission_missing".parse().unwrap();
+    let resource = client.sessions().permissions(&missing);
+    for error in [
+        resource.list().await.unwrap_err(),
+        resource.get(&first.id).await.unwrap_err(),
+        resource.create(&request).await.unwrap_err(),
+        resource.reply(&first.id, &reply).await.unwrap_err(),
+    ] {
+        assert_eq!(error.status().unwrap(), 404);
+        let Error::Http(error) = error else {
+            panic!("missing session")
+        };
+        assert!(matches!(
+            error.api_error(),
+            Some(ApiError::SessionNotFound { .. })
+        ));
+    }
+    let error = client
+        .permissions()
+        .list_at(Location::directory(
+            "/opencoders-missing-permission-location",
+        ))
+        .await
+        .unwrap_err();
+    assert_eq!(error.status().unwrap(), 404);
+    let Error::Http(error) = error else {
+        panic!("missing location")
+    };
+    assert!(matches!(
+        error.api_error(),
+        Some(ApiError::LocationNotFound { .. })
+    ));
+    let mut saw_asked = false;
+    let mut saw_replied = false;
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while !saw_asked || !saw_replied {
+            match events.next().await.unwrap().unwrap().event {
+                opencoders::models::Event::PermissionAsked(e) if e.data.id == first.id => {
+                    saw_asked = true
+                }
+                opencoders::models::Event::PermissionReplied(e)
+                    if e.data.request_id == first.id =>
+                {
+                    assert_eq!(e.data.reply, PermissionReply::Once);
+                    saw_replied = true;
+                }
+                _ => {}
+            }
+        }
+    })
+    .await
+    .unwrap();
+    events.close();
+}
+fn assert_permission_missing(error: Error) {
+    assert_eq!(error.status().unwrap(), 404);
+    let Error::Http(error) = error else {
+        panic!("missing permission")
+    };
+    assert!(matches!(
+        error.api_error(),
+        Some(ApiError::PermissionNotFound { .. })
+    ));
 }
 
 async fn verify_execution(client: &Client, id: &opencoders::models::SessionId) {
