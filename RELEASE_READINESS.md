@@ -6,9 +6,10 @@ This does not establish Linux or remote-provider compatibility. It tracks remain
 work for the first usable release; no release or publication has been performed.
 
 The core conversation resources are implemented, but **milestone 2 is not yet
-complete**. The remaining work is chiefly package/release preparation and hosted
-validation. PTY support is milestone 3 and does not gate the first
-conversation-library release. No UI is being built.
+complete**. Package metadata and draft release notes are prepared; hosted
+validation and the final release revision review remain. PTY support is
+milestone 3 and does not gate the first conversation-library release. No UI is
+being built.
 
 ## Coverage and evidence
 
@@ -111,29 +112,51 @@ validation still gate release readiness.
 
 ### 3. Prepare the package and release notes
 
-Recommended next goal: prepare the package metadata, archive contents, licensing
-attribution and initial release notes, then validate the packaged crate without
-publishing. Confirm the license holder/year with the owner if not established.
+The manifest now supplies a description, verified repository URL, explicit README,
+keywords/categories and a file include list. The existing 0.1.0 version, Rust 1.88
+minimum and feature/dependency declarations are unchanged. No documentation URL
+claims an existing hosted build; Cargo's normal docs.rs discovery can apply after
+publication. The owner confirmed **2026 Austin Poor** for the MIT notice; the
+Apache appendix now has the same attribution. Both full license texts are packaged.
 
-The audit ran `cargo package --list --allow-dirty --locked --offline`. Listing
-succeeds, but Cargo warns about missing package metadata. This checks the file
-list, not compilation of a packaged archive or publication readiness.
+The archive contains **108 files**: source, all sixteen examples/support modules,
+tests/fixtures, README, [draft release notes](CHANGELOG.md), licenses and Cargo's
+generated metadata. Schema, generation, coverage/live tools, workflows and planning
+documents remain in the repository. README links use repository URLs so excluded
+documents are not dangling archive-relative links. It explicitly describes 0.1.0
+as unreleased and gives local-checkout installation instructions.
 
-- Add a package description and repository URL; review documentation links,
-  version and README rendering. Cargo currently discovers the root README.
-- Replace the project copyright placeholder in `LICENSE-MIT.txt` with the
-  owner's correct holder/year. The Apache license's standard appendix template
-  is not the same unresolved project attribution.
-- Review the package file list. It currently includes the schema, tests,
-  workflows and coverage/live tooling; decide which are useful in the published
-  archive. The private model-generator workspace package is not included.
-- Write initial release notes with supported APIs, runtime/MSRV/features, tested
-  server/platform, experimental behavior and known limitations. Check whether
-  any public API ergonomics should change before the first release.
-- Build and test the intended package archive in isolation, then perform a Cargo
-  publish dry run. Neither has been performed by this audit.
+Public usage review covered client/runtime ownership, resource accessors, typed
+IDs and request builders, omitted/null handling, pagination, stream policy and
+error inspection. Existing examples retain explicit application decisions. No
+additional API changes were identified for this goal; the instruction-delta enum
+correction is included in the release notes for early checkout consumers.
+
+The [package procedure](RELEASING.md) builds and tests an extracted archive outside
+the checkout, checks both feature configurations and the MSRV, and uses only a
+publish dry run. Local results on **2026-11-03, macOS arm64, Rust 1.99.1**:
+
+| Check | Result |
+| --- | --- |
+| Package listing/build | Pass with `--allow-dirty --locked --offline`; no missing-metadata warnings. |
+| Archive inspection | 108 files, 1,421,235 uncompressed bytes / 218,386 compressed bytes. Source matches checkout; no generation tools, workspace/path dependencies or build script. |
+| Extracted default and HTTP-only tests | Both pass: 217 library/integration tests and 14 doctests; the two live tests remain ignored. Fresh directory outside the checkout. |
+| Rust 1.88 library and all sixteen examples | Both feature configurations pass with locked, cached dependencies. |
+| Extracted API documentation | Pass with warnings denied. |
+| Publish dry run | Pass against crates.io with `--allow-dirty --locked --dry-run`; Cargo confirms upload was aborted. Registry access is required, so the initial offline attempt could not run. |
+| Repository consistency | Formatting, diff whitespace, coverage report, and documentation path checks pass. No SDK behavior or generated models changed. |
+
+This is working-tree evidence based on commit `899ec51`, **not a clean release
+artifact**. Its VCS metadata records that dirty state. The dry run produced the
+same tested archive, SHA-256
+`6219b427195d24ed0820a27e0326b85a890dccc888ab83cf29109f3e233449ae`.
+Repeat validation after final release edits and record the clean revision.
 
 ### 4. Collect release-candidate validation
+
+Recommended next goal: collect hosted CI and pinned live-server results on
+Linux/macOS after the reviewed commits are pushed. This package-preparation goal
+does not push, create a tag or publish.
 
 After the implementation work, run the repository checks on the intended release
 revision: workspace and HTTP-only tests, Rust 1.88 library builds, formatting,

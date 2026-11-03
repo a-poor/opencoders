@@ -6,10 +6,11 @@ prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events and experimental session logs. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5/macOS;
-milestone 2 still needs release preparation and hosted validation. See
+the intended crate archive passes local build/test and publish dry-run checks.
+Milestone 2 still needs hosted validation and final release revision checks. See
 [API coverage](API_COVERAGE.md) for operation-level evidence and
-[release readiness](RELEASE_READINESS.md) for
-the prioritized acceptance audit. Broader APIs remain the implementation plan.
+[release readiness](RELEASE_READINESS.md) for the prioritized acceptance audit.
+Broader APIs remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
 audience is developers building GUI, TUI, desktop, and other interactive OpenCode

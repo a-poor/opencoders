@@ -65,9 +65,9 @@ No active goal.
 
 - [ ] Extend mock-server coverage as additional operations are implemented,
   following the existing JSON body, empty-response, and mutation retry checks.
-- [ ] After pushing the workflows, confirm hosted CI and manually run the pinned
-  server smoke workflow on Linux/macOS. Local macOS compatibility is verified;
-  Linux execution remains unverified.
+- [ ] Next goal: after pushing the reviewed commits, confirm hosted CI and
+  manually run both pinned smoke/active workflow jobs on Linux/macOS. Local
+  macOS compatibility is verified; hosted and Linux execution remain unverified.
 
 ## Next: interactive conversation APIs (milestone 2)
 
@@ -81,13 +81,9 @@ No active goal.
 
 ### Examples and first usable release
 
-- [ ] Next goal: prepare package metadata, review the archive's included files,
-  and replace the MIT copyright placeholder with the owner's correct holder/year.
-  Audit-only package listing succeeds; packaged-build and publish dry-run checks
-  remain.
-- [ ] Write initial release notes and finish the documentation/API ergonomics
-  review. Setup, authentication, runtime, operation coverage and tested-version
-  guidance already exist; retain the documented execution/recovery limits.
+- [ ] Finalize release date/version and README installation instructions when
+  release gates pass. Repeat the package checks from a clean final revision;
+  current evidence is an unpublished working-tree archive. See `RELEASING.md`.
 - [ ] Verify milestone 2 acceptance criteria and release-candidate checks from
   `RELEASE_READINESS.md`, including hosted Linux/macOS CI/live runs, before
   declaring the first usable conversation-library release ready.
@@ -225,6 +221,22 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Prepare 0.1.0 package metadata and an explicit 108-file archive containing
+  source, examples, tests/fixtures, README, release notes and both licenses.
+  Keep schema/generation, coverage/live tooling and planning documents in the
+  repository; preserve normal builds' independence from those tools.
+- [x] Fill the MIT notice with the owner's confirmed `2026 Austin Poor`
+  attribution and preserve the matching Apache appendix edit. Add an unreleased
+  `CHANGELOG.md`, review public usage, make README setup/status and repository
+  links explicit, and document the reproducible checks in `RELEASING.md`.
+- [x] Build and inspect the archive, then verify it outside the checkout with a
+  fresh build directory on macOS arm64: 217 library/integration tests and 14
+  doctests pass with default and HTTP-only features; both live tests stay ignored.
+  Compile the library and all sixteen examples on Rust 1.88 in both configurations;
+  build warning-free docs. Cargo's publish dry run passes with registry access
+  and performs no upload. Record the working-tree checksum and remaining hosted/
+  final-revision gates in `RELEASE_READINESS.md`; no push, tag or publication.
 
 - [x] Extend the isolated active fixture with a test-only GET relay and two live
   recovery scenarios using the background example's unchanged connection/state

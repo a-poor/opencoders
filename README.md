@@ -7,11 +7,24 @@ session management/listing and agent/model selection, message history/retrieval,
 prompt admission/inbox management, interruption/waiting, permission requests/replies, forms, live event subscriptions,
 and experimental session logs. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
-and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
+and state. See [DESIGN.md](https://github.com/a-poor/opencoders/blob/main/DESIGN.md) and [TODO.md](https://github.com/a-poor/opencoders/blob/main/TODO.md) for the plan and backlog.
 
 ## Usage
 
 Requires Rust 1.88 or newer and a caller-owned Tokio runtime.
+
+Version **0.1.0 is unreleased**. Use a local checkout while release preparation is
+in progress:
+
+```toml
+[dependencies]
+opencoders = { path = "../opencoders" }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+The default `rustls` feature enables HTTPS. For HTTP-only applications, set
+`default-features = false` on the `opencoders` dependency. See the
+[release notes](https://github.com/a-poor/opencoders/blob/main/CHANGELOG.md) for the supported surface and compatibility limits.
 
 ```rust
 use opencoders::Client;
@@ -265,7 +278,7 @@ is never automatically retried. Reconcile server state before resubmitting.
 Run `cargo run --example session_fork` with `OPENCODE_BASE_URL`,
 `OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates a fresh session,
 records an agent-selection history entry without model calls, creates full and
-empty forks, and removes its known fixtures. See [compatibility notes](tools/live/README.md).
+empty forks, and removes its known fixtures. See [compatibility notes](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md).
 
 ## Updating and deleting sessions
 
@@ -470,13 +483,13 @@ application owns reconnection, retry decisions, and coordination with live event
 Run `cargo run --example execution` with `OPENCODE_BASE_URL`, `OPENCODE_SESSION_ID`,
 and optional `OPENCODE_PASSWORD` to wait for up to 30 seconds and inspect snapshots.
 Pass `-- --interrupt` to explicitly request a stop first. The smoke test covers
-idle and parked input. A separate [active fixture](tools/live/README.md#active-execution)
+idle and parked input. A separate [active fixture](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md#active-execution)
 verifies interruption of a held localhost provider stream and wait settlement.
 Concurrent wakeups, tool interruption and steering resumption remain unverified.
 
 ## Bounded automation
 
-[`examples/automation.rs`](examples/automation.rs) creates a fresh session with
+[`examples/automation.rs`](https://github.com/a-poor/opencoders/blob/main/examples/automation.rs) creates a fresh session with
 an explicitly selected agent/model, subscribes to events, admits one identified
 prompt with `resume(true)`, waits and inspects history plus pending work. Running
 it can spend provider credit and invoke tools that modify the server workspace,
@@ -496,7 +509,7 @@ and printed before mutations so a lost response can be investigated. They are no
 idempotency keys. The example makes one attempt and never resubmits a mutation.
 Selection/admission do not establish model availability or successful execution.
 
-The [example-owned policy](examples/support/automation.rs) uses a shared 30-second
+The [example-owned policy](https://github.com/a-poor/opencoders/blob/main/examples/support/automation.rs) uses a shared 30-second
 deadline for creation, subscription, admission and waiting, followed by a separate
 10-second inspection window, including after a wait timeout. Ordinary requests
 also have a 10-second limit. It consumes progress alongside the requests without
@@ -534,11 +547,11 @@ running. If stopping it is intended, use the explicit interrupt/wait flow in
 `sessions().remove(&id)` removes the session and its children. These actions do
 not undo completed tool effects and are never automatic in this example.
 
-[`tests/automation.rs`](tests/automation.rs) verifies the policy and wire flow
+[`tests/automation.rs`](https://github.com/a-poor/opencoders/blob/main/tests/automation.rs) verifies the policy and wire flow
 with deterministic fixtures. A separate active fixture verifies SDK execution
 outcomes and waiting-tool resumption against OpenCode with a scripted localhost
 provider; it does not run this example's complete policy. See
-[compatibility notes](tools/live/README.md#active-execution).
+[compatibility notes](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md#active-execution).
 
 ## Permission requests and replies
 
@@ -667,7 +680,7 @@ source-reviewed path that has not been exercised live.
 Run `cargo run --example forms` with `OPENCODE_BASE_URL`, `OPENCODE_DIRECTORY`, and
 optional `OPENCODE_PASSWORD`. It creates a fresh session, answers and cancels only
 its own manual fixtures, then removes the session. It neither renders a UI nor
-starts model work. See [live compatibility notes](tools/live/README.md).
+starts model work. See [live compatibility notes](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md).
 
 ## Live events
 
@@ -699,7 +712,7 @@ even with filters. No model calls are needed to subscribe. Run the read-only
 
 `models::Event` covers 62 kinds across live feeds and durable logs: connection/RPC, session lifecycle and selections,
 inbox, execution, steps, text/reasoning, tools, retries, compaction, permissions,
-forms, and durable history changes. The exact set is in [event-roots.json](tools/model-spike/event-roots.json).
+forms, and durable history changes. The exact set is in [event-roots.json](https://github.com/a-poor/opencoders/blob/main/tools/model-spike/event-roots.json).
 Envelope/payload types live in `models::events`. Other kinds, including currently
 unimplemented native events, retain their complete JSON in `Event::Unknown`.
 Malformed implemented kinds produce `Error::Decode`. Nested closed enums remain
@@ -739,7 +752,7 @@ conversation data.
 
 ## Background session observation
 
-[`examples/background_session.rs`](examples/background_session.rs) demonstrates
+[`examples/background_session.rs`](https://github.com/a-poor/opencoders/blob/main/examples/background_session.rs) demonstrates
 a background reader and minimal application-owned state without a UI framework.
 With `OPENCODE_BASE_URL` and `OPENCODE_SESSION_ID` set (and optionally
 `OPENCODE_PASSWORD`), run:
@@ -756,7 +769,7 @@ the response's opaque cursor remains available for caller-controlled pagination.
 Each snapshot response is limited to 1 MiB. The views are separate reads, not an
 atomic snapshot or a complete transcript.
 
-The [example's state and task code](examples/support/session_observer.rs) shows
+The [example's state and task code](https://github.com/a-poor/opencoders/blob/main/examples/support/session_observer.rs) shows
 the integration policy:
 
 - A reader task feeds a bounded queue of 32 events, with a 64 KiB SSE block limit.
@@ -778,10 +791,10 @@ the integration policy:
   fallback, rather than detaching a task. Cancelling local observation does not
   interrupt server execution or reply to pending requests.
 
-[`tests/background_session.rs`](tests/background_session.rs) uses controlled
+[`tests/background_session.rs`](https://github.com/a-poor/opencoders/blob/main/tests/background_session.rs) uses controlled
 HTTP/SSE fixtures to verify missed-change convergence, overlapping snapshots,
 incremental previews, queue overflow, failed/cancelled refreshes and independent
-shutdown. The [active recovery fixture](tools/live/README.md#controlled-live-recovery)
+shutdown. The [active recovery fixture](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md#controlled-live-recovery)
 also runs the shared observer against v2.2.5 with forced SSE transport cuts,
 missed text/form events and a delayed old history response. Explicit reconnect
 and refresh converge after execution settles. Missing text deltas cannot be
@@ -823,7 +836,7 @@ new payloads either. The SDK does not turn retention on. Refresh authoritative
 session/message/inbox snapshots after reconnecting, and verify retention for the
 server deployment before relying on replay. The pinned server library has an
 `events.persist` option, but the CLI does not forward it. See the
-[verified scope and upstream sources](tools/live/README.md).
+[verified scope and upstream sources](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md).
 
 `SessionLogItem` distinguishes all 47 reviewed durable session events from
 `log.synced` markers and unknown JSON. It reuses `models::Event`, adding typed
@@ -925,6 +938,11 @@ values; treat explicitly accessed or serialized response data as sensitive.
 
 ## Development and compatibility
 
+Run these commands from the repository checkout. The crate archive includes
+source, examples, tests and JSON fixtures; schema-generation, coverage and live
+runner tools are repository-only. Package checks and the release handoff are
+documented in [RELEASING.md](https://github.com/a-poor/opencoders/blob/main/RELEASING.md).
+
 ```sh
 cargo test --workspace --locked
 cargo fmt --all -- --check
@@ -938,10 +956,10 @@ Tests use local mock HTTP servers; they need permission to bind localhost ports
 but do not require OpenCode, provider credentials, or model calls. The runnable
 examples are built by the checks and contact a real server only when invoked.
 
-The pinned schema and provenance live in [`openapi/`](openapi/). The implemented
+The pinned schema and provenance live in [`openapi/`](https://github.com/a-poor/opencoders/tree/main/openapi). The implemented
 operations also pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
 arm64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
-see [compatibility details and CI](tools/live/README.md) for prerequisites, release
+see [compatibility details and CI](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md) for prerequisites, release
 checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded
 fixtures because the stock CLI disables retention. Run `python3 tools/live/active.py`
 separately for active execution with a scripted localhost provider and disposable
@@ -950,15 +968,19 @@ same macOS baseline. It also verifies controlled disconnect/reconnect and snapsh
 recovery using the background observer. It uses no real credentials or paid calls.
 Remote providers, server overflow, restart recovery and Linux remain unverified.
 
-The [API coverage inventory](API_COVERAGE.md) classifies all 169 pinned operations:
+The [API coverage inventory](https://github.com/a-poor/opencoders/blob/main/API_COVERAGE.md) classifies all 169 pinned operations:
 35 supported, 129 planned and 5 deferred. Each supported route links to its Rust
 method, representative protocol tests and verification limits. See the
-[milestone 2 readiness audit](RELEASE_READINESS.md) for remaining integration,
+[milestone 2 readiness audit](https://github.com/a-poor/opencoders/blob/main/RELEASE_READINESS.md) for remaining integration,
 execution/recovery and release work. The inventory checks are offline and do not
 run during ordinary crate builds.
 
-The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
+The private [`tools/model-spike/`](https://github.com/a-poor/opencoders/blob/main/tools/model-spike/README.md) workspace tool
 contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event/permission/form generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.
+
+## License
+
+Available under either [MIT](https://github.com/a-poor/opencoders/blob/main/LICENSE-MIT.txt) or [Apache-2.0](https://github.com/a-poor/opencoders/blob/main/LICENSE-APACHE.txt).

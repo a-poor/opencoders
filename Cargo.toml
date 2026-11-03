@@ -3,7 +3,22 @@ name = "opencoders"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
+description = "Async Rust client for the OpenCode v2 HTTP API"
+repository = "https://github.com/a-poor/opencoders"
+readme = "README.md"
 license = "MIT OR Apache-2.0"
+keywords = ["opencode", "async", "client", "api"]
+categories = ["api-bindings", "asynchronous"]
+include = [
+    "/src/**/*.rs",
+    "/examples/**/*.rs",
+    "/tests/**/*.rs",
+    "/tests/fixtures/*.json",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE-MIT.txt",
+    "/LICENSE-APACHE.txt",
+]
 
 [features]
 default = ["rustls"]
