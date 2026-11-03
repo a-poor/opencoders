@@ -25,10 +25,11 @@ HTTPS is enabled by default through Rustls. Use `default-features = false` for H
 
 ## Getting started
 
-Set `OPENCODE_PASSWORD` to your server password, then connect to your OpenCode server:
+With OpenCode running and a provider/model configured, set `OPENCODE_PASSWORD`
+to your server password, then create a session and send a message:
 
 ```rust
-use opencoders::{Client, SessionListOptions};
+use opencoders::{Client, models::{SessionCreateRequest, SessionPromptRequest}};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -36,14 +37,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .basic_auth("opencode", std::env::var("OPENCODE_PASSWORD")?)
         .build()?;
 
-    let info = client.server().info().await?;
-    let sessions = client.sessions()
-        .list(&SessionListOptions::default().limit(10))
+    let session = client.sessions()
+        .create(&SessionCreateRequest::default().title("Hello from Rust"))
         .await?;
-    println!("OpenCode {}: {} sessions in this page", info.version, sessions.data.len());
+    let prompt = SessionPromptRequest::new("Say hello in one sentence.").resume(true);
+    client.sessions().prompt(&session.data.id, &prompt).await?;
+    println!("Message accepted in session {}", session.data.id.as_str());
     Ok(())
 }
 ```
+
+The session uses the server's working directory. `prompt` acknowledges acceptance;
+see [streaming responses](https://github.com/a-poor/opencoders/blob/main/docs/events.md)
+to receive the assistant's output.
 
 ## Pinned API contract
 
