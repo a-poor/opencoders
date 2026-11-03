@@ -2,18 +2,19 @@
 
 Version 0.1.0 is unreleased. This procedure validates a candidate without uploading
 it. See [release readiness](RELEASE_READINESS.md) for the outstanding hosted
-Linux/macOS checks and the [changelog](CHANGELOG.md) for consumer-facing limits.
+Linux/macOS live-server checks and the [changelog](CHANGELOG.md) for
+consumer-facing limits.
 
 ## Archive policy
 
 The `Cargo.toml` include list keeps Rust sources, all sixteen examples and their
-support modules, integration tests and JSON fixtures, README, changelog, and both
-licenses. Keeping tests lets consumers verify the extracted source distribution.
+support modules, integration tests and JSON fixtures, README, `docs/` guides,
+changelog, and both licenses. Keeping tests lets consumers verify the extracted source distribution.
 The two live tests remain ignored and require the repository's separate runners.
 
 Planning documents, CI, pinned schema, generation experiment, coverage tools and
-live-server runners stay in the repository. README links to those resources use
-repository URLs; examples and tests are available in both locations. Normal
+live-server runners stay in the repository. Links to those resources use
+repository URLs; guides, examples and tests are available in both locations. Normal
 library builds use checked-in models and never run a generator or fetch a schema.
 Cargo also supplies the normalized manifest, original manifest, minimized lockfile
 and VCS metadata; inspect these along with the explicit files.
@@ -71,8 +72,9 @@ produce a docs.rs build. See Cargo's official
 
 ## Release handoff
 
-Confirm hosted CI and both pinned live workflows, update the changelog date and
-README installation instructions, and rerun package validation after those final
-edits. Publishing and creating a version tag are separate, explicit actions;
-this procedure does neither. After an authorized publication, verify registry
+Confirm hosted CI and dispatch the **Pinned server compatibility** workflow with
+`active_execution` enabled, which runs both smoke and active jobs on Linux/macOS.
+Update the changelog date, confirm the README dependency matches the release
+version, and rerun package validation after those final edits. Publishing and creating a version tag are
+separate, explicit actions; this procedure does neither. After an authorized publication, verify registry
 metadata and docs.rs before announcing compatibility or availability.

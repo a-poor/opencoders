@@ -4,7 +4,7 @@
 
 Initial async Rust library for applications using the OpenCode v2 HTTP API,
 primarily GUI/TUI clients. Applications own rendering, runtime and state.
-This version has not been published; hosted validation and a final release
+This version has not been published; hosted live-server validation and a final release
 revision review remain pending.
 
 ### Supported APIs
@@ -33,9 +33,10 @@ other APIs remain outside this release's implemented surface.
   explicit cursors, and request models preserving omission versus null.
 - No automatic mutation retries or event reconnection. Cancellation stops local
   waiting and does not undo server work; admission and idleness are not success.
-- Sixteen examples, including application-owned background observation and
-  bounded automation, with deterministic tests. Source, examples, test fixtures
-  and both license texts are included in the crate archive.
+- A minimal README and [topic guides](docs/README.md), plus sixteen examples
+  including application-owned background observation and bounded automation with
+  deterministic tests. Source, guides, examples, test fixtures and both license
+  texts are included in the crate archive.
 
 ### Compatibility and limits
 
@@ -44,7 +45,8 @@ The local compatibility baseline is **OpenCode v2.2.5 on macOS arm64**, tested
 scenarios use an isolated localhost provider and disposable read/question tools
 to verify execution, interruption, waiting-tool resumption, and controlled
 disconnect/reconnect recovery. They do not establish real-model reasoning or
-remote-provider compatibility. Linux and hosted runs remain unverified.
+remote-provider compatibility. Live-server compatibility on Linux and hosted
+smoke/active runs remain unverified.
 
 Live events are transient. Missing text cannot be reconstructed from history
 until its text block ends. Snapshot reads are not atomic; the shared observer

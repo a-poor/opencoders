@@ -7,7 +7,8 @@ live events and experimental session logs. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5/macOS;
 the intended crate archive passes local build/test and publish dry-run checks.
-Milestone 2 still needs hosted validation and final release revision checks. See
+Milestone 2 still needs hosted live-server validation and final release revision
+checks. See
 [API coverage](API_COVERAGE.md) for operation-level evidence and
 [release readiness](RELEASE_READINESS.md) for the prioritized acceptance audit.
 Broader APIs remain the implementation plan.
@@ -16,6 +17,10 @@ Broader APIs remain the implementation plan.
 audience is developers building GUI, TUI, desktop, and other interactive OpenCode
 clients. Automated workflows are a secondary audience and should be able to use
 the same underlying API without UI-specific dependencies.
+
+The README is the short installation/quick-start entry point. Put extensive
+workflow documentation in [docs/](docs/README.md); this file records architecture,
+contract decisions and the implementation plan.
 
 ## Goals
 
@@ -173,7 +178,8 @@ information directly, matching the operation's unenveloped HTTP 200 body.
 `client.location().get().await` also returns a direct response, with directory and
 project information. `client.agents().list().await` returns an `AgentListResponse`
 containing both the resolved `location` and the `data` list, without filtering
-hidden agents. Each method has a per-call location override described above.
+hidden agents. Location and agent discovery support per-call location overrides;
+server information is server-wide and ignores the discovery location default.
 
 `agents().get(&AgentId)` returns an `AgentResponse`; `models().list(&ModelListOptions)`
 and `models().default()` return location/data envelopes. Missing agents have typed
@@ -340,8 +346,10 @@ not pause existing execution. Inbox steering wakes execution; queue updates do
 not. Same-mode and unavailable-item updates conflict. Unavailable cancellations
 are no-ops, while a missing session fails. Repeating a pending user ID for the same
 session returns the original payload; cross-session reuse conflicts. This is not
-a blanket idempotency promise across lifecycle states. Execution and concurrency
-remain separate validation work; current live checks admit only with resume(false).
+a blanket idempotency promise across lifecycle states. Smoke checks admit with
+`resume(false)`; the active localhost fixture verifies fresh-session delivery
+with `resume(true)`. Concurrent admissions, steering during existing execution
+and ID reuse after delivery/cancellation remain separate validation work.
 
 ### Execution control
 
@@ -479,8 +487,8 @@ models into `src/models/generated.rs`. Reviewed adaptations preserve additive
 fields in flattened `extra` maps at every object level, mark response structs
 non-exhaustive, and enforce the schema's nonnegative safe-integer PID range.
 A schema guard requires review if that range changes. Absent and null optional
-fields both decode to `None` for these response-only types; this does not settle
-the representation of future update requests. `--server-info --check` verifies
+fields both decode to `None` for these response-only types; this does not define
+request-field semantics. `--server-info --check` verifies
 checked-in output without modifying it.
 
 `--discovery` generates `src/models/discovery.rs`, extracting the inline
@@ -536,14 +544,18 @@ omitted versus empty collections, and non-null optional nested inputs. The four-
 `SessionInboxInfo` uses explicit tag dispatch; `NonNullValue` enforces the opaque
 compaction payload constraint. A strict source decoder corrects Typify's permissive
 adjacent-tag input decoding. Responses retain added fields and numeric precision.
-Normal crate builds never run generation; CI checks the new output alongside the
-existing five generation targets.
+`--events`, `--permissions` and `--forms` generate the remaining implemented
+conversation models. Event dispatch preserves unknown kinds while rejecting
+malformed known payloads; permission and form inputs retain their reviewed
+validation and omission/null rules. See the [generation guide](tools/model-spike/README.md)
+for each slice's adapters and schema guards. CI checks all nine targets: the raw
+probe and eight production slices. Normal builds never run generation.
 
-The public client now applies three-state fields to session creation, updates, and prompts;
-the experiment also demonstrates explicit event dispatch.
-Response tolerance, full event/error coverage, numeric
-constraints, and inline schemas for additional endpoints still require review. Compilation alone
-does not establish wire compatibility or complete schema validation.
+Production request models use three-state fields where the reviewed schema allows
+omission, null and a value; non-nullable inputs retain their stricter contracts.
+Response tolerance, full event/error coverage, numeric constraints and inline
+schemas for additional endpoints still require review. Compilation alone does not
+establish wire compatibility or complete schema validation.
 
 The generation evaluation must cover tagged unions, nested references, optional
 and nullable fields, recursive types, and JSON encoded inside SSE data. Many
@@ -576,11 +588,12 @@ details, and bounded diagnostic response content where useful. Unknown API error
 and non-JSON error bodies must remain inspectable. Authentication secrets must
 not appear in default debug or tracing output.
 
-The foundation implements `Encode`, `Transport`, `Http`, `Decode`, and `ResponseTooLarge`
-errors plus separate client-build failures. JSON response routes accept HTTP 200;
-session update/remove/switch and inbox update/cancel methods accept only HTTP 204 and do not attempt JSON decoding.
-Known validation/authentication, missing-location,
-missing-agent/session/parent/message, conflict, unavailable-service, and invalid-cursor errors expose typed details;
+The client implements `Encode`, `Transport`, `Http`, `Decode`, `ResponseTooLarge`
+and `Stream` errors plus separate client-build failures. JSON response routes
+accept HTTP 200. Session update/remove/switch/wait, inbox update/cancel,
+permission reply and form reply/cancel accept only HTTP 204 without JSON decoding.
+Known validation/authentication, missing-resource, conflict, form-settlement,
+invalid-form-answer, unavailable-service and invalid-cursor errors expose typed details;
 unknown or malformed error shapes retain their JSON and raw bytes. A body-read
 failure remains a transport error and retains the received status when available.
 Encode failures occur before a request is sent and have no HTTP status.
@@ -684,7 +697,9 @@ Library usage examples and documentation should demonstrate a recovery lifecycle
 
 1. Establish live observation and load authoritative snapshots for the selected
    views, reconciling updates that arrive while snapshots are loading.
-2. Apply typed events to application-owned state and retain useful cursors.
+2. Treat events as snapshot invalidations and keep transient previews separate
+   from stored history. Retain explicit durable-log checkpoints only after
+   successfully handling the corresponding events.
 3. On disconnection, expose that live state may be stale.
 4. Re-establish observation and refresh affected snapshots; use durable session
    replay where applicable, without assuming it restores transient deltas or

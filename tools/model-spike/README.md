@@ -5,7 +5,8 @@ overrides and hand-written request/event adapters. Keep generated wire types
 behind a reviewed public API. This private workspace package is a feasibility
 experiment, not the implementation of the `opencoders` client.
 
-The root crate exposes reviewed server-info, discovery, and session models and HTTP methods.
+The root crate exposes reviewed server-info, discovery, session, message, inbox,
+event, permission and form models through hand-written HTTP/stream methods.
 Workspace `default-members` keeps this tool out of ordinary `cargo build` and
 `cargo test`; use `--workspace` or `-p` deliberately. Nothing runs generation at
 build time. Generated probe and production model files are checked in separately.
@@ -94,8 +95,7 @@ Hand-written constructors/setters live in the root `src/models/session_inputs.rs
 Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.
 
-Run all production checks (`--server-info --check`, `--discovery --check`,
-`--sessions --check`, `--messages --check`, and `--inbox --check`) after schema/tool changes, alongside the raw probe `--check`.
+Run [all nine generation checks](#verify-checked-in-models) after schema/tool changes.
 Normal library builds use the checked-in output without invoking the tool.
 
 ## Reviewed message models
@@ -228,6 +228,32 @@ Regression tests cover strings (including special-number spellings), precise JSO
 numbers, booleans, and answer string arrays. Input numeric limits/defaults retain
 the separate number/special-string union. Server-owned semantic validation is not
 generated into the client. Run both `--events --check` and `--forms --check`.
+
+## Verify checked-in models
+
+From the repository root, use the same Rust/rustfmt **1.99.1** toolchain as CI.
+Install that toolchain with rustfmt and fetch the locked dependencies once before
+running these offline checks. The subshell keeps the toolchain override local:
+
+```sh
+(
+  set -e
+  export RUSTUP_TOOLCHAIN=1.99.1
+  cargo run --locked --offline -p opencoders-model-spike -- --check
+  cargo run --locked --offline -p opencoders-model-spike -- --server-info --check
+  cargo run --locked --offline -p opencoders-model-spike -- --discovery --check
+  cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
+  cargo run --locked --offline -p opencoders-model-spike -- --messages --check
+  cargo run --locked --offline -p opencoders-model-spike -- --inbox --check
+  cargo run --locked --offline -p opencoders-model-spike -- --events --check
+  cargo run --locked --offline -p opencoders-model-spike -- --permissions --check
+  cargo run --locked --offline -p opencoders-model-spike -- --forms --check
+)
+```
+
+Each `--check` compares generated text without rewriting it. To regenerate a
+reviewed slice, use the same toolchain and omit only `--check` from its command.
+The diagnostic full-schema experiment below is separate from these nine checks.
 
 ## Run the experiment
 

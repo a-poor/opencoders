@@ -11,6 +11,7 @@ developers. Applications own rendering and UI state; do not build an interface.
 - `openapi/`: pinned schema and provenance.
 - `DESIGN.md`: architecture and milestones; `TODO.md`: tasks, inbox, and backlog.
 - `tests/`: model and mock HTTP tests; `examples/`: runnable library usage.
+- `docs/`: detailed usage guides; keep `README.md` focused on installation and quick start.
 
 ## Build, Test, and Development Commands
 
@@ -21,7 +22,8 @@ developers. Applications own rendering and UI state; do not build an interface.
 - `cargo doc --workspace --no-deps --locked`: build API documentation.
 
 `cargo test` selects only the root crate. See
-`tools/model-spike/README.md` for regeneration and full-schema compilation checks.
+[generation checks](tools/model-spike/README.md#verify-checked-in-models) for all
+nine pinned-toolchain checks; [RELEASING.md](RELEASING.md) covers package validation.
 
 ## Coding Style and Architecture
 
@@ -47,7 +49,8 @@ of artificial tests. Use Rust's test framework and behavioral names such as
 `prompt_preserves_delivery_mode`. No numeric coverage threshold is configured.
 Prioritize deterministic protocol tests and regressions. Keep live-server/model
 tests opt-in with pinned versions and disposable data.
-Use `python3 tools/live/run.py` for the isolated smoke test; normal tests skip it.
+Use `python3 tools/live/run.py` for the isolated smoke test and
+`python3 tools/live/active.py` for scripted localhost execution; normal tests skip both.
 
 ## Commits and Pull Requests
 

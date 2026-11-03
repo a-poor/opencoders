@@ -65,9 +65,9 @@ No active goal.
 
 - [ ] Extend mock-server coverage as additional operations are implemented,
   following the existing JSON body, empty-response, and mutation retry checks.
-- [ ] Next goal: after pushing the reviewed commits, confirm hosted CI and
-  manually run both pinned smoke/active workflow jobs on Linux/macOS. Local
-  macOS compatibility is verified; hosted and Linux execution remain unverified.
+- [ ] Next goal: dispatch **Pinned server compatibility** with `active_execution`
+  enabled and verify smoke/active jobs on Linux/macOS. Ordinary hosted CI passed
+  for `e0bd6de`; hosted live-server execution remains unverified on both platforms.
 
 ## Next: interactive conversation APIs (milestone 2)
 
@@ -81,7 +81,7 @@ No active goal.
 
 ### Examples and first usable release
 
-- [ ] Finalize release date/version and README installation instructions when
+- [ ] Finalize release date/version and verify the README dependency version when
   release gates pass. Repeat the package checks from a clean final revision;
   current evidence is an unpublished working-tree archive. See `RELEASING.md`.
 - [ ] Verify milestone 2 acceptance criteria and release-candidate checks from
@@ -141,6 +141,12 @@ the additional API surface. Move an item into a milestone when it is prioritized
 - [ ] Typed plugin RPC adapters for externally supplied plugin contracts.
 - [ ] Optional state-reconstruction helpers, keeping state ownership explicit.
 - [ ] Generation of routine endpoint methods if manual maintenance becomes costly.
+- [ ] Reduce repeated contract details between `docs/` and `DESIGN.md`, keeping
+  guides focused on usage and design focused on rationale. README is now a
+  minimal entry point; duplication caused stale coverage statements during review.
+- [ ] Review the pinned checkout action's Node.js runtime version. CI run
+  `41669812365` warns that its Node.js 20 action is being forced onto Node.js 24;
+  update to a reviewed maintained action release and pin its commit.
 -
 
 ## Bugs
@@ -163,8 +169,9 @@ when a decision is made.
   serialization style. Discovery routes use documented `deepObject` encoding;
   explicit-null query semantics remain unverified. The v2.2.5 live test confirms
   directory query encoding, header fallback, and query precedence.
-- [ ] Choose ergonomic resource names and request construction patterns after
-  exercising representative methods in library examples.
+- [ ] Review resource naming and request construction as APIs expand beyond
+  conversations; current resource accessors/builders are exercised by sixteen
+  examples and documentation snippets, with no release-blocking change identified.
 - [ ] Verify omitted/null behavior for future mutations. `RequestField<T>` preserves
   all three wire states; v2.2.5 create accepts null for all eight fields and uses
   server-cwd fallback for omitted/null location without a parent. All four session
@@ -221,6 +228,27 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Replace the roughly 1,000-line README with a 54-line entry point: crates.io
+  `0.1.0` installation, a read-only quick start, pinned API provenance and licenses.
+  Move detailed usage into seven topic guides plus `docs/README.md`; retain the
+  existing behavior and compatibility notes and update contributor/release links.
+- [x] Include the guides in the crate archive and update the automation example's
+  documentation pointer. Compile the new quick start and thirteen unchanged
+  moved snippets on Rust 1.88 against the local release candidate. Verify 262
+  repository links/anchors, all eight packaged documentation files, the 116-file
+  package build, formatting and coverage checks. No publication or live run.
+
+- [x] Push through `e0bd6de` to `origin/main` and wait for
+  [CI run 41669812365](https://github.com/a-poor/opencoders/actions/runs/41669812365).
+  All seven jobs pass: Linux/macOS default and HTTP-only tests, quality, MSRV,
+  and generation. Record live-server validation as a separate pending workflow.
+- [x] Review onboarding, API descriptions, generation/release instructions and
+  contributor guidance. Add README workflow navigation; correct stale location,
+  execution, generation, error and recovery guidance. Compile all fourteen README
+  Rust snippets on Rust 1.88, check repository links/anchors and coverage, and
+  verify generation instructions match all nine CI commands. Record duplicated
+  workflow docs and the observed checkout-action warning as backlog follow-ups.
 
 - [x] Prepare 0.1.0 package metadata and an explicit 108-file archive containing
   source, examples, tests/fixtures, README, release notes and both licenses.

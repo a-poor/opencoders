@@ -1,5 +1,5 @@
 //! Explicitly invoked automation: this can call models/tools and modify the
-//! server workspace. See README for required environment and retained-session cleanup.
+//! server workspace. See docs/execution.md for required environment and retained-session cleanup.
 #[path = "support/automation.rs"]
 mod automation;
 

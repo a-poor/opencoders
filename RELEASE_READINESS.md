@@ -2,12 +2,13 @@
 
 Updated **2026-11-03**, against the checked-in schema, the recorded OpenCode
 **v2.2.5 / macOS arm64** smoke run and a new active localhost-provider run.
-This does not establish Linux or remote-provider compatibility. It tracks remaining
-work for the first usable release; no release or publication has been performed.
+This does not establish live-server compatibility on Linux or with remote
+providers. It tracks remaining work for the first usable release; no release or
+publication has been performed.
 
 The core conversation resources are implemented, but **milestone 2 is not yet
 complete**. Package metadata and draft release notes are prepared; hosted
-validation and the final release revision review remain. PTY support is
+live-server validation and the final release revision review remain. PTY support is
 milestone 3 and does not gate the first conversation-library release. No UI is
 being built.
 
@@ -119,12 +120,13 @@ claims an existing hosted build; Cargo's normal docs.rs discovery can apply afte
 publication. The owner confirmed **2026 Austin Poor** for the MIT notice; the
 Apache appendix now has the same attribution. Both full license texts are packaged.
 
-The archive contains **108 files**: source, all sixteen examples/support modules,
-tests/fixtures, README, [draft release notes](CHANGELOG.md), licenses and Cargo's
-generated metadata. Schema, generation, coverage/live tools, workflows and planning
-documents remain in the repository. README links use repository URLs so excluded
-documents are not dangling archive-relative links. It explicitly describes 0.1.0
-as unreleased and gives local-checkout installation instructions.
+The archive includes source, all sixteen examples/support modules, tests/fixtures,
+README, the [usage guides](docs/README.md), [draft release notes](CHANGELOG.md),
+licenses and Cargo's generated metadata. Schema, generation, coverage/live tools,
+workflows and planning documents remain in the repository; links to them use
+repository URLs. The README uses the planned crates.io `0.1.0` dependency, as
+requested for release preparation; this is not evidence of publication. The
+changelog and release records retain the actual unreleased status.
 
 Public usage review covered client/runtime ownership, resource accessors, typed
 IDs and request builders, omitted/null handling, pagination, stream policy and
@@ -139,24 +141,42 @@ publish dry run. Local results on **2026-11-03, macOS arm64, Rust 1.99.1**:
 | Check | Result |
 | --- | --- |
 | Package listing/build | Pass with `--allow-dirty --locked --offline`; no missing-metadata warnings. |
-| Archive inspection | 108 files, 1,421,235 uncompressed bytes / 218,386 compressed bytes. Source matches checkout; no generation tools, workspace/path dependencies or build script. |
+| Archive inspection | 108 files, 1,421,235 uncompressed bytes / 218,386 compressed bytes. Source matches the package-preparation checkout; no generation tools, workspace/path dependencies or build script. |
 | Extracted default and HTTP-only tests | Both pass: 217 library/integration tests and 14 doctests; the two live tests remain ignored. Fresh directory outside the checkout. |
 | Rust 1.88 library and all sixteen examples | Both feature configurations pass with locked, cached dependencies. |
 | Extracted API documentation | Pass with warnings denied. |
 | Publish dry run | Pass against crates.io with `--allow-dirty --locked --dry-run`; Cargo confirms upload was aborted. Registry access is required, so the initial offline attempt could not run. |
 | Repository consistency | Formatting, diff whitespace, coverage report, and documentation path checks pass. No SDK behavior or generated models changed. |
 
-This is working-tree evidence based on commit `899ec51`, **not a clean release
-artifact**. Its VCS metadata records that dirty state. The dry run produced the
-same tested archive, SHA-256
+The table above records the earlier package-preparation snapshot. This is
+working-tree evidence based on commit `899ec51`, **not a clean release
+artifact**. The source/documentation snapshot was subsequently committed as
+`e0bd6de`; the archive's VCS metadata records the earlier dirty state. The dry run
+produced the same tested archive, SHA-256
 `6219b427195d24ed0820a27e0326b85a890dccc888ab83cf29109f3e233449ae`.
-Repeat validation after final release edits and record the clean revision.
+Later README/changelog edits change the archive. Repeat validation after final
+release edits and record the clean revision.
+
+The subsequent documentation split was checked locally on 2026-11-03: packaging
+and extracted-library verification pass with **116 files**, including all eight
+`docs/` files. All fourteen README/guide Rust snippets compile on Rust 1.88; the
+crates.io dependency in the quick start was patched to the local 0.1.0 candidate
+for that check. Repository links/anchors and archive-relative documentation links
+resolve. These documentation checks do not replace the final clean-revision test
+and publish-dry-run procedure above.
 
 ### 4. Collect release-candidate validation
 
-Recommended next goal: collect hosted CI and pinned live-server results on
-Linux/macOS after the reviewed commits are pushed. This package-preparation goal
-does not push, create a tag or publish.
+Hosted [CI run 41669812365](https://github.com/a-poor/opencoders/actions/runs/41669812365)
+passed all seven jobs for pushed commit `e0bd6de` on 2026-11-03: default and
+HTTP-only tests on Linux/macOS, quality checks, Rust 1.88 library checks and all
+nine generation checks. This is evidence for that commit; later documentation
+edits have separate local checks. CI emits a non-failing checkout-action Node.js
+runtime deprecation warning, tracked in `TODO.md`.
+
+Recommended next goal: dispatch **Pinned server compatibility** with
+`active_execution` enabled and collect smoke/active results on Linux/macOS.
+Ordinary CI skips both live tests; its success does not establish server behavior.
 
 After the implementation work, run the repository checks on the intended release
 revision: workspace and HTTP-only tests, Rust 1.88 library builds, formatting,
@@ -164,11 +184,10 @@ strict Clippy, warning-free docs, examples, all nine generation checks, coverage
 inventory/tests and live-runner tests. The workflows already encode most checks;
 the coverage checker is now included in the quality job.
 
-Confirm hosted CI and run the manual pinned smoke workflow on Linux x86-64 and
-macOS arm64. Linux and hosted execution are still unverified; workflow files alone
-are not evidence of passing runs. Repeat the package check after final changes
-and record revision/platform/results with the release. Publishing remains a
-separate action.
+Run the manual pinned compatibility workflow on Linux x86-64 and macOS arm64.
+Hosted live-server execution on both platforms remains unverified. Repeat the
+package check after final changes and record revision/platform/results with the
+release. Publishing remains a separate action.
 
 ## Limits to retain in release documentation
 

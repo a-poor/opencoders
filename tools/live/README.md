@@ -156,8 +156,8 @@ orchestration API was added.
 ## Verified smoke behavior
 
 Local run: **2026-11-02, macOS arm64, OpenCode 2.2.5, Rust 1.99.1**. The full
-smoke test passes. Linux is configured in the manual workflow but has not yet
-been exercised in this repository. Hosted workflow runs require pushing the files.
+smoke test passes. Linux is configured in the manual workflow but live-server
+execution has not yet been exercised there or on either hosted platform.
 
 | Operation | Observed and asserted |
 | --- | --- |
@@ -428,6 +428,10 @@ provider execution is covered separately above.
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
 docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
 sets on Rust 1.88, Python runner tests, and all nine generation checks.
+All seven jobs passed for commit `e0bd6de` on 2026-11-03 in
+[run 41669812365](https://github.com/a-poor/opencoders/actions/runs/41669812365).
+These jobs skip the two live tests; they do not extend the server compatibility
+baseline beyond the recorded local macOS runs.
 Regeneration pins Rust/rustfmt 1.99.1 and uses the locked dependencies and local
 schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.
