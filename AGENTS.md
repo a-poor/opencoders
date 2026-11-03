@@ -8,7 +8,7 @@ developers. Applications own rendering and UI state; do not build an interface.
 - `src/`: public client, transport/errors, resource methods, and generated models.
 - `tools/model-spike/`: private generation tool, experiment, and tests.
 - `tools/live/`: pinned server manifest, disposable runner, and compatibility notes.
-- `openapi/`: pinned schema and provenance.
+- `openapi/`: pinned schema/provenance; `tools/schema/`: upstream drift checker.
 - `DESIGN.md`: architecture and milestones; `TODO.md`: tasks, inbox, and backlog.
 - `tests/`: model and mock HTTP tests; `examples/`: runnable library usage.
 - `docs/`: detailed usage guides; keep `README.md` focused on installation and quick start.

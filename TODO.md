@@ -78,9 +78,12 @@ No active goal.
 
 ### Examples and first usable release
 
-- [ ] Next: publish and tag the validated 0.1.0 candidate after explicit
-  authorization. Verify crates.io metadata and docs.rs after publication;
-  see `RELEASING.md`. The planned release date is 2026-11-03.
+- [ ] Next: verify Linux CI for the badge/maintenance changes and manually dispatch
+  the schema workflow once it reaches `main`. Check the final clean package after
+  the README/guide changes; previous archive checksums describe earlier candidates.
+- [ ] Publish and tag the validated 0.1.0 candidate after explicit authorization.
+  Verify crates.io metadata and docs.rs after publication; see `RELEASING.md`.
+  The planned release date is 2026-11-03.
 
 ## Soon: terminal and workspace APIs (milestone 3)
 
@@ -135,6 +138,9 @@ the additional API surface. Move an item into a milestone when it is prioritized
 - [ ] Typed plugin RPC adapters for externally supplied plugin contracts.
 - [ ] Optional state-reconstruction helpers, keeping state ownership explicit.
 - [ ] Generation of routine endpoint methods if manual maintenance becomes costly.
+- [ ] Reconsider hosted macOS testing if OS-specific functionality or dependency
+  regressions justify its cost and runner delays. Local macOS testing remains
+  the primary development path; hosted checks currently use Linux.
 - [ ] Reduce repeated contract details between `docs/` and `DESIGN.md`, keeping
   guides focused on usage and design focused on rationale. README is now a
   minimal entry point; duplication caused stale coverage statements during review.
@@ -219,6 +225,18 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Reduce ordinary CI and manual live-server workflows to Linux. Keep local
+  macOS runners and historical compatibility evidence; track reconsidering hosted
+  macOS coverage in the backlog.
+- [x] Add CI, docs.rs, crates.io and MIT/Apache-2.0 badges to the 59-line README,
+  preserving the author's title cleanup. All badge endpoints return SVGs; docs
+  and crate-version badges await publication. The updated 116-file package builds.
+- [x] Add a read-only weekly/manual upstream schema check (Monday 09:17 UTC),
+  ignoring JSON whitespace/key order and reporting bounded diffs. Nine offline
+  behavioral tests pass and run in ordinary CI. A real 2026-11-03 download matches
+  the pin byte-for-byte. Workflow lint, coverage checks, formatting and 272 local
+  links/anchors pass. No schema, generated model or SDK behavior changes.
 
 - [x] Commit/push hosted-validation records and finalize candidate `e86c6fa`:
   version 0.1.0 and planned changelog date 2026-11-03, matching the README.

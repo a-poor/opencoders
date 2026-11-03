@@ -16,11 +16,17 @@ cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 cargo doc --workspace --no-deps --locked
 python3 tools/coverage/report.py --check
 python3 -m unittest discover -s tools/coverage -p 'test_*.py'
+python3 -m unittest discover -s tools/schema -p 'test_*.py'
 ```
 
 Tests use local mock HTTP servers; they need permission to bind localhost ports
 but do not require OpenCode, provider credentials, or model calls. The runnable
 examples are built by the checks and contact a real server only when invoked.
+
+Hosted CI and manual live-server jobs run on Linux. Development testing is
+primarily on macOS; retain local macOS checks for releases and significant
+dependency changes. Hosted macOS jobs may return if platform-specific behavior
+justifies their cost and queue time.
 
 ## Compatibility
 
@@ -53,3 +59,9 @@ contains the initial experiment and reviewed server-info/discovery/session/messa
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.
+
+A separate weekly/manual workflow checks the published OpenAPI JSON for content
+drift without modifying the pin or generated code. See the
+[schema maintenance guide](https://github.com/a-poor/opencoders/blob/main/openapi/README.md#weekly-upstream-check)
+for comparison rules, results and manual commands. Ordinary CI tests the checker
+offline and never fetches the upstream schema.

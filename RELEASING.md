@@ -75,7 +75,10 @@ produce a docs.rs build. See Cargo's official
 Confirm hosted CI on the intended revision. Recorded live compatibility evidence
 can be reused when the SDK, fixtures, workflows and server baseline are unchanged;
 otherwise dispatch **Pinned server compatibility** with `active_execution` enabled
-to run both smoke and active jobs on Linux/macOS.
+to run smoke and active jobs on Linux. Hosted checks are Linux-only; run relevant
+macOS checks locally using `tools/live/run.py` and `tools/live/active.py`.
+The separate **Upstream schema drift** workflow is a maintenance signal; review
+differences without treating every upstream change as a release blocker.
 Update the changelog date, confirm the README dependency matches the release
 version, and rerun package validation after those final edits. Publishing and creating a version tag are
 separate, explicit actions; this procedure does neither. After an authorized publication, verify registry

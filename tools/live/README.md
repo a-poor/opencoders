@@ -428,9 +428,10 @@ provider execution is covered separately above.
 ## CI
 
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
-docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
-sets on Rust 1.88, Python runner tests, and all nine generation checks.
-All seven jobs passed for commit `75f0f2a9e67b06c0e4b80dd7134cac03b060d01e`
+docs/examples, default and HTTP-only tests on Linux, both library feature
+sets on Rust 1.88, Python runner/schema-checker tests, and all nine generation checks.
+Before reducing the hosted matrix, all seven jobs passed for commit
+`75f0f2a9e67b06c0e4b80dd7134cac03b060d01e`
 on 2026-11-03 in
 [run 41679740026](https://github.com/a-poor/opencoders/actions/runs/41679740026).
 These jobs skip the two live tests; server compatibility is established separately
@@ -440,9 +441,14 @@ schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.
 
 [`live.yml`](../../.github/workflows/live.yml) is manual (`workflow_dispatch`) and
-runs the smoke runner on Linux x86-64 and macOS arm64. Its optional
-`active_execution` input adds the active localhost fixture on both platforms.
-No model secrets are needed.
+runs the smoke runner on Linux x86-64. Its optional `active_execution` input adds
+the active localhost fixture on Linux. No model secrets are needed.
+
+Hosted macOS jobs are disabled to avoid runner cost and queue delays. The same
+smoke/active commands remain supported locally on macOS arm64, where most
+development testing takes place. Use them for releases and relevant dependency
+changes; the earlier hosted results below remain historical evidence. Revisit
+the hosted matrix if platform-specific functionality makes it worthwhile.
 
 ### Hosted validation
 

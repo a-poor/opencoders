@@ -7,8 +7,8 @@ live events and experimental session logs. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
 hosted smoke and active checks pass on macOS arm64 and Linux x86-64.
-The clean 0.1.0 candidate passes package, test, CI and publish dry-run checks.
-Milestone 2's conversation-library candidate is ready for publication. See
+The recorded clean 0.1.0 candidate passes package, test, CI and publish dry-run
+checks; later badge/documentation edits need a final committed package check. See
 [API coverage](API_COVERAGE.md) for operation-level evidence and
 [release readiness](RELEASE_READINESS.md) for the prioritized acceptance audit.
 Broader APIs remain the implementation plan.
@@ -778,9 +778,12 @@ default test suite. Use disposable server data and workspaces for those tests.
 
 GitHub Actions workflows cover formatting, Clippy, unit/protocol tests, docs and
 examples, default/HTTP-only features, Rust 1.88 library builds, and all checked-in
-generation targets. Regeneration pins Rust/rustfmt 1.99.1. A separate manual
+generation targets on Linux. Most development testing occurs locally on macOS;
+hosted macOS jobs are disabled to avoid runner cost and queue delays. Retain local
+macOS release/dependency checks and reconsider hosted coverage if OS-specific
+functionality grows. Regeneration pins Rust/rustfmt 1.99.1. A separate manual
 workflow runs the disposable server smoke test and optionally the separate active
-fixture; ordinary tests skip both live tests.
+fixture on Linux; ordinary tests skip both live tests.
 
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
 and commit pinned in `tools/live/server.json`. Server info, location/agent/model discovery,
@@ -816,6 +819,10 @@ live scope, source-reviewed behavior and unverified cases remain separate.
 See [inventory maintenance](tools/coverage/README.md). Review schema updates as explicit
 changes: inspect the diff, regenerate, adjust adapters, and run compatibility
 tests. Do not automatically replace the schema during normal builds or CI checks.
+A separate weekly/manual [drift workflow](.github/workflows/schema.yml) downloads
+upstream JSON and compares its content, ignoring whitespace and object-key order.
+It reports changes for review and never regenerates or edits the pin. Ordinary
+CI tests the checker offline. See [schema maintenance](openapi/README.md#weekly-upstream-check).
 
 ## Decisions to resolve during implementation
 

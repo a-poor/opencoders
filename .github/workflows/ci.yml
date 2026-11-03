@@ -32,14 +32,15 @@ jobs:
         run: |
           python3 -m unittest discover -s tools/coverage -p 'test_*.py'
           python3 tools/coverage/report.py --check
+      - name: Test upstream schema checker offline
+        run: python3 -m unittest discover -s tools/schema -p 'test_*.py'
 
   tests:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
         features: [default, http-only]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

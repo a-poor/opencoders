@@ -1,0 +1,31 @@
+name: Upstream schema drift
+
+on:
+  schedule:
+    # Mondays at 09:17 UTC, away from the busy start of the hour.
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: schema-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download the published OpenAPI document
+        run: >-
+          curl --fail --silent --show-error --location
+          --retry 2 --retry-delay 2 --max-time 60 --max-filesize 16777216
+          https://opencode.ai/v2/openapi.json
+          --output "$RUNNER_TEMP/opencode-v2-latest.json"
+      - name: Compare content with the reviewed schema
+        run: >-
+          python3 tools/schema/check.py "$RUNNER_TEMP/opencode-v2-latest.json"
+          --summary "$GITHUB_STEP_SUMMARY"

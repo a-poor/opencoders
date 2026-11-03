@@ -1,7 +1,12 @@
-# `opencoders`
+# opencoders
 
-An async Rust client for the [OpenCode v2 HTTP API](https://opencode.ai/v2/docs/api),
-for GUI/TUI developers and automated consumers. Your application owns its UI and state.
+[![CI](https://github.com/a-poor/opencoders/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/a-poor/opencoders/actions/workflows/ci.yml)
+[![docs.rs](https://img.shields.io/docsrs/opencoders)](https://docs.rs/opencoders)
+[![crates.io](https://img.shields.io/crates/v/opencoders)](https://crates.io/crates/opencoders)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
+
+An unofficial async Rust client for connecting to a running OpenCode server
+through its [v2 HTTP API](https://opencode.ai/v2/docs/api).
 
 See the [documentation](https://github.com/a-poor/opencoders/tree/main/docs) for
 workflow guides, examples and compatibility details.

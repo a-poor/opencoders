@@ -9,12 +9,19 @@ publication has been performed.
 The core conversation resources and hosted functional validation are complete.
 The candidate version is **0.1.0**, matching Cargo and the README dependency;
 release notes are dated **2026-11-03**. This is the planned release date, not a
-publication record. The clean committed candidate passes package validation and
-hosted CI and is ready for an authorized publication. PTY support is
+publication record. The clean committed candidate recorded below passes package
+validation and hosted CI. Subsequent badge, documentation and maintenance-workflow
+edits still need final CI and package checks before publication.
+PTY support is
 milestone 3 and does not gate the first conversation-library release. No UI is
 being built.
 
 ## Coverage and evidence
+
+Current hosted policy is Linux-only for ordinary CI and manual live tests;
+macOS testing continues locally. Earlier macOS runs below remain valid historical
+evidence. The separate weekly schema check reports upstream drift for review and
+does not update the pinned contract or gate ordinary CI.
 
 [API_COVERAGE.md](API_COVERAGE.md) classifies all **169** pinned operation IDs:
 
