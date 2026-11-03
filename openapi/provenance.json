@@ -5,7 +5,7 @@
   "openapi_version": "3.1.0",
   "schema_info_version": "0.0.1",
   "server_version": null,
-  "server_version_note": "The published schema does not identify a server release; compatibility baseline remains to be selected.",
+  "server_version_note": "The published schema does not identify its producing server release. OpenCode v2.2.5 is a separately tested compatibility baseline; see tools/live/server.json and tools/live/README.md.",
   "operations": 169,
   "component_schemas": 490
 }

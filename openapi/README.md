@@ -14,3 +14,9 @@ the behavioral and compatibility changes. Normal builds do not fetch a schema.
 
 See [the generation experiment](../tools/model-spike/README.md) for commands,
 findings, and known limitations.
+
+[`coverage.json`](coverage.json) explicitly classifies all pinned operation IDs
+and records method/test references and verification limits. The generated
+[coverage report](../API_COVERAGE.md) is checked offline in CI. Schema and
+server-baseline updates require reviewing this inventory too; see
+[maintenance instructions](../tools/coverage/README.md).

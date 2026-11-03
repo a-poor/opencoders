@@ -1,10 +1,12 @@
 # opencoders design and implementation plan
 
-Status: foundation implemented through `server.info()`, location/agent/model discovery
-with configurable location selection, plus session creation,
-retrieval, updates, deletion, agent/model selection, filtered/paginated listing,
-message history/retrieval, prompt admission, inbox management, and live event
-subscriptions and experimental durable session logs. Broader APIs remain the implementation plan.
+Status: 35 pinned operations have public methods and protocol tests, covering
+server/location/agent/model discovery, session lifecycle and forks, history,
+prompt admission/inbox management, interruption/waiting, permissions/forms,
+live events and experimental session logs. Milestone 2 still needs integrated
+examples and execution/recovery validation. See [API coverage](API_COVERAGE.md)
+for operation-level evidence and [release readiness](RELEASE_READINESS.md) for
+the prioritized acceptance audit. Broader APIs remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
 audience is developers building GUI, TUI, desktop, and other interactive OpenCode
@@ -687,6 +689,12 @@ complete HTTP coverage is a longer-term objective. Each milestone should leave a
 usable client rather than requiring all endpoints before any real consumer can
 exercise the design.
 
+The operation inventory is already maintained across all milestones; it is not
+deferred until milestone 4. The [readiness audit](RELEASE_READINESS.md) distinguishes
+implemented methods from integrated workflow evidence. A usable snapshot-refresh
+recovery path is required for the stock CLI baseline; naturally retained log
+replay remains a separate validation gap rather than an assumed server guarantee.
+
 Provide small runnable Rust examples that list sessions, retrieve history,
 submit input, consume events, and reply to permissions or forms. Use ordinary
 output or assertions to demonstrate results; no GUI toolkit, TUI framework, or
@@ -732,8 +740,12 @@ needed no model changes; authentication and cursor semantics required clearer
 guidance. The original schema's source release remains unknown, independently of
 this tested baseline. No release is downloaded during normal builds/tests.
 
-Record endpoint coverage by upstream operation ID, including deliberate
-deferrals and protocol-specific implementations. Review schema updates as explicit
+Record endpoint coverage by upstream operation ID in `openapi/coverage.json`,
+including deliberate deferrals and protocol-specific implementations. Regenerate
+`API_COVERAGE.md` with `python3 tools/coverage/report.py --write`; CI checks it with
+`--check`. Supported status requires a public method and protocol assertions;
+live scope, source-reviewed behavior and unverified cases remain separate.
+See [inventory maintenance](tools/coverage/README.md). Review schema updates as explicit
 changes: inspect the diff, regenerate, adjust adapters, and run compatibility
 tests. Do not automatically replace the schema during normal builds or CI checks.
 

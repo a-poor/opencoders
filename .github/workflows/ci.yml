@@ -28,6 +28,10 @@ jobs:
       - run: cargo +stable check --examples --all-features --locked
       - name: Check live-test runner without starting a server
         run: python3 -m unittest discover -s tools/live -p 'test_*.py'
+      - name: Check reviewed API coverage
+        run: |
+          python3 -m unittest discover -s tools/coverage -p 'test_*.py'
+          python3 tools/coverage/report.py --check
 
   tests:
     runs-on: ${{ matrix.os }}

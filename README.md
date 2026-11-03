@@ -772,7 +772,7 @@ checkpoint storage, and snapshot reconciliation remain application decisions. Tr
 `Error::Http`, `Error::Decode`, `Error::ResponseTooLarge`, or `Error::Stream`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
 methods expect exactly HTTP 200; session update/remove/switch/wait, permission reply,
-and inbox update/cancel methods expect HTTP 204 with no
+form reply/cancel, and inbox update/cancel methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
 too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.
@@ -781,7 +781,9 @@ HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `UnauthorizedError`, `LocationNotFoundError`, `ServiceUnavailableError`, and
 `InvalidCursorError`, `SessionNotFoundError` (including missing parents), and
 `MessageNotFoundError` (also used when a message belongs to another session), and
-`AgentNotFoundError`, `PermissionNotFoundError`, and `ConflictError` (with an optional resource identifier).
+`AgentNotFoundError`, `PermissionNotFoundError`, `FormNotFoundError`,
+`FormAlreadySettledError`, `FormInvalidAnswerError`, and `ConflictError`
+(with an optional resource identifier).
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
 available in the raw body. Truncated or non-JSON bodies have no parsed API error.
@@ -803,6 +805,8 @@ cargo test --workspace --locked
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 cargo doc --workspace --no-deps --locked
+python3 tools/coverage/report.py --check
+python3 -m unittest discover -s tools/coverage -p 'test_*.py'
 ```
 
 Tests use local mock HTTP servers; they need permission to bind localhost ports
@@ -817,8 +821,15 @@ checksums, verified behavior, and limitations. Other endpoints remain unimplemen
 fixtures because the stock CLI disables retention; live model execution and server-overflow
 behavior are not yet exercised.
 
+The [API coverage inventory](API_COVERAGE.md) classifies all 169 pinned operations:
+35 supported, 129 planned and 5 deferred. Each supported route links to its Rust
+method, representative protocol tests and verification limits. See the
+[milestone 2 readiness audit](RELEASE_READINESS.md) for remaining integration,
+execution/recovery and release work. The inventory checks are offline and do not
+run during ordinary crate builds.
+
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
-contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event/permission generation commands.
+contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event/permission/form generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.

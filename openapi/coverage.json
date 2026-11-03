@@ -1,0 +1,1819 @@
+{
+  "format_version": 1,
+  "schema_sha256": "2fdcda59d6c37f5dac904ab7b7aff05fb98465e23eb0fe8d3b9767151ad391de",
+  "baseline": {
+    "version": "2.2.5",
+    "commit": "9bbb8ce18c80f099e0e448775f59d965ead40a21",
+    "verified_on": "2026-11-02",
+    "platform": "macOS arm64"
+  },
+  "evidence": {
+    "catalog": {
+      "live_scope": "The smoke run checks agent lookup and missing-agent errors, model catalog/default envelopes, repeated type filters, grouping, empty results and location selection.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_selection(",
+          "label": "verify_selection"
+        }
+      ],
+      "source_reviewed": [],
+      "unverified": [
+        "Null default-model data is mock-tested, not observed live. Provider execution and concurrent catalog changes are not covered."
+      ],
+      "examples": [
+        "examples/configure_session.rs"
+      ]
+    },
+    "discovery": {
+      "live_scope": "The smoke run checks location directory encoding/overrides, header fallback and query precedence, plus typed agent lists and resolved location metadata.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn pinned_server_discovery_and_session_pagination(",
+          "label": "pinned_server_discovery_and_session_pagination"
+        }
+      ],
+      "source_reviewed": [],
+      "unverified": [
+        "Explicit-null location query semantics and other location variants."
+      ],
+      "examples": [
+        "examples/discovery.rs"
+      ]
+    },
+    "events": {
+      "live_scope": "The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_events(",
+          "label": "verify_events"
+        }
+      ],
+      "source_reviewed": [
+        "The pinned global feed is live-only, sends heartbeat comments and uses a bounded subscriber queue."
+      ],
+      "unverified": [
+        "Active model-output delivery, heartbeat timing, server slow-consumer overflow and reconnect/snapshot reconciliation. Framing, EOF, failures and deadlines have deterministic protocol tests."
+      ],
+      "examples": [
+        "examples/events.rs"
+      ]
+    },
+    "execution": {
+      "live_scope": "The smoke run checks interrupt on idle/parked sessions, including omitted/false/true resume, interrupted:false, unchanged held input, idle wait HTTP 204 and missing-session errors.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_execution(",
+          "label": "verify_execution"
+        }
+      ],
+      "source_reviewed": [],
+      "unverified": [
+        "Interruption during active model/tool execution, interrupted:true, resuming steering input, wait through real execution and cross-server ownership."
+      ],
+      "examples": [
+        "examples/execution.rs"
+      ]
+    },
+    "fork": {
+      "live_scope": "The smoke run forks imported settled transcripts: exclusive/before-first/default/null boundaries, errors, configuration/location inheritance, new message IDs, attachments, reset state, parked-input exclusion, compaction remapping, events and independent deletion.",
+      "live_tests": [
+        {
+          "file": "tests/support/forks.rs",
+          "anchor": "fn verify(",
+          "label": "verify"
+        },
+        {
+          "file": "tests/support/forks.rs",
+          "anchor": "fn verify_compaction(",
+          "label": "verify_compaction"
+        }
+      ],
+      "source_reviewed": [
+        "The pinned import path drops unfinished assistant/shell/compaction entries before storing fixtures."
+      ],
+      "unverified": [
+        "Fork filtering during real active execution, instruction inheritance, concurrent mutation, copies crossing the 500-row batch boundary and retained-log replay on forks."
+      ],
+      "examples": [
+        "examples/session_fork.rs"
+      ]
+    },
+    "forms": {
+      "live_scope": "Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_forms(",
+          "label": "verify_forms"
+        }
+      ],
+      "source_reviewed": [
+        "The pinned service retains terminal forms in memory for ten minutes."
+      ],
+      "unverified": [
+        "Timed eviction, actual waiting-tool resumption, restart behavior and concurrent replies. Fixtures neither call models nor open external URLs."
+      ],
+      "examples": [
+        "examples/forms.rs"
+      ]
+    },
+    "history": {
+      "live_scope": "The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_message_history(",
+          "label": "verify_message_history"
+        }
+      ],
+      "source_reviewed": [],
+      "unverified": [
+        "History during active execution, concurrent timeline changes and experimental media-reference negotiation. Imported model/tool results are fixtures, not real executions."
+      ],
+      "examples": [
+        "examples/history.rs"
+      ]
+    },
+    "inbox": {
+      "live_scope": "The smoke run uses resume(false) on idle sessions: prompt admission and ID reconciliation, prepared inline attachments, pending order, steer-to-queue updates, cancellation, conflicts and absent history before delivery.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_prompt_inbox(",
+          "label": "verify_prompt_inbox"
+        }
+      ],
+      "source_reviewed": [
+        "Omitted/null resume wakes execution; queue delivery alone does not prevent it. Updating queued input to steer wakes execution."
+      ],
+      "unverified": [
+        "Actual delivery/execution, already delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation."
+      ],
+      "examples": [
+        "examples/prompt_inbox.rs"
+      ]
+    },
+    "log": {
+      "live_scope": "The smoke run checks stock-CLI marker-only behavior and finite/follow modes. Captured rename events explicitly seeded into the runner-owned database verify exclusive replay, cross-aggregate isolation, follow, resumption and watermark gaps.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_session_logs(",
+          "label": "verify_session_logs"
+        }
+      ],
+      "source_reviewed": [
+        "The v2.2.5 CLI disables log payload retention; the replay fixture does not change that server policy."
+      ],
+      "unverified": [
+        "Naturally retained payloads across restart, fork replay and retention under load. Seeded rows do not establish durable recovery guarantees."
+      ],
+      "examples": [
+        "examples/session_log.rs"
+      ]
+    },
+    "permissions": {
+      "live_scope": "Manually created idle-session requests exercise allow/deny/ask, pending lists and ownership, location isolation, once/reject/always replies, saved-rule effects across sessions, deny precedence, feedback and asked/replied events.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_permissions(",
+          "label": "verify_permissions"
+        }
+      ],
+      "source_reviewed": [
+        "Duplicate pending-ID rejection is source-reviewed only."
+      ],
+      "unverified": [
+        "Actual waiting-tool resumption, plugin hooks, concurrent replies/partial failures and reload/restart behavior. Saved rules exist only in the disposable database."
+      ],
+      "examples": [
+        "examples/permissions.rs"
+      ]
+    },
+    "selection": {
+      "live_scope": "The smoke run checks stored agent/model selection, history markers, deduplication, default variant normalization, unknown IDs and missing sessions.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn verify_selection(",
+          "label": "verify_selection"
+        }
+      ],
+      "source_reviewed": [],
+      "unverified": [
+        "Availability/credentials for a selected model or agent, selection during execution and concurrent catalog changes."
+      ],
+      "examples": [
+        "examples/configure_session.rs"
+      ]
+    },
+    "server": {
+      "live_scope": "The v2.2.5 disposable smoke run asserts version/PID/paths, successful Basic authentication and typed unauthenticated HTTP 401.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn pinned_server_discovery_and_session_pagination(",
+          "label": "pinned_server_discovery_and_session_pagination"
+        }
+      ],
+      "source_reviewed": [],
+      "unverified": [
+        "Pairing/session cookies and proxy-specific authentication."
+      ],
+      "examples": [
+        "examples/server_info.rs"
+      ]
+    },
+    "sessions": {
+      "live_scope": "The smoke run checks create/get/list/update/remove with idle disposable sessions: null/omitted inputs, location and parent behavior, cursor traversal, filtering, metadata/permission replacement, archive/restore and recursive deletion.",
+      "live_tests": [
+        {
+          "file": "tests/live.rs",
+          "anchor": "fn pinned_server_discovery_and_session_pagination(",
+          "label": "pinned_server_discovery_and_session_pagination"
+        }
+      ],
+      "source_reviewed": [
+        "The pinned title generator can call a model for populated sessions; updates are sequential rather than an atomic transaction."
+      ],
+      "unverified": [
+        "Generated titles on populated sessions, deletion during active work, concurrent page consistency, maximum list limits and all project/subpath filters."
+      ],
+      "examples": [
+        "examples/sessions.rs",
+        "examples/create_session.rs",
+        "examples/session_lifecycle.rs"
+      ]
+    }
+  },
+  "operations": {
+    "agent.get": {
+      "method": "GET",
+      "path": "/api/agent/{agentID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/agents.rs",
+        "anchor": "pub async fn get(",
+        "label": "Agents::get / get_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/selection.rs",
+          "anchor": "fn discovery_preserves_envelopes_defaults_overrides_and_repeated_types(",
+          "label": "discovery_preserves_envelopes_defaults_overrides_and_repeated_types"
+        }
+      ],
+      "evidence": "catalog"
+    },
+    "agent.list": {
+      "method": "GET",
+      "path": "/api/agent",
+      "status": "supported",
+      "rust": {
+        "file": "src/agents.rs",
+        "anchor": "pub async fn list(",
+        "label": "Agents::list / list_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/discovery.rs",
+          "anchor": "fn default_location_applies_only_to_location_aware_routes(",
+          "label": "default_location_applies_only_to_location_aware_routes"
+        }
+      ],
+      "evidence": "discovery"
+    },
+    "command.list": {
+      "method": "GET",
+      "path": "/api/command",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+    },
+    "config.get": {
+      "method": "GET",
+      "path": "/api/config",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+    },
+    "config.shells": {
+      "method": "GET",
+      "path": "/api/config/shell",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+    },
+    "credential.activate": {
+      "method": "POST",
+      "path": "/api/credential/{credentialID}/activate",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+    },
+    "credential.create": {
+      "method": "POST",
+      "path": "/api/credential",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+    },
+    "credential.list": {
+      "method": "GET",
+      "path": "/api/credential",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+    },
+    "credential.remove": {
+      "method": "DELETE",
+      "path": "/api/credential/{credentialID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+    },
+    "credential.update": {
+      "method": "PATCH",
+      "path": "/api/credential/{credentialID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+    },
+    "debug.heapDump": {
+      "method": "POST",
+      "path": "/api/debug/heap-dump",
+      "status": "deferred",
+      "reason": "Server diagnostic/eviction API; outside the initial client workflow, reconsider for a concrete debugging use case."
+    },
+    "debug.location.evict": {
+      "method": "DELETE",
+      "path": "/api/debug/location",
+      "status": "deferred",
+      "reason": "Server diagnostic/eviction API; outside the initial client workflow, reconsider for a concrete debugging use case."
+    },
+    "debug.location.list": {
+      "method": "GET",
+      "path": "/api/debug/location",
+      "status": "deferred",
+      "reason": "Server diagnostic/eviction API; outside the initial client workflow, reconsider for a concrete debugging use case."
+    },
+    "event.subscribe": {
+      "method": "GET",
+      "path": "/api/event",
+      "status": "supported",
+      "rust": {
+        "file": "src/events.rs",
+        "anchor": "pub async fn subscribe(",
+        "label": "Events::subscribe"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/events.rs",
+          "anchor": "fn subscription_uses_explicit_filters_headers_and_preserves_sse_metadata(",
+          "label": "subscription_uses_explicit_filters_headers_and_preserves_sse_metadata"
+        }
+      ],
+      "evidence": "events"
+    },
+    "experimental.artifacts.create": {
+      "method": "POST",
+      "path": "/api/experimental/artifacts",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.artifacts.delete": {
+      "method": "DELETE",
+      "path": "/api/experimental/artifacts/{artifactID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.artifacts.get": {
+      "method": "GET",
+      "path": "/api/experimental/artifacts/{artifactID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.artifacts.list": {
+      "method": "GET",
+      "path": "/api/experimental/artifacts",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.artifacts.providers": {
+      "method": "GET",
+      "path": "/api/experimental/artifacts/providers",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.artifacts.update": {
+      "method": "PATCH",
+      "path": "/api/experimental/artifacts/{artifactID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.artifacts.view": {
+      "method": "GET",
+      "path": "/api/experimental/artifacts/{artifactID}/view/*",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.config.update": {
+      "method": "PATCH",
+      "path": "/api/experimental/config",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+    },
+    "experimental.fs.unwatch": {
+      "method": "DELETE",
+      "path": "/api/experimental/fs/watch",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+    },
+    "experimental.fs.watch": {
+      "method": "POST",
+      "path": "/api/experimental/fs/watch",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+    },
+    "experimental.fs.write": {
+      "method": "POST",
+      "path": "/api/experimental/fs/write",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+    },
+    "experimental.generate.decisions": {
+      "method": "POST",
+      "path": "/api/experimental/generate/decisions",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional generation APIs with explicit cost, cancellation and long-running deadline behavior."
+    },
+    "experimental.generate.image": {
+      "method": "POST",
+      "path": "/api/experimental/generate/image",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional generation APIs with explicit cost, cancellation and long-running deadline behavior."
+    },
+    "experimental.generate.text": {
+      "method": "POST",
+      "path": "/api/experimental/generate/text",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional generation APIs with explicit cost, cancellation and long-running deadline behavior."
+    },
+    "experimental.generate.textLegacy": {
+      "method": "POST",
+      "path": "/api/experimental/generate",
+      "status": "deferred",
+      "reason": "Deprecated route in the pinned schema; plan the replacement experimental.generate.text route instead."
+    },
+    "experimental.integration.wellknown.add": {
+      "method": "POST",
+      "path": "/api/experimental/integration/wellknown",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "experimental.mcp.add": {
+      "method": "PUT",
+      "path": "/api/experimental/mcp/{server}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "experimental.mcp.client": {
+      "method": "GET",
+      "path": "/api/experimental/client-mcp",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "experimental.mcp.client.token": {
+      "method": "POST",
+      "path": "/api/experimental/client-mcp/token",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "experimental.mcp.connect": {
+      "method": "POST",
+      "path": "/api/experimental/mcp/{server}/connect",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "experimental.mcp.disconnect": {
+      "method": "POST",
+      "path": "/api/experimental/mcp/{server}/disconnect",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "experimental.mcp.remove": {
+      "method": "DELETE",
+      "path": "/api/experimental/mcp/{server}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "experimental.media.get": {
+      "method": "GET",
+      "path": "/api/experimental/media/{hash}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Artifact/media storage and retrieval; review binary bodies and external-view effects."
+    },
+    "experimental.migration.v1.status": {
+      "method": "GET",
+      "path": "/api/experimental/migration/v1",
+      "status": "deferred",
+      "reason": "V1 migration status is outside the initial v2 client scope; revisit if a consumer needs migration tooling."
+    },
+    "experimental.persistentPty.connect": {
+      "method": "GET",
+      "path": "/api/experimental/persistent-pty/{ptyID}/connect",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.connectToken": {
+      "method": "POST",
+      "path": "/api/experimental/persistent-pty/{ptyID}/connect-token",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.create": {
+      "method": "POST",
+      "path": "/api/experimental/session/{sessionID}/terminal",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.get": {
+      "method": "GET",
+      "path": "/api/experimental/persistent-pty/{ptyID}",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.handoff": {
+      "method": "POST",
+      "path": "/api/experimental/persistent-pty/handoff",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.list": {
+      "method": "GET",
+      "path": "/api/experimental/session/{sessionID}/terminal",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.read": {
+      "method": "GET",
+      "path": "/api/experimental/session/{sessionID}/terminal/read",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.remove": {
+      "method": "DELETE",
+      "path": "/api/experimental/persistent-pty/{ptyID}",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.shutdown": {
+      "method": "POST",
+      "path": "/api/experimental/persistent-pty/shutdown",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.snapshot": {
+      "method": "GET",
+      "path": "/api/experimental/persistent-pty/{ptyID}/snapshot",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.persistentPty.update": {
+      "method": "PUT",
+      "path": "/api/experimental/persistent-pty/{ptyID}",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Persistent terminal lifecycle/ownership and replay semantics; follows ordinary PTY transport."
+    },
+    "experimental.schedule.create": {
+      "method": "POST",
+      "path": "/api/experimental/schedule",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Scheduled execution lifecycle; explicit persisted effects and cancellation behavior."
+    },
+    "experimental.schedule.delete": {
+      "method": "DELETE",
+      "path": "/api/experimental/schedule/{scheduleID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Scheduled execution lifecycle; explicit persisted effects and cancellation behavior."
+    },
+    "experimental.schedule.get": {
+      "method": "GET",
+      "path": "/api/experimental/schedule/{scheduleID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Scheduled execution lifecycle; explicit persisted effects and cancellation behavior."
+    },
+    "experimental.schedule.list": {
+      "method": "GET",
+      "path": "/api/experimental/schedule",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Scheduled execution lifecycle; explicit persisted effects and cancellation behavior."
+    },
+    "experimental.schedule.pause": {
+      "method": "POST",
+      "path": "/api/experimental/schedule/{scheduleID}/pause",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Scheduled execution lifecycle; explicit persisted effects and cancellation behavior."
+    },
+    "experimental.schedule.resume": {
+      "method": "POST",
+      "path": "/api/experimental/schedule/{scheduleID}/resume",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Scheduled execution lifecycle; explicit persisted effects and cancellation behavior."
+    },
+    "experimental.session.export": {
+      "method": "GET",
+      "path": "/api/experimental/session/{sessionID}/export",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Public transcript transfer API; raw live-test imports currently serve only fixture setup."
+    },
+    "experimental.session.import": {
+      "method": "POST",
+      "path": "/api/experimental/session/import",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Public transcript transfer API; raw live-test imports currently serve only fixture setup."
+    },
+    "experimental.session.instructions.entry.list": {
+      "method": "GET",
+      "path": "/api/experimental/session/{sessionID}/instructions/entries",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+    },
+    "experimental.session.instructions.entry.put": {
+      "method": "PUT",
+      "path": "/api/experimental/session/{sessionID}/instructions/entries/{key}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+    },
+    "experimental.session.instructions.entry.remove": {
+      "method": "DELETE",
+      "path": "/api/experimental/session/{sessionID}/instructions/entries/{key}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+    },
+    "experimental.session.log": {
+      "method": "GET",
+      "path": "/api/experimental/session/{sessionID}/log",
+      "status": "supported",
+      "rust": {
+        "file": "src/session_log.rs",
+        "anchor": "pub async fn experimental_log(",
+        "label": "Sessions::experimental_log"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/session_log.rs",
+          "anchor": "fn log_encodes_explicit_queries_and_segments_and_retains_markers_and_sse_ids(",
+          "label": "log_encodes_explicit_queries_and_segments_and_retains_markers_and_sse_ids"
+        }
+      ],
+      "evidence": "log"
+    },
+    "experimental.session.skill": {
+      "method": "POST",
+      "path": "/api/experimental/session/{sessionID}/skill",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+    },
+    "experimental.session.stats": {
+      "method": "GET",
+      "path": "/api/experimental/session/stats",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Usage and session statistics with reviewed units, numeric bounds and availability."
+    },
+    "experimental.session.wait": {
+      "method": "POST",
+      "path": "/api/experimental/session/{sessionID}/wait",
+      "status": "supported",
+      "rust": {
+        "file": "src/execution.rs",
+        "anchor": "pub async fn experimental_wait(",
+        "label": "Sessions::experimental_wait"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/execution.rs",
+          "anchor": "fn wait_posts_without_a_body_query_or_location_and_accepts_only_204(",
+          "label": "wait_posts_without_a_body_query_or_location_and_accepts_only_204"
+        }
+      ],
+      "evidence": "execution"
+    },
+    "experimental.usage.limits": {
+      "method": "GET",
+      "path": "/api/experimental/usage/limits",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Usage and session statistics with reviewed units, numeric bounds and availability."
+    },
+    "experimental.voice.models": {
+      "method": "GET",
+      "path": "/api/experimental/voice/models",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional voice/search capabilities and their provider/transport requirements."
+    },
+    "experimental.voice.session": {
+      "method": "POST",
+      "path": "/api/experimental/voice/session",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional voice/search capabilities and their provider/transport requirements."
+    },
+    "form.list": {
+      "method": "GET",
+      "path": "/api/form",
+      "status": "supported",
+      "rust": {
+        "file": "src/forms.rs",
+        "anchor": "pub async fn list(&self) -> Result<FormListResponse>",
+        "label": "Forms::list / list_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/forms.rs",
+          "anchor": "fn forms_use_location_for_discovery_and_session_paths_for_lifecycle(",
+          "label": "forms_use_location_for_discovery_and_session_paths_for_lifecycle"
+        }
+      ],
+      "evidence": "forms"
+    },
+    "fs.find": {
+      "method": "GET",
+      "path": "/api/fs/find",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+    },
+    "fs.list": {
+      "method": "GET",
+      "path": "/api/fs/list",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+    },
+    "fs.read": {
+      "method": "GET",
+      "path": "/api/fs/read/*",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+    },
+    "integration.command.cancel": {
+      "method": "DELETE",
+      "path": "/api/integration/{integrationID}/connect/command/{attemptID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.command.connect": {
+      "method": "POST",
+      "path": "/api/integration/{integrationID}/connect/command",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.command.status": {
+      "method": "GET",
+      "path": "/api/integration/{integrationID}/connect/command/{attemptID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.connect.external": {
+      "method": "POST",
+      "path": "/api/integration/{integrationID}/connect/external",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.connect.key": {
+      "method": "POST",
+      "path": "/api/integration/{integrationID}/connect/key",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.get": {
+      "method": "GET",
+      "path": "/api/integration/{integrationID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.list": {
+      "method": "GET",
+      "path": "/api/integration",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.oauth.cancel": {
+      "method": "DELETE",
+      "path": "/api/integration/{integrationID}/connect/oauth/{attemptID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.oauth.complete": {
+      "method": "POST",
+      "path": "/api/integration/{integrationID}/connect/oauth/{attemptID}/complete",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.oauth.connect": {
+      "method": "POST",
+      "path": "/api/integration/{integrationID}/connect/oauth",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "integration.oauth.status": {
+      "method": "GET",
+      "path": "/api/integration/{integrationID}/connect/oauth/{attemptID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "location.get": {
+      "method": "GET",
+      "path": "/api/location",
+      "status": "supported",
+      "rust": {
+        "file": "src/location.rs",
+        "anchor": "pub async fn get(",
+        "label": "Locations::get / get_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/discovery.rs",
+          "anchor": "fn default_location_applies_only_to_location_aware_routes(",
+          "label": "default_location_applies_only_to_location_aware_routes"
+        }
+      ],
+      "evidence": "discovery"
+    },
+    "location.reload": {
+      "method": "POST",
+      "path": "/api/location/reload",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+    },
+    "mcp.list": {
+      "method": "GET",
+      "path": "/api/mcp",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "mcp.resource.catalog": {
+      "method": "GET",
+      "path": "/api/mcp/resource",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+    },
+    "model.default": {
+      "method": "GET",
+      "path": "/api/model/default",
+      "status": "supported",
+      "rust": {
+        "file": "src/catalog.rs",
+        "anchor": "pub async fn default(",
+        "label": "Models::default / default_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/selection.rs",
+          "anchor": "fn discovery_preserves_envelopes_defaults_overrides_and_repeated_types(",
+          "label": "discovery_preserves_envelopes_defaults_overrides_and_repeated_types"
+        }
+      ],
+      "evidence": "catalog"
+    },
+    "model.list": {
+      "method": "GET",
+      "path": "/api/model",
+      "status": "supported",
+      "rust": {
+        "file": "src/catalog.rs",
+        "anchor": "pub async fn list(",
+        "label": "Models::list / list_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/selection.rs",
+          "anchor": "fn discovery_preserves_envelopes_defaults_overrides_and_repeated_types(",
+          "label": "discovery_preserves_envelopes_defaults_overrides_and_repeated_types"
+        }
+      ],
+      "evidence": "catalog"
+    },
+    "permission.request.list": {
+      "method": "GET",
+      "path": "/api/permission/request",
+      "status": "supported",
+      "rust": {
+        "file": "src/permissions.rs",
+        "anchor": "pub async fn list(&self) -> Result<PermissionRequestListResponse>",
+        "label": "Permissions::list / list_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/permissions.rs",
+          "anchor": "fn location_lists_preserve_metadata_order_and_per_call_overrides(",
+          "label": "location_lists_preserve_metadata_order_and_per_call_overrides"
+        }
+      ],
+      "evidence": "permissions"
+    },
+    "permission.saved.list": {
+      "method": "GET",
+      "path": "/api/permission/saved",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Direct saved-rule administration; current replies already exercise server-side save effects."
+    },
+    "permission.saved.remove": {
+      "method": "DELETE",
+      "path": "/api/permission/saved/{id}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Direct saved-rule administration; current replies already exercise server-side save effects."
+    },
+    "permission.saved.update": {
+      "method": "PATCH",
+      "path": "/api/permission/saved/{id}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Direct saved-rule administration; current replies already exercise server-side save effects."
+    },
+    "plugin.check": {
+      "method": "POST",
+      "path": "/api/plugin/check",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Plugin management and dynamic RPC contracts; library access only, no UI rendering."
+    },
+    "plugin.gui": {
+      "method": "GET",
+      "path": "/api/plugin/gui",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Plugin management and dynamic RPC contracts; library access only, no UI rendering."
+    },
+    "plugin.list": {
+      "method": "GET",
+      "path": "/api/plugin",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Plugin management and dynamic RPC contracts; library access only, no UI rendering."
+    },
+    "plugin.update": {
+      "method": "POST",
+      "path": "/api/plugin/update",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Plugin management and dynamic RPC contracts; library access only, no UI rendering."
+    },
+    "project.list": {
+      "method": "GET",
+      "path": "/api/project",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+    },
+    "project.update": {
+      "method": "PATCH",
+      "path": "/api/project/{projectID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+    },
+    "provider.get": {
+      "method": "GET",
+      "path": "/api/provider/{providerID}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+    },
+    "provider.list": {
+      "method": "GET",
+      "path": "/api/provider",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+    },
+    "pty.connect": {
+      "method": "GET",
+      "path": "/api/pty/{ptyID}/connect",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+    },
+    "pty.connect.token": {
+      "method": "POST",
+      "path": "/api/pty/{ptyID}/connect-token",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+    },
+    "pty.create": {
+      "method": "POST",
+      "path": "/api/pty",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+    },
+    "pty.get": {
+      "method": "GET",
+      "path": "/api/pty/{ptyID}",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+    },
+    "pty.list": {
+      "method": "GET",
+      "path": "/api/pty",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+    },
+    "pty.remove": {
+      "method": "DELETE",
+      "path": "/api/pty/{ptyID}",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+    },
+    "pty.update": {
+      "method": "PUT",
+      "path": "/api/pty/{ptyID}",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+    },
+    "reference.list": {
+      "method": "GET",
+      "path": "/api/reference",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+    },
+    "rpc.call": {
+      "method": "POST",
+      "path": "/api/rpc/{rpcID}/{method}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Plugin management and dynamic RPC contracts; library access only, no UI rendering."
+    },
+    "server.connect": {
+      "method": "GET",
+      "path": "/auth/connect/{code}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Pairing and cookie/session authentication; verify redemption and redirect/cookie policy first."
+    },
+    "server.info": {
+      "method": "GET",
+      "path": "/api/info",
+      "status": "supported",
+      "rust": {
+        "file": "src/server.rs",
+        "anchor": "pub async fn info(",
+        "label": "Server::info"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/server_info.rs",
+          "anchor": "fn server_info_uses_get_and_decodes_the_direct_response(",
+          "label": "server_info_uses_get_and_decodes_the_direct_response"
+        }
+      ],
+      "evidence": "server"
+    },
+    "server.pair": {
+      "method": "POST",
+      "path": "/api/pair",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Pairing and cookie/session authentication; verify redemption and redirect/cookie policy first."
+    },
+    "session.active": {
+      "method": "GET",
+      "path": "/api/session/active",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.background": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/background",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.command": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/command",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.compact": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/compact",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.context": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/context",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.create": {
+      "method": "POST",
+      "path": "/api/session",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn create(",
+        "label": "Sessions::create"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/session_operations.rs",
+          "anchor": "fn create_sends_required_empty_json_body_and_preserves_the_response_envelope(",
+          "label": "create_sends_required_empty_json_body_and_preserves_the_response_envelope"
+        }
+      ],
+      "evidence": "sessions"
+    },
+    "session.diff": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/diff",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.environment": {
+      "method": "PUT",
+      "path": "/api/session/{sessionID}/environment",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.fork": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/fork",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn fork(",
+        "label": "Sessions::fork"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/session_forks.rs",
+          "anchor": "fn fork_posts_required_json_with_encoded_id_and_preserves_the_envelope(",
+          "label": "fork_posts_required_json_with_encoded_id_and_preserves_the_envelope"
+        }
+      ],
+      "evidence": "fork"
+    },
+    "session.form.cancel": {
+      "method": "DELETE",
+      "path": "/api/session/{sessionID}/form/{formID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/forms.rs",
+        "anchor": "pub async fn cancel(",
+        "label": "SessionForms::cancel"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/forms.rs",
+          "anchor": "fn forms_use_location_for_discovery_and_session_paths_for_lifecycle(",
+          "label": "forms_use_location_for_discovery_and_session_paths_for_lifecycle"
+        }
+      ],
+      "evidence": "forms"
+    },
+    "session.form.create": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/form",
+      "status": "supported",
+      "rust": {
+        "file": "src/forms.rs",
+        "anchor": "pub async fn create(",
+        "label": "SessionForms::create"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/forms.rs",
+          "anchor": "fn forms_use_location_for_discovery_and_session_paths_for_lifecycle(",
+          "label": "forms_use_location_for_discovery_and_session_paths_for_lifecycle"
+        }
+      ],
+      "evidence": "forms"
+    },
+    "session.form.get": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/form/{formID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/forms.rs",
+        "anchor": "pub async fn get(",
+        "label": "SessionForms::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/forms.rs",
+          "anchor": "fn forms_use_location_for_discovery_and_session_paths_for_lifecycle(",
+          "label": "forms_use_location_for_discovery_and_session_paths_for_lifecycle"
+        }
+      ],
+      "evidence": "forms"
+    },
+    "session.form.list": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/form",
+      "status": "supported",
+      "rust": {
+        "file": "src/forms.rs",
+        "anchor": "pub async fn list(&self) -> Result<SessionFormListResponse>",
+        "label": "SessionForms::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/forms.rs",
+          "anchor": "fn forms_use_location_for_discovery_and_session_paths_for_lifecycle(",
+          "label": "forms_use_location_for_discovery_and_session_paths_for_lifecycle"
+        }
+      ],
+      "evidence": "forms"
+    },
+    "session.form.reply": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/form/{formID}/reply",
+      "status": "supported",
+      "rust": {
+        "file": "src/forms.rs",
+        "anchor": "pub async fn reply(",
+        "label": "SessionForms::reply"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/forms.rs",
+          "anchor": "fn forms_use_location_for_discovery_and_session_paths_for_lifecycle(",
+          "label": "forms_use_location_for_discovery_and_session_paths_for_lifecycle"
+        }
+      ],
+      "evidence": "forms"
+    },
+    "session.generate": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/generate",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional generation APIs with explicit cost, cancellation and long-running deadline behavior."
+    },
+    "session.get": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn get(",
+        "label": "Sessions::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/session_operations.rs",
+          "anchor": "fn get_encodes_a_session_id_as_one_segment_without_changing_proxy_prefix_or_query(",
+          "label": "get_encodes_a_session_id_as_one_segment_without_changing_proxy_prefix_or_query"
+        }
+      ],
+      "evidence": "sessions"
+    },
+    "session.inbox.cancel": {
+      "method": "DELETE",
+      "path": "/api/session/{sessionID}/inbox/{inboxID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/inbox.rs",
+        "anchor": "pub async fn cancel(",
+        "label": "SessionInbox::cancel"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/inbox.rs",
+          "anchor": "fn prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults(",
+          "label": "prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults"
+        }
+      ],
+      "evidence": "inbox"
+    },
+    "session.inbox.list": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/inbox",
+      "status": "supported",
+      "rust": {
+        "file": "src/inbox.rs",
+        "anchor": "pub async fn list(",
+        "label": "SessionInbox::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/inbox.rs",
+          "anchor": "fn prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults(",
+          "label": "prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults"
+        }
+      ],
+      "evidence": "inbox"
+    },
+    "session.inbox.update": {
+      "method": "PATCH",
+      "path": "/api/session/{sessionID}/inbox/{inboxID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/inbox.rs",
+        "anchor": "pub async fn update(",
+        "label": "SessionInbox::update"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/inbox.rs",
+          "anchor": "fn prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults(",
+          "label": "prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults"
+        }
+      ],
+      "evidence": "inbox"
+    },
+    "session.interrupt": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/interrupt",
+      "status": "supported",
+      "rust": {
+        "file": "src/execution.rs",
+        "anchor": "pub async fn interrupt(",
+        "label": "Sessions::interrupt"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/execution.rs",
+          "anchor": "fn interrupt_preserves_resume_omission_and_false_and_encodes_the_session_id(",
+          "label": "interrupt_preserves_resume_omission_and_false_and_encodes_the_session_id"
+        }
+      ],
+      "evidence": "execution"
+    },
+    "session.list": {
+      "method": "GET",
+      "path": "/api/session",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn list(",
+        "label": "Sessions::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/sessions.rs",
+          "anchor": "fn next_and_previous_cursors_round_trip_without_automatic_requests_or_reordering(",
+          "label": "next_and_previous_cursors_round_trip_without_automatic_requests_or_reordering"
+        }
+      ],
+      "evidence": "sessions"
+    },
+    "session.message.get": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/message/{messageID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/messages.rs",
+        "anchor": "pub async fn get(",
+        "label": "SessionMessages::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/messages.rs",
+          "anchor": "fn list_and_get_encode_ids_preserve_envelopes_and_ignore_default_location(",
+          "label": "list_and_get_encode_ids_preserve_envelopes_and_ignore_default_location"
+        }
+      ],
+      "evidence": "history"
+    },
+    "session.message.list": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/message",
+      "status": "supported",
+      "rust": {
+        "file": "src/messages.rs",
+        "anchor": "pub async fn list(",
+        "label": "SessionMessages::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/messages.rs",
+          "anchor": "fn pagination_is_explicit_preserves_order_and_repeats_type_filter(",
+          "label": "pagination_is_explicit_preserves_order_and_repeats_type_filter"
+        }
+      ],
+      "evidence": "history"
+    },
+    "session.move": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/move",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.permission.create": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/permission",
+      "status": "supported",
+      "rust": {
+        "file": "src/permissions.rs",
+        "anchor": "pub async fn create(",
+        "label": "SessionPermissions::create"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/permissions.rs",
+          "anchor": "fn session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies(",
+          "label": "session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies"
+        }
+      ],
+      "evidence": "permissions"
+    },
+    "session.permission.get": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/permission/{requestID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/permissions.rs",
+        "anchor": "pub async fn get(",
+        "label": "SessionPermissions::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/permissions.rs",
+          "anchor": "fn session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies(",
+          "label": "session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies"
+        }
+      ],
+      "evidence": "permissions"
+    },
+    "session.permission.list": {
+      "method": "GET",
+      "path": "/api/session/{sessionID}/permission",
+      "status": "supported",
+      "rust": {
+        "file": "src/permissions.rs",
+        "anchor": "pub async fn list(&self) -> Result<SessionPermissionListResponse>",
+        "label": "SessionPermissions::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/permissions.rs",
+          "anchor": "fn session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies(",
+          "label": "session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies"
+        }
+      ],
+      "evidence": "permissions"
+    },
+    "session.permission.reply": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/permission/{requestID}/reply",
+      "status": "supported",
+      "rust": {
+        "file": "src/permissions.rs",
+        "anchor": "pub async fn reply(",
+        "label": "SessionPermissions::reply"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/permissions.rs",
+          "anchor": "fn session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies(",
+          "label": "session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies"
+        }
+      ],
+      "evidence": "permissions"
+    },
+    "session.prompt": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/prompt",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn prompt(",
+        "label": "Sessions::prompt"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/inbox.rs",
+          "anchor": "fn prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults(",
+          "label": "prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults"
+        }
+      ],
+      "evidence": "inbox"
+    },
+    "session.remove": {
+      "method": "DELETE",
+      "path": "/api/session/{sessionID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn remove(",
+        "label": "Sessions::remove"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/session_mutations.rs",
+          "anchor": "fn update_and_remove_encode_one_segment_and_accept_empty_204_without_json(",
+          "label": "update_and_remove_encode_one_segment_and_accept_empty_204_without_json"
+        }
+      ],
+      "evidence": "sessions"
+    },
+    "session.revert.clear": {
+      "method": "DELETE",
+      "path": "/api/session/{sessionID}/revert",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.revert.commit": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/revert/commit",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.revert.stage": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/revert/stage",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.shell": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/shell",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.switchAgent": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/agent",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn switch_agent(",
+        "label": "Sessions::switch_agent"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/selection.rs",
+          "anchor": "fn switches_send_strict_json_accept_204_and_ignore_discovery_location(",
+          "label": "switches_send_strict_json_accept_204_and_ignore_discovery_location"
+        }
+      ],
+      "evidence": "selection"
+    },
+    "session.switchModel": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/model",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn switch_model(",
+        "label": "Sessions::switch_model"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/selection.rs",
+          "anchor": "fn switches_send_strict_json_accept_204_and_ignore_discovery_location(",
+          "label": "switches_send_strict_json_accept_204_and_ignore_discovery_location"
+        }
+      ],
+      "evidence": "selection"
+    },
+    "session.synthetic": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/synthetic",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "session.update": {
+      "method": "PATCH",
+      "path": "/api/session/{sessionID}",
+      "status": "supported",
+      "rust": {
+        "file": "src/sessions.rs",
+        "anchor": "pub async fn update(",
+        "label": "Sessions::update"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/session_mutations.rs",
+          "anchor": "fn update_and_remove_encode_one_segment_and_accept_empty_204_without_json(",
+          "label": "update_and_remove_encode_one_segment_and_accept_empty_204_without_json"
+        }
+      ],
+      "evidence": "sessions"
+    },
+    "session.view": {
+      "method": "POST",
+      "path": "/api/session/{sessionID}/view",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "shell.create": {
+      "method": "POST",
+      "path": "/api/shell",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "shell.get": {
+      "method": "GET",
+      "path": "/api/shell/{id}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "shell.list": {
+      "method": "GET",
+      "path": "/api/shell",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "shell.output": {
+      "method": "GET",
+      "path": "/api/shell/{id}/output",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "shell.remove": {
+      "method": "DELETE",
+      "path": "/api/shell/{id}",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+    },
+    "skill.list": {
+      "method": "GET",
+      "path": "/api/skill",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+    },
+    "vcs.base": {
+      "method": "GET",
+      "path": "/api/vcs/base",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "vcs.branch.list": {
+      "method": "GET",
+      "path": "/api/vcs/branch",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "vcs.diff": {
+      "method": "GET",
+      "path": "/api/vcs/diff",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "vcs.get": {
+      "method": "GET",
+      "path": "/api/vcs",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "vcs.init": {
+      "method": "POST",
+      "path": "/api/vcs/init",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "vcs.status": {
+      "method": "GET",
+      "path": "/api/vcs/status",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "websearch.providers": {
+      "method": "GET",
+      "path": "/api/websearch/provider",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional voice/search capabilities and their provider/transport requirements."
+    },
+    "websearch.query": {
+      "method": "POST",
+      "path": "/api/websearch",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Additional voice/search capabilities and their provider/transport requirements."
+    },
+    "worktree.create": {
+      "method": "POST",
+      "path": "/api/worktree",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "worktree.list": {
+      "method": "GET",
+      "path": "/api/worktree",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "worktree.refresh": {
+      "method": "POST",
+      "path": "/api/worktree/refresh",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    },
+    "worktree.remove": {
+      "method": "DELETE",
+      "path": "/api/worktree",
+      "status": "planned",
+      "milestone": 3,
+      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+    }
+  }
+}

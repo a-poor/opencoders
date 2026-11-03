@@ -1,7 +1,9 @@
 # Tasks and backlog
 
 This file tracks current work, upcoming milestones, bugs, and longer-term ideas
-for `opencoders`. See [DESIGN.md](DESIGN.md) for architecture, scope, and rationale.
+for `opencoders`. See [DESIGN.md](DESIGN.md) for architecture, scope, and rationale,
+[API_COVERAGE.md](API_COVERAGE.md) for route status, and
+[RELEASE_READINESS.md](RELEASE_READINESS.md) for the milestone 2 acceptance audit.
 
 We are building a Rust library for GUI/TUI developers, with automation supported
 by the same APIs. Building an end-user interface is outside the project's scope.
@@ -48,8 +50,6 @@ No active implementation goal.
 - [ ] Apply the spike findings to broader production models: additive response fields,
   complete event/error dispatch, three-state request fields, numeric constraints,
   and inline endpoint schemas. See `tools/model-spike/README.md`.
-- [ ] Create an operation-ID inventory with supported, planned, and deferred
-  status so API coverage can be tracked.
 
 ### Crate and transport
 
@@ -68,7 +68,6 @@ No active implementation goal.
 - [ ] After pushing the workflows, confirm hosted CI and manually run the pinned
   server smoke workflow on Linux/macOS. Local macOS compatibility is verified;
   Linux execution remains unverified.
-- [ ] Replace the MIT license's copyright placeholders with the correct details.
 
 ## Next: interactive conversation APIs (milestone 2)
 
@@ -84,14 +83,28 @@ No active implementation goal.
 
 ### Examples and first usable release
 
-- [ ] Add an example of background event consumption using minimal
-  application-owned state. Explicit log resumption and snapshot refresh are
-  demonstrated in `examples/session_log.rs` without a background task.
-- [ ] Add an automation example using the same API surface.
-- [ ] Expand crate documentation and the README with setup, authentication,
-  runtime requirements, supported operations, and tested server versions.
-- [ ] Verify milestone 2 acceptance criteria from `DESIGN.md` and prepare the
-  first usable release.
+- [ ] Next goal: add a background session observer example using minimal
+  application-owned state. Demonstrate bounded buffering, cancellation, visible
+  stream failures/lag, explicit reconnect and snapshot refresh; test convergence
+  after missed events without promising atomic snapshot/event ordering. See
+  `RELEASE_READINESS.md` for completion checks. Existing `examples/session_log.rs`
+  demonstrates explicit resumption/refresh without a background task.
+- [ ] Add a bounded automation example using the same APIs: admit input, observe
+  progress and inspect history/pending work after waiting. Distinguish admission,
+  idleness and successful completion; document deadlines and cleanup.
+- [ ] Extend opt-in compatibility testing to active incremental output,
+  interruption/settlement and actual permission/form tool resumption. Investigate
+  deterministic local provider/tool fixtures first; keep normal tests and the
+  existing smoke runner credential-free and without model calls.
+- [ ] Prepare package metadata, review the archive's included files, and replace
+  the MIT copyright placeholder with the owner's correct holder/year. Audit-only
+  package listing succeeds; packaged-build and publish dry-run checks remain.
+- [ ] Write initial release notes and finish the documentation/API ergonomics
+  review. Setup, authentication, runtime, operation coverage and tested-version
+  guidance already exist; retain the documented execution/recovery limits.
+- [ ] Verify milestone 2 acceptance criteria and release-candidate checks from
+  `RELEASE_READINESS.md`, including hosted Linux/macOS CI/live runs, before
+  declaring the first usable conversation-library release ready.
 
 ## Soon: terminal and workspace APIs (milestone 3)
 
@@ -122,12 +135,11 @@ No active implementation goal.
 - [ ] Implement generation, voice, web search, and usage APIs.
 - [ ] Implement shell, schedule, artifact, and media APIs, preserving streamed
   binary responses where applicable.
-- [ ] Review all remaining operations, including debug and migration routes;
-  implement them or record explicit deferrals in the coverage inventory.
+- [ ] Extend the explicit planned routes in `API_COVERAGE.md` as consumer needs
+  justify them. Debug, deprecated generation and V1 migration routes are deferred.
 - [ ] Document schema-update and release procedures, including compatibility
   checks and review of generated changes.
-- [ ] Validate package metadata, included files, Cargo feature combinations,
-  examples, and documentation before publishing.
+- [ ] Maintain the milestone 2 package/release checks as additional features land.
 
 ## Backlog
 
@@ -223,6 +235,20 @@ when a decision is made.
 
 ## Completed
 
+- [x] Audit all 169 pinned operations: 35 supported with public methods/protocol
+  references, 129 planned (34 milestone 3, 95 milestone 4), and 5 explicit
+  deferrals. Keep live scope, source-reviewed findings and unverified behavior
+  separate in reviewed `openapi/coverage.json` and generated `API_COVERAGE.md`.
+- [x] Add offline inventory generation/checking and CI integration. Reject schema,
+  route, baseline and reference drift; require explicit new-operation review.
+  Document the limits of reference/literal checks rather than claiming behavioral
+  coverage from them. Track milestone 2 acceptance gaps and prioritized goals in
+  `RELEASE_READINESS.md`; correct stale provenance and README error guidance.
+- [x] Validate eight coverage-checker tests, deterministic report checking, both
+  workflow files with actionlint, local documentation links and the package file
+  list. Package metadata warnings and packaged-build/publish dry-run checks remain
+  on the release checklist. No Rust behavior changes or new live-server run were
+  part of this audit; no automatic commit or publication.
 - [x] Complete typed session forking with TDD: `sessions().fork(&id, &request)`,
   strict generated `SessionForkRequest`, omitted/null/value `before` semantics,
   shared response/provenance types, and generator guards for message IDs and the
