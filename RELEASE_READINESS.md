@@ -1,14 +1,14 @@
 # Milestone 2 release readiness
 
-Audit and example follow-ups: **2026-11-02**, against the checked-in schema and the recorded OpenCode
-**v2.2.5 / macOS arm64** smoke run. This audit does not rerun that server test or
-establish Linux compatibility. It proposes the remaining work for the first
-usable release; no release or publication has been performed.
+Updated **2026-11-03**, against the checked-in schema, the recorded OpenCode
+**v2.2.5 / macOS arm64** smoke run and a new active localhost-provider run.
+This does not establish Linux or remote-provider compatibility. It tracks remaining
+work for the first usable release; no release or publication has been performed.
 
 The core conversation resources are implemented, but **milestone 2 is not yet
-complete**. The remaining work is chiefly live recovery and active-execution
-validation, and release preparation. PTY support is milestone 3 and
-does not gate the first conversation-library release. No UI is being built.
+complete**. The remaining work is chiefly live recovery validation and release
+preparation. PTY support is milestone 3 and does not gate the first
+conversation-library release. No UI is being built.
 
 ## Coverage and evidence
 
@@ -37,12 +37,12 @@ The criteria below come from [DESIGN.md](DESIGN.md#implementation-milestones).
 
 | Criterion | Present evidence | Remaining gap |
 | --- | --- | --- |
-| Session listing and history | Runnable examples, protocol tests and imported settled transcripts on the pinned server. | Concurrent/active snapshots are not validated. |
-| Incremental output | Typed SSE plus the background observer's bounded transient previews, with deterministic HTTP/SSE tests. | No active model-output run. Previews are not reconstructed transcripts. |
-| Permission/form replies | Typed lifecycle APIs, six form field kinds, reply effects and manual live fixtures. | No real waiting-tool resumption after a reply. |
-| Execution outcomes | Admission/inbox/control APIs and a bounded automation example with deterministic outcome-correlation tests. | Live prompts are parked with `resume(false)`; interrupts/waits exercise idle sessions. Active execution remains unverified. |
+| Session listing and history | Runnable examples, protocol tests, imported transcripts and active streaming/waiting-tool snapshots on the pinned server. | Concurrent timeline changes during pagination remain unverified. |
+| Incremental output | Typed SSE, bounded transient previews with deterministic tests, and gated live text deltas from a scripted localhost provider. | Live recovery remains unverified. An unfinished block is absent from persisted text until it ends. |
+| Permission/form replies | Typed lifecycle APIs, manual fixtures, and actual read/question tool resumption after SDK replies. Cancellation with feedback also resumes execution. | Other waiting-tool reply modes, dismissal without feedback, races and restart lifetime remain unverified. |
+| Execution outcomes | Bounded automation tests plus active success/failure/interruption, provider connection cancellation and wait settlement on the pinned server. | Tool interruption, steering/successor runs, remote providers and concurrent clients remain unverified. |
 | Recovery after disconnection | Background observer and deterministic missed-change, overlap, lag, cancellation and reconnect tests; explicit log cursors remain available separately. | Live reconnect ordering/overflow remains unverified; stock v2.2.5 CLI retains no event payloads. |
-| Library use outside a UI | Bounded automation creates/selects a session, submits one prompt, consumes progress and inspects outcomes/pending work. | Its fresh-session policy is mock-tested; live model/tool behavior remains a separate validation goal. |
+| Library use outside a UI | Bounded automation creates/selects a session, submits one prompt, consumes progress and inspects outcomes/pending work. The active fixture exercises the SDK primitives. | The example's complete fresh-session policy remains mock-tested. |
 
 ## Prioritized completion plan
 
@@ -71,6 +71,11 @@ available. Snapshot refresh is necessary for the stock CLI baseline. Verifying
 natural retention across restart/forks remains open; it need not block a release
 whose documented recovery path relies on refreshed snapshots.
 
+Recommended next goal: extend the isolated active fixture to verify disconnect,
+reconnect and snapshot refresh during gated execution. Keep transient previews
+separate from persisted text; the server does not project individual text deltas.
+Record server overflow separately unless the fixture can reliably induce it.
+
 ### 2. Demonstrate bounded automation and active execution
 
 Completed the bounded example as [`examples/automation.rs`](examples/automation.rs)
@@ -81,16 +86,14 @@ input, requests requiring an answer and inconclusive evidence are distinct.
 It retains all sessions and does not equate admission/idleness with success.
 An explicit `--execute` invocation is required to run it against a server.
 
-Recommended next goal: investigate and build an isolated deterministic
-provider/tool fixture for active compatibility testing against the pinned server.
-Keep real credentials and paid calls outside that goal unless separately requested.
-
-Extend opt-in compatibility testing to actual execution, including incremental
-output, active interruption/settlement and permission/form tool resumption.
-First investigate a deterministic local provider/tool fixture supported by the
-pinned server. If real credentials are necessary, use a separate explicitly
-invoked test with documented cost and workspace effects. Ordinary tests and the
-current smoke runner must remain credential-free and avoid model calls.
+Completed the separate [`tools/live/active.py`](tools/live/active.py) fixture:
+six active scenarios pass on v2.2.5/macOS arm64 using nine scripted localhost
+provider requests, disposable state and no real credentials/paid calls. It verifies
+text deltas versus snapshots, active interruption and provider cancellation,
+success/failure/interrupted outcomes, permission-approved reading, and question
+answer/cancellation-feedback resumption. Each checks settlement and empty pending
+work; all six sessions are deleted through the SDK. Ordinary tests compile and
+skip this fixture; the existing smoke runner still makes no model calls.
 
 Record unsupported or untested outcome paths individually. A package may be
 described as a limited preview before these checks pass, but that would not
@@ -139,9 +142,9 @@ separate action.
 - Slow-consumer overflow and snapshot/event races need additional validation.
   Local cancellation does not undo server-side work; mutations can have ambiguous
   outcomes and are not automatically retried.
-- Settled transcript imports do not verify active history/fork filtering, model
-  execution or tool resumption. Forks beyond the 500-row copy boundary and form
-  expiry/restart behavior remain explicit compatibility gaps.
+- Active local-provider tests do not validate remote-provider behavior, arbitrary
+  tools or model reasoning. Active fork filtering, copies beyond the 500-row
+  boundary and form expiry/restart behavior remain explicit compatibility gaps.
 
 Continue tracking concrete tasks in [TODO.md](TODO.md); keep operation status and
 evidence in [openapi/coverage.json](openapi/coverage.json) synchronized as work lands.

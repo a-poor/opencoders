@@ -10,7 +10,7 @@ is inferred to work solely because models exist or a raw fixture calls it.
 
 Schema SHA-256: `2fdcda59d6c37f5dac904ab7b7aff05fb98465e23eb0fe8d3b9767151ad391de`. The schema's producing server release
 is unknown; see [provenance](openapi/README.md). Reviewed live evidence uses
-OpenCode **2.2.5** on **macOS arm64**, last verified **2026-11-02**;
+OpenCode **2.2.5** on **macOS arm64**, last verified **2026-11-03**;
 commit `9bbb8ce18c80f099e0e448775f59d965ead40a21`. [Compatibility notes](tools/live/README.md)
 record the verified scope. Linux/hosted CI evidence remains pending.
 
@@ -222,7 +222,7 @@ Source-reviewed behavior is not promoted to live verification.
 The smoke run checks agent lookup and missing-agent errors, model catalog/default envelopes, repeated type filters, grouping, empty results and location selection.
 
 - **Live assertions:** [verify_selection](tests/live.rs#L1782).
-- **Still unverified live:** Null default-model data is mock-tested, not observed live. Provider execution and concurrent catalog changes are not covered.
+- **Still unverified live:** Null default-model data is mock-tested, not observed live. Remote-provider readiness and concurrent catalog changes are not covered. The separate active fixture explicitly selects its configured localhost provider.
 - **Examples:** [configure_session](examples/configure_session.rs).
 
 ### Evidence: discovery
@@ -235,20 +235,20 @@ The smoke run checks location directory encoding/overrides, header fallback and 
 
 ### Evidence: events
 
-The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events.
+The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events. The active fixture (2026-11-03) adds gated text deltas, execution outcomes and real tool lifecycle events from a scripted localhost provider.
 
-- **Live assertions:** [verify_events](tests/live.rs#L1472).
+- **Live assertions:** [verify_events](tests/live.rs#L1472), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
 - **Source-reviewed only:** The pinned global feed is live-only, sends heartbeat comments and uses a bounded subscriber queue.
-- **Still unverified live:** Active model-output delivery, heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live ordering.
+- **Still unverified live:** Heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live recovery ordering.
 - **Examples:** [events](examples/events.rs), [background_session](examples/background_session.rs).
 
 ### Evidence: execution
 
-The smoke run checks interrupt on idle/parked sessions, including omitted/false/true resume, interrupted:false, unchanged held input, idle wait HTTP 204 and missing-session errors.
+The smoke run checks interrupt on idle/parked sessions, including omitted/false/true resume, interrupted:false, unchanged held input, idle wait HTTP 204 and missing-session errors. The active fixture (2026-11-03) verifies interrupted:true during a gated local provider stream, provider connection cancellation, local wait timeout without stopping execution, final wait settlement, and matching success/failure/interrupted session and history outcomes.
 
-- **Live assertions:** [verify_execution](tests/live.rs#L1115).
+- **Live assertions:** [verify_execution](tests/live.rs#L1115), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
 - **Source-reviewed only:** The pinned message updater projects terminal execution outcomes into idle history (except shutdown interruption), and instruction changes into marked system notices. The automation classifier is mock-tested, not live execution evidence.
-- **Still unverified live:** Interruption during active model/tool execution, interrupted:true, resuming steering input, wait through real execution and cross-server ownership.
+- **Still unverified live:** Active tool interruption, repeated interrupts while stopping, steering/successor execution, concurrent wakeups, cross-server ownership and remote providers. The complete automation policy remains mock-tested.
 - **Examples:** [execution](examples/execution.rs), [automation](examples/automation.rs).
 
 ### Evidence: fork
@@ -262,28 +262,29 @@ The smoke run forks imported settled transcripts: exclusive/before-first/default
 
 ### Evidence: forms
 
-Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending.
+Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending. The active fixture (2026-11-03) answers a real waiting question and cancels another with feedback; the provider validates the tool result and execution continues. Tool/form events, running/terminal snapshots and pending lists are asserted.
 
-- **Live assertions:** [verify_forms](tests/live.rs#L520).
-- **Source-reviewed only:** The pinned service retains terminal forms in memory for ten minutes.
-- **Still unverified live:** Timed eviction, actual waiting-tool resumption, restart behavior and concurrent replies. Fixtures neither call models nor open external URLs.
+- **Live assertions:** [verify_forms](tests/live.rs#L520), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Source-reviewed only:** The pinned service retains terminal forms in memory for ten minutes. The pinned question tool treats dismissal without feedback differently from cancellation with model-facing feedback; only the feedback path is active-tested.
+- **Still unverified live:** Timed eviction, restart/teardown, concurrent replies and question dismissal without feedback. Active calls target a scripted localhost provider; external URLs are never opened.
 - **Examples:** [forms](examples/forms.rs).
 
 ### Evidence: history
 
-The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method.
+The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method. The active fixture (2026-11-03) reads incomplete assistant and running tool snapshots, then completed/failed tools and terminal history. A text delta arrives while the stored text part is empty; final/interrupted text is retained after settlement.
 
-- **Live assertions:** [verify_message_history](tests/live.rs#L2010).
-- **Still unverified live:** History during active execution, concurrent timeline changes and experimental media-reference negotiation. Imported model/tool results are fixtures, not real executions.
+- **Live assertions:** [verify_message_history](tests/live.rs#L2010), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Source-reviewed only:** The pinned message updater stores text on text.ended, not transient text.delta; live previews must remain separate from stored history.
+- **Still unverified live:** Concurrent timeline changes during pagination and experimental media-reference negotiation. Remote-provider behavior and arbitrary tool histories remain unverified.
 - **Examples:** [history](examples/history.rs), [automation](examples/automation.rs).
 
 ### Evidence: inbox
 
-The smoke run uses resume(false) on idle sessions: prompt admission and ID reconciliation, prepared inline attachments, pending order, steer-to-queue updates, cancellation, conflicts and absent history before delivery.
+The smoke run uses resume(false) on idle sessions: prompt admission and ID reconciliation, prepared inline attachments, pending order, steer-to-queue updates, cancellation, conflicts and absent history before delivery. The active fixture (2026-11-03) admits an identified resume(true) prompt in each fresh session, observes delivery and execution through a scripted local provider, then checks matching user history and empty inbox after settlement.
 
-- **Live assertions:** [verify_prompt_inbox](tests/live.rs#L1569).
+- **Live assertions:** [verify_prompt_inbox](tests/live.rs#L1569), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
 - **Source-reviewed only:** Omitted/null resume wakes execution; queue delivery alone does not prevent it. Updating queued input to steer wakes execution.
-- **Still unverified live:** Actual delivery/execution, already delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation.
+- **Still unverified live:** Delivery during an already active run, delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation.
 - **Examples:** [prompt_inbox](examples/prompt_inbox.rs), [automation](examples/automation.rs).
 
 ### Evidence: log
@@ -297,11 +298,11 @@ The smoke run checks stock-CLI marker-only behavior and finite/follow modes. Cap
 
 ### Evidence: permissions
 
-Manually created idle-session requests exercise allow/deny/ask, pending lists and ownership, location isolation, once/reject/always replies, saved-rule effects across sessions, deny precedence, feedback and asked/replied events.
+Manually created idle-session requests exercise allow/deny/ask, pending lists and ownership, location isolation, once/reject/always replies, saved-rule effects across sessions, deny precedence, feedback and asked/replied events. The active fixture (2026-11-03) discovers a real waiting read by session/location and tool ID, replies once, and verifies the file content reaches the local provider, the tool completes and execution succeeds.
 
-- **Live assertions:** [verify_permissions](tests/live.rs#L791).
+- **Live assertions:** [verify_permissions](tests/live.rs#L791), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
 - **Source-reviewed only:** Duplicate pending-ID rejection is source-reviewed only.
-- **Still unverified live:** Actual waiting-tool resumption, plugin hooks, concurrent replies/partial failures and reload/restart behavior. Saved rules exist only in the disposable database.
+- **Still unverified live:** Reject/always and feedback with actual waiting tools, plugin hooks, concurrent replies/partial failures and reload/restart behavior. Saved-rule smoke fixtures use only the disposable database.
 - **Examples:** [permissions](examples/permissions.rs).
 
 ### Evidence: selection

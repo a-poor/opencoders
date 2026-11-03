@@ -4,7 +4,7 @@
   "baseline": {
     "version": "2.2.5",
     "commit": "9bbb8ce18c80f099e0e448775f59d965ead40a21",
-    "verified_on": "2026-11-02",
+    "verified_on": "2026-11-03",
     "platform": "macOS arm64"
   },
   "evidence": {
@@ -19,7 +19,7 @@
       ],
       "source_reviewed": [],
       "unverified": [
-        "Null default-model data is mock-tested, not observed live. Provider execution and concurrent catalog changes are not covered."
+        "Null default-model data is mock-tested, not observed live. Remote-provider readiness and concurrent catalog changes are not covered. The separate active fixture explicitly selects its configured localhost provider."
       ],
       "examples": [
         "examples/configure_session.rs"
@@ -43,19 +43,24 @@
       ]
     },
     "events": {
-      "live_scope": "The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events.",
+      "live_scope": "The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events. The active fixture (2026-11-03) adds gated text deltas, execution outcomes and real tool lifecycle events from a scripted localhost provider.",
       "live_tests": [
         {
           "file": "tests/live.rs",
           "anchor": "fn verify_events(",
           "label": "verify_events"
+        },
+        {
+          "file": "tests/live_active.rs",
+          "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
+          "label": "pinned_server_active_execution_and_waiting_tools"
         }
       ],
       "source_reviewed": [
         "The pinned global feed is live-only, sends heartbeat comments and uses a bounded subscriber queue."
       ],
       "unverified": [
-        "Active model-output delivery, heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live ordering."
+        "Heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live recovery ordering."
       ],
       "examples": [
         "examples/events.rs",
@@ -63,19 +68,24 @@
       ]
     },
     "execution": {
-      "live_scope": "The smoke run checks interrupt on idle/parked sessions, including omitted/false/true resume, interrupted:false, unchanged held input, idle wait HTTP 204 and missing-session errors.",
+      "live_scope": "The smoke run checks interrupt on idle/parked sessions, including omitted/false/true resume, interrupted:false, unchanged held input, idle wait HTTP 204 and missing-session errors. The active fixture (2026-11-03) verifies interrupted:true during a gated local provider stream, provider connection cancellation, local wait timeout without stopping execution, final wait settlement, and matching success/failure/interrupted session and history outcomes.",
       "live_tests": [
         {
           "file": "tests/live.rs",
           "anchor": "fn verify_execution(",
           "label": "verify_execution"
+        },
+        {
+          "file": "tests/live_active.rs",
+          "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
+          "label": "pinned_server_active_execution_and_waiting_tools"
         }
       ],
       "source_reviewed": [
         "The pinned message updater projects terminal execution outcomes into idle history (except shutdown interruption), and instruction changes into marked system notices. The automation classifier is mock-tested, not live execution evidence."
       ],
       "unverified": [
-        "Interruption during active model/tool execution, interrupted:true, resuming steering input, wait through real execution and cross-server ownership."
+        "Active tool interruption, repeated interrupts while stopping, steering/successor execution, concurrent wakeups, cross-server ownership and remote providers. The complete automation policy remains mock-tested."
       ],
       "examples": [
         "examples/execution.rs",
@@ -107,36 +117,49 @@
       ]
     },
     "forms": {
-      "live_scope": "Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending.",
+      "live_scope": "Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending. The active fixture (2026-11-03) answers a real waiting question and cancels another with feedback; the provider validates the tool result and execution continues. Tool/form events, running/terminal snapshots and pending lists are asserted.",
       "live_tests": [
         {
           "file": "tests/live.rs",
           "anchor": "fn verify_forms(",
           "label": "verify_forms"
+        },
+        {
+          "file": "tests/live_active.rs",
+          "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
+          "label": "pinned_server_active_execution_and_waiting_tools"
         }
       ],
       "source_reviewed": [
-        "The pinned service retains terminal forms in memory for ten minutes."
+        "The pinned service retains terminal forms in memory for ten minutes.",
+        "The pinned question tool treats dismissal without feedback differently from cancellation with model-facing feedback; only the feedback path is active-tested."
       ],
       "unverified": [
-        "Timed eviction, actual waiting-tool resumption, restart behavior and concurrent replies. Fixtures neither call models nor open external URLs."
+        "Timed eviction, restart/teardown, concurrent replies and question dismissal without feedback. Active calls target a scripted localhost provider; external URLs are never opened."
       ],
       "examples": [
         "examples/forms.rs"
       ]
     },
     "history": {
-      "live_scope": "The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method.",
+      "live_scope": "The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method. The active fixture (2026-11-03) reads incomplete assistant and running tool snapshots, then completed/failed tools and terminal history. A text delta arrives while the stored text part is empty; final/interrupted text is retained after settlement.",
       "live_tests": [
         {
           "file": "tests/live.rs",
           "anchor": "fn verify_message_history(",
           "label": "verify_message_history"
+        },
+        {
+          "file": "tests/live_active.rs",
+          "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
+          "label": "pinned_server_active_execution_and_waiting_tools"
         }
       ],
-      "source_reviewed": [],
+      "source_reviewed": [
+        "The pinned message updater stores text on text.ended, not transient text.delta; live previews must remain separate from stored history."
+      ],
       "unverified": [
-        "History during active execution, concurrent timeline changes and experimental media-reference negotiation. Imported model/tool results are fixtures, not real executions."
+        "Concurrent timeline changes during pagination and experimental media-reference negotiation. Remote-provider behavior and arbitrary tool histories remain unverified."
       ],
       "examples": [
         "examples/history.rs",
@@ -144,19 +167,24 @@
       ]
     },
     "inbox": {
-      "live_scope": "The smoke run uses resume(false) on idle sessions: prompt admission and ID reconciliation, prepared inline attachments, pending order, steer-to-queue updates, cancellation, conflicts and absent history before delivery.",
+      "live_scope": "The smoke run uses resume(false) on idle sessions: prompt admission and ID reconciliation, prepared inline attachments, pending order, steer-to-queue updates, cancellation, conflicts and absent history before delivery. The active fixture (2026-11-03) admits an identified resume(true) prompt in each fresh session, observes delivery and execution through a scripted local provider, then checks matching user history and empty inbox after settlement.",
       "live_tests": [
         {
           "file": "tests/live.rs",
           "anchor": "fn verify_prompt_inbox(",
           "label": "verify_prompt_inbox"
+        },
+        {
+          "file": "tests/live_active.rs",
+          "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
+          "label": "pinned_server_active_execution_and_waiting_tools"
         }
       ],
       "source_reviewed": [
         "Omitted/null resume wakes execution; queue delivery alone does not prevent it. Updating queued input to steer wakes execution."
       ],
       "unverified": [
-        "Actual delivery/execution, already delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation."
+        "Delivery during an already active run, delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation."
       ],
       "examples": [
         "examples/prompt_inbox.rs",
@@ -183,19 +211,24 @@
       ]
     },
     "permissions": {
-      "live_scope": "Manually created idle-session requests exercise allow/deny/ask, pending lists and ownership, location isolation, once/reject/always replies, saved-rule effects across sessions, deny precedence, feedback and asked/replied events.",
+      "live_scope": "Manually created idle-session requests exercise allow/deny/ask, pending lists and ownership, location isolation, once/reject/always replies, saved-rule effects across sessions, deny precedence, feedback and asked/replied events. The active fixture (2026-11-03) discovers a real waiting read by session/location and tool ID, replies once, and verifies the file content reaches the local provider, the tool completes and execution succeeds.",
       "live_tests": [
         {
           "file": "tests/live.rs",
           "anchor": "fn verify_permissions(",
           "label": "verify_permissions"
+        },
+        {
+          "file": "tests/live_active.rs",
+          "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
+          "label": "pinned_server_active_execution_and_waiting_tools"
         }
       ],
       "source_reviewed": [
         "Duplicate pending-ID rejection is source-reviewed only."
       ],
       "unverified": [
-        "Actual waiting-tool resumption, plugin hooks, concurrent replies/partial failures and reload/restart behavior. Saved rules exist only in the disposable database."
+        "Reject/always and feedback with actual waiting tools, plugin hooks, concurrent replies/partial failures and reload/restart behavior. Saved-rule smoke fixtures use only the disposable database."
       ],
       "examples": [
         "examples/permissions.rs"

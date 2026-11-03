@@ -78,16 +78,12 @@ No active implementation goal.
   retention; current live replay/follow checks use explicitly seeded fixture rows.
 - [ ] Exercise server queue overflow/slow-consumer behavior against the pinned
   implementation; deterministic tests already cover visible failures and EOF.
-- [ ] Verify snapshot/event ordering and recovery behavior against upstream;
-  document which steps remain the consuming application's responsibility.
+- [ ] Next goal: extend the active localhost fixture to verify disconnect,
+  reconnect and snapshot refresh during gated execution. Keep previews separate
+  from persisted text; record which recovery steps remain application-owned.
 
 ### Examples and first usable release
 
-- [ ] Next goal: investigate and build an isolated deterministic provider/tool
-  fixture for active compatibility testing against the pinned server. Exercise
-  incremental output, interruption/settlement and actual permission/form tool
-  resumption. Keep real credentials/paid calls out of this goal, and keep normal
-  tests and the existing smoke runner without model calls.
 - [ ] Prepare package metadata, review the archive's included files, and replace
   the MIT copyright placeholder with the owner's correct holder/year. Audit-only
   package listing succeeds; packaged-build and publish dry-run checks remain.
@@ -186,35 +182,38 @@ when a decision is made.
   consistency during concurrent changes. v2.2.5 smoke tests confirm cursor-bound
   filters/order, boundary cursors that can lead to empty pages, and zero-limit
   rejection; see `tools/live/README.md`.
-- [ ] Verify message snapshots during active execution, timeline changes during
-  pagination, and experimental media-reference negotiation. The v2.2.5 baseline
+- [ ] Verify timeline changes during pagination and experimental media-reference
+  negotiation. The active fixture covers unfinished text and running tools; text
+  deltas do not update persisted text until the block ends. The smoke baseline
   verifies fixed imported history, both directions, separate type filters,
   cursor/order rejection, and empty boundary pages without model/tool execution.
 - [ ] Verify catalog changes/settlement, live absence of a default model, and
   selection during active execution. Current v2.2.5 tests verify stored selections
   and history markers without model calls; success does not establish availability.
-  Nullable defaults are covered by mocks. Provider execution remains unverified.
-- [ ] Verify prompt waking/execution, delivery during active runs, concurrent
-  admission/cancellation, and ID reuse after delivery/cancellation. Current live
-  checks use `resume(false)` and queue-only updates, confirming pending-ID
+  Nullable defaults are covered by mocks. Active execution selects a configured
+  localhost provider; remote-provider readiness remains unverified.
+- [ ] Verify delivery during active runs, concurrent admission/cancellation, and
+  ID reuse after delivery/cancellation. Active fixtures verify fresh-session
+  `resume(true)` waking/delivery. Smoke checks use `resume(false)`, confirming pending-ID
   reconciliation and same-mode update conflicts. Synthetic/compaction/move inbox
   lifecycle and experimental inbox media references also remain unverified.
-- [ ] Verify interruption of active provider/tool work, asynchronous cleanup,
-  repeated interruption during stopping/settlement, resume-true steering/control
-  execution, concurrent admissions, and waits through successor runs. These are
-  source-reviewed; current live checks cover only idle and parked-input behavior.
+- [ ] Verify active tool interruption, repeated interruption during stopping,
+  resume-true steering/control execution, concurrent admissions, and waits through
+  successor runs. Active fixtures verify held-provider interruption, connection
+  cancellation, wait timeouts/settlement and success/failure/interrupted outcomes.
 - [ ] Verify permission/plugin evaluation, concurrent replies and partial batch
-  failures, actual tool resumption/feedback, duplicate pending IDs, and pending
-  lifetime across location reload/server restart. Current live fixtures manually
-  evaluate requests without executing tools; they confirm reply batching, saved
-  allow effects, configured-deny precedence, and session/location ownership.
+  failures, waiting-tool reject/always/feedback, duplicate pending IDs, and pending
+  lifetime across location reload/server restart. The active read fixture verifies
+  `once` resumption and provider receipt of the file content. Manual fixtures cover
+  reply batching, saved rules, deny precedence and session/location ownership.
 - [ ] Verify fork instruction inheritance, active assistant/shell/compaction
   exclusion during actual execution, concurrent mutations, and copies exceeding
   the 500-row batch size. The import fixture path filters unfinished rows before
   storing them. Settled history, boundaries, compaction references, usage reset,
   current configuration, inbox exclusion, and independent ownership are live-tested.
 - [ ] Verify form terminal expiry, restart/location teardown, concurrent settlement,
-  and resumption of actual waiting tools. Manual v2.2.5 fixtures cover discovery,
+  and question dismissal without feedback. Active fixtures verify answer and
+  cancellation-feedback resumption. Manual v2.2.5 fixtures cover discovery,
   all field kinds, validation/default/condition/hidden semantics, answering and
   cancellation, immediate terminal retrieval, ownership, and form events. The
   ten-minute terminal retention is source-reviewed, not tested by waiting.
@@ -226,6 +225,26 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Add the separate opt-in `tools/live/active.py` runner and
+  `tests/live_active.rs`, reusing the checksum-pinned server and isolated
+  environment with a scripted authenticated localhost provider. Restrict tools
+  to asking permission for one disposable file and answering questions; disable
+  other providers, warming, compaction, sharing and automatic titles. Make no
+  real-credential or paid calls; ordinary tests skip the active fixture.
+- [x] Verify all six active scenarios on v2.2.5/macOS arm64 (2026-11-03): gated
+  text deltas, provider interruption/cancellation, provider failure, permission
+  `once` resuming a read, and question answer/cancellation-feedback resumption.
+  Assert wait timeouts/settlement, running/terminal history, matching outcomes,
+  empty pending work, exactly nine provider calls and deletion of all sessions.
+  Record that text deltas remain transient until the block ends, and that a tool
+  failure with feedback can still lead to successful execution.
+- [x] Add seven pure active-fixture tests and an opt-in manual workflow job;
+  update coverage, usage/design, compatibility and readiness records. Validate
+  workspace/HTTP-only suites (214 client tests, 39 generator tests, 14 doctests),
+  strict Clippy/docs, rustfmt, Rust 1.88 compilation of the new test in both feature
+  sets, 15 runner tests, 8 coverage tests/report checks, and actionlint. Linux,
+  remote providers, live recovery and other waiting-tool modes remain explicit gaps.
 
 - [x] Add `examples/automation.rs` and example-owned orchestration/outcome policy.
   Explicit `--execute` creates/selects a fresh session, identifies one prompt,

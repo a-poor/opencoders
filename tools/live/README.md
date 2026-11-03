@@ -42,7 +42,77 @@ and inbox updates only queue work, so the test does not wake model execution or 
 to an existing server. Do not manually point its environment
 variables at your normal server. `cargo test` compiles but skips this test.
 
-## Verified behavior
+## Active execution
+
+The separate opt-in runner exercises the real pinned server's execution loop
+with a **scripted localhost provider**, without real provider credentials or paid
+model calls:
+
+```sh
+cargo test --locked --test live_active --no-run
+python3 tools/live/active.py
+```
+
+Local run: **2026-11-03, macOS arm64, OpenCode 2.2.5, Rust 1.99.1**.
+All six scenarios in [`tests/live_active.rs`](../../tests/live_active.rs) pass.
+Ordinary `cargo test` compiles and skips this test. The manual compatibility
+workflow has a separate `active_execution` checkbox, off by default; hosted and
+Linux execution remain unverified.
+
+[`active.py`](active.py) reuses the smoke runner's checksum-pinned archive,
+environment allowlist, ephemeral password, loopback port allocation and process
+cleanup. It creates a separate disposable workspace/database. A local HTTP server
+speaks the pinned bundled OpenAI-compatible chat streaming protocol. The runner
+configures only this provider, denies other providers by policy, disables warming,
+automatic compaction, updates and sharing, and removes the title agent. Named
+sessions avoid automatic titling. No provider keys, user configuration, plugins
+or proxies are inherited by OpenCode.
+
+Tool permissions deny everything except asking permission to read `fixture.txt`
+and using `question`. The fixture emits only those two built-in tool calls. The
+file contains fixed test text; questions are answered/cancelled through the SDK.
+No shell commands or external URLs are requested. This isolates application state
+and routes the tested provider locally; it is **not an OS/network sandbox**.
+
+The provider uses per-run authentication, bounded bodies/request counts and
+stream deadlines. It rejects unexpected models, duplicate calls and incorrect
+tool results. Output is gated by the test, so interruption and waiting checks
+cannot accidentally exercise an already completed request. Both servers stop and
+temporary data is removed on completion, failure or normal interruption.
+
+| Scenario | Observed and asserted through the SDK |
+| --- | --- |
+| Output | `resume(true)` delivers the identified prompt; two gated text deltas decode; an incomplete assistant snapshot has empty text until the block ends; final text and successful session/history outcome agree. |
+| Interruption | A held provider stream returns `interrupted: true` with `resume(false)`; the provider observes connection cancellation; the typed interruption reason is `user`; wait settles, history retains partial text, and a subsequent idle interrupt returns false. |
+| Failure | One provider HTTP 400 produces a typed execution-failed event and failed session/idle history with an error; wait still returns successfully. No provider retry is observed for this case. |
+| Permission | A real `read` call waits on a pending request with matching tool ID/resource. Session/location lists expose it. `once` unblocks the read; the provider verifies the file content in the next request; the tool and execution complete. |
+| Question | A real `question` call creates a pending form tied to its tool ID. Replying with `q0` produces the expected tool result at the provider, completed tool history and successful execution. |
+| Cancellation feedback | Cancelling a waiting question with a message produces cancelled form state/events, failed tool history/events and model-facing feedback; the next provider step succeeds. Tool failure alone does not imply execution failure. |
+
+Wait deadlines expire while the provider or a tool is held; those local timeouts
+do not stop execution. After settlement, all six cases have matching prompt and
+terminal history, no pending inbox/permission/form entries, and the expected
+session outcome. The runner asserts exactly nine provider requests and removes
+all six sessions through the SDK.
+
+The text-snapshot distinction agrees with the pinned
+[message updater](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/message-updater.ts):
+`session.text.started` projects an empty text part, `session.text.ended` stores
+the complete block, and transient deltas do not update stored history. Keep live
+previews separate from snapshots; repeatedly fetching history cannot reconstruct
+an unfinished block. The
+[question tool](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/tool/plugin/question.ts)
+distinguishes dismissal without feedback from cancellation with feedback; only
+the feedback path is exercised here.
+
+These tests validate SDK/server/protocol integration, not actual model reasoning,
+remote-provider compatibility, billing or provider authentication. Active tool
+interruption, permission rejection/always with waiting tools, question dismissal
+without feedback, steering/successor runs, retries, shutdown, concurrent clients,
+live reconnect/overflow and other platforms remain separate validation work.
+The automation/background examples themselves remain mock-tested.
+
+## Verified smoke behavior
 
 Local run: **2026-11-02, macOS arm64, OpenCode 2.2.5, Rust 1.99.1**. The full
 smoke test passes. Linux is configured in the manual workflow but has not yet
@@ -84,12 +154,13 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.form.cancel` | Bodyless DELETE with omitted/empty/Unicode feedback; terminal state retains feedback; repeated cancellation/reply returns settled errors. |
 | Form events | Typed `form.created`, `form.replied`, and `form.cancelled`; scalar conditions and answers decode; cancellation event omits feedback. |
 
-Form fixtures are manual and do not start model calls or open external URLs.
+Smoke form fixtures are manual and do not start model calls or open external URLs.
 The [pinned service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/form.ts)
 retains terminal forms in memory for ten minutes; the smoke run checks immediate
 terminal retrieval, not timed expiry or survival across restart/location teardown.
-Concurrent replies/cancellations and resumption of actual waiting tools remain
-unverified. Snapshot discovery and live events do not provide durable form history.
+Concurrent replies/cancellations remain unverified. The separate active fixture
+checks waiting-question resumption. Snapshot discovery and live events do not
+provide durable form history.
 
 Fork semantics are reviewed against the pinned [session service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session.ts)
 and [projector](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/projector.ts).
@@ -171,8 +242,8 @@ order is rejected, and the type filter must be repeated separately. The test
 checks both directions, filtering before pagination, and dropping the filter on
 a cursor request. See the pinned
 [message handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/message.ts).
-Live message snapshots during active execution, concurrent timeline changes, and
-experimental media-reference negotiation remain unverified.
+The active fixture checks streaming and waiting-tool snapshots. Concurrent timeline
+changes during pagination and experimental media-reference negotiation remain unverified.
 
 Prompt admission returns a durable pending user item, not an assistant response.
 Tests explicitly use `resume(false)` on an idle session to avoid waking execution.
@@ -192,7 +263,8 @@ from the opposite mode, so updating to the current mode returns a conflict.
 Steering wakes execution; the live test only changes steer to queue. Cancellation
 of an unavailable item succeeds without undoing delivered work. See the pinned
 [inbox implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/inbox.ts).
-Waking, delivery during execution, already delivered/cancelled ID reuse, synthetic/
+The active fixture verifies waking a fresh session and delivering its one prompt.
+Delivery during execution, already delivered/cancelled ID reuse, synthetic/
 compaction/move lifecycle, and experimental inbox media-reference negotiation remain
 unverified. Runtime ordering is not inferred from the pending-list snapshot.
 
@@ -215,7 +287,7 @@ enforce session ownership for get/reply. Reject affects the whole session's pend
 batch; always with save patterns re-evaluates pending requests at that location
 after saving project allow rules. Configured denies retain precedence.
 
-All permission fixtures are manually created for idle disposable sessions with
+Smoke permission fixtures are manually created for idle disposable sessions with
 explicit rules under `opencoders.live.*`. No tool/model waits on their replies.
 The test observes permission asked/replied events, verifies once versus batch
 rejection, preserves other sessions/locations, and exercises saved-rule effects
@@ -239,14 +311,14 @@ parked. The wait implementation observes process-local idleness, waits through
 successors, and ignores execution failure/interruption as outcomes. It never starts
 work and does not promise that the inbox is empty or a particular prompt succeeded.
 
-Live checks exercise only idle sessions: empty inboxes with every resume query
+Smoke checks exercise only idle sessions: empty inboxes with every resume query
 choice, a held queued prompt with resume true, and a held steering prompt with
 omitted/false resume. Wait returns HTTP 204 while those prompts remain pending and
 message history remains empty. Fixtures are then cancelled through the SDK. No
 resume-true call has steering/control work eligible to run, and no model is invoked.
 
-Active interruption/cleanup, concurrent wakeups, failure outcomes, and actual
-steering resumption are source-reviewed but not live-validated. Deterministic
+The active fixture adds provider interruption, wait settlement and success/failure
+outcomes. Concurrent wakeups and actual steering resumption remain unverified. Deterministic
 protocol tests cover both response booleans, statuses/errors, total/error-body
 deadlines, injected timeout policies, cancellation of one independent wait,
 connection cleanup, empty keep-alive responses, and no automatic retry.
@@ -265,9 +337,8 @@ interruption), and instruction updates into system notices marked
 requires matching prompt/terminal history and session outcome, an idle wait and
 no pending work before declaring observed success. This is a conservative
 application policy, not an atomic snapshot guarantee or per-prompt server receipt.
-Full active execution, actual tool resumption, shutdown and competing work still
-need live compatibility fixtures; the source review does not promote them to
-verified behavior.
+The separate active fixture checks SDK execution and waiting tools, but does not
+run this example's complete policy. Shutdown and competing work remain unverified.
 
 ### Durable log retention and replay
 
@@ -308,19 +379,22 @@ the original schema download, whose originating server release remains unknown.
 Its `info.version: 0.0.1` is not this server's version. Testing v2.2.5 does not
 retroactively identify that schema's source release. Concurrent session changes,
 maximum page sizes, project/subpath filtering, explicit-null discovery queries, durable log retention across restarts/forks,
-provider execution, and other platforms remain unverified.
+remote-provider behavior, and other platforms remain unverified. Active local
+provider execution is covered separately above.
 
 ## CI
 
 The ordinary [`ci.yml`](../../.github/workflows/ci.yml) checks formatting, Clippy,
 docs/examples, default and HTTP-only tests on Linux/macOS, both library feature
-sets on Rust 1.88, Python runner tests, and all eight checked-in generation targets.
+sets on Rust 1.88, Python runner tests, and all nine generation checks.
 Regeneration pins Rust/rustfmt 1.99.1 and uses the locked dependencies and local
 schema; it never refreshes upstream input. The full-schema experiment remains a
 separate optional check.
 
 [`live.yml`](../../.github/workflows/live.yml) is manual (`workflow_dispatch`) and
-runs this same runner on Linux x86-64 and macOS arm64. No model secrets are needed.
+runs the smoke runner on Linux x86-64 and macOS arm64. Its optional
+`active_execution` input adds the active localhost fixture on both platforms.
+No model secrets are needed.
 Both workflows use read-only repository permissions and a pinned checkout action.
 Validate workflow edits with `actionlint`; runner checks use:
 

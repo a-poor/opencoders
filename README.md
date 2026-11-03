@@ -469,9 +469,10 @@ application owns reconnection, retry decisions, and coordination with live event
 
 Run `cargo run --example execution` with `OPENCODE_BASE_URL`, `OPENCODE_SESSION_ID`,
 and optional `OPENCODE_PASSWORD` to wait for up to 30 seconds and inspect snapshots.
-Pass `-- --interrupt` to explicitly request a stop first. Live checks cover idle
-and parked-input behavior without model calls; active interruption/cleanup and
-resumption during provider execution remain unverified against a live server.
+Pass `-- --interrupt` to explicitly request a stop first. The smoke test covers
+idle and parked input. A separate [active fixture](tools/live/README.md#active-execution)
+verifies interruption of a held localhost provider stream and wait settlement.
+Concurrent wakeups, tool interruption and steering resumption remain unverified.
 
 ## Bounded automation
 
@@ -534,8 +535,10 @@ running. If stopping it is intended, use the explicit interrupt/wait flow in
 not undo completed tool effects and are never automatic in this example.
 
 [`tests/automation.rs`](tests/automation.rs) verifies the policy and wire flow
-with deterministic fixtures. Active execution and waiting-tool resumption against
-OpenCode remain unverified; see [compatibility notes](tools/live/README.md).
+with deterministic fixtures. A separate active fixture verifies SDK execution
+outcomes and waiting-tool resumption against OpenCode with a scripted localhost
+provider; it does not run this example's complete policy. See
+[compatibility notes](tools/live/README.md#active-execution).
 
 ## Permission requests and replies
 
@@ -600,8 +603,9 @@ Run `cargo run --example permissions` with `OPENCODE_BASE_URL`,
 `OPENCODE_DIRECTORY`, and optional `OPENCODE_PASSWORD`. It creates a fresh session,
 evaluates a demonstration action, inspects/rejects its own pending request, and
 removes that session. It submits no prompt or tool call and saves no allow rules.
-Live tests also cover saved rules and cross-session effects in disposable data;
-actual tool resumption, plugins, races, and restart behavior remain unverified.
+Live tests also cover saved rules and cross-session effects in disposable data.
+The active fixture verifies `once` resuming a waiting read; other waiting-tool
+reply modes, plugins, races and restart behavior remain unverified.
 
 ## Forms
 
@@ -655,6 +659,10 @@ message goes in a bodyless DELETE query; absent and empty remain distinct. Feedb
 is present in cancelled state but absent from the v2.2.5 cancellation event. HTTP
 responses and form events share IDs, field models, and answer values. Refresh
 snapshots after stream interruption; the library owns no UI or application state.
+The active fixture verifies that answering a waiting `question` tool resumes it.
+Cancelling with feedback instead produces a tool error that the provider can
+respond to; execution can still succeed. Dismissal without feedback is a distinct,
+source-reviewed path that has not been exercised live.
 
 Run `cargo run --example forms` with `OPENCODE_BASE_URL`, `OPENCODE_DIRECTORY`, and
 optional `OPENCODE_PASSWORD`. It creates a fresh session, answers and cancels only
@@ -931,8 +939,11 @@ operations also pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
 arm64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
 see [compatibility details and CI](tools/live/README.md) for prerequisites, release
 checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded
-fixtures because the stock CLI disables retention; live model execution and server-overflow
-behavior are not yet exercised.
+fixtures because the stock CLI disables retention. Run `python3 tools/live/active.py`
+separately for active execution with a scripted localhost provider and disposable
+tools: streaming, interruption, failure and permission/form resumption pass on the
+same macOS baseline. It uses no real credentials or paid calls. Remote providers,
+server overflow, live reconnect and Linux remain unverified.
 
 The [API coverage inventory](API_COVERAGE.md) classifies all 169 pinned operations:
 35 supported, 129 planned and 5 deferred. Each supported route links to its Rust

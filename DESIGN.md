@@ -4,8 +4,9 @@ Status: 35 pinned operations have public methods and protocol tests, covering
 server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events and experimental session logs. Background observation and automation
-examples now have deterministic tests; milestone 2 still needs active execution,
-live recovery validation and release preparation. See [API coverage](API_COVERAGE.md)
+examples have deterministic tests. A separate localhost provider fixture verifies
+active execution and waiting tools on v2.2.5/macOS; milestone 2 still needs live
+recovery validation and release preparation. See [API coverage](API_COVERAGE.md)
 for operation-level evidence and [release readiness](RELEASE_READINESS.md) for
 the prioritized acceptance audit. Broader APIs remain the implementation plan.
 
@@ -365,9 +366,11 @@ requires an explicit `--interrupt` flag to request a stop before bounded waiting
 
 Live validation covers empty/idle sessions, parked queued work with resume true,
 held steering work with omitted/false resume, and missing sessions, without model
-calls. Active provider interruption, cleanup ordering, and concurrent resumption
-remain unverified live; mocks exercise both acknowledgement booleans, cancellation,
-deadlines, disconnections, and response/error contracts.
+calls. A separate opt-in active fixture verifies interruption of a held localhost
+provider stream, connection cancellation, bounded waits and success/failure/
+interrupted outcomes in events and history. Active tool interruption, concurrent
+resumption and waits across successor runs remain unverified; mocks exercise both
+acknowledgement booleans, deadlines and response/error contracts.
 
 `examples/automation.rs` applies an example-owned, fresh-session policy: explicitly
 select agent/model on creation, subscribe before one identified prompt, consume
@@ -414,9 +417,10 @@ follow applied effects; caller-supplied IDs are not an idempotency promise.
 Disposable live tests cover immediate decisions, discovery location/header
 precedence, session ownership, once/reject/always, saved-rule effects and deny
 precedence, nullable inputs, and permission events without model/tool execution.
-The example rejects its own manually created request in a fresh session. Actual
-tool resumption, plugin hooks, concurrent decisions, and reload/restart lifetime
-remain separate compatibility work.
+The example rejects its own manually created request in a fresh session. The active
+fixture adds a built-in read waiting on `once`, then verifies file content reaches
+the local provider and execution succeeds. Waiting-tool reject/always, plugin
+hooks, concurrent decisions and reload/restart lifetime remain separate work.
 
 ### Forms and explicit answers
 
@@ -453,9 +457,11 @@ Events share form data, but cancellation feedback requires fetching state.
 
 Disposable live validation exercises all field kinds, conditions/defaults/hidden
 semantics, ownership/location isolation, null IDs, duplicate IDs, errors, terminal
-states, and creation/reply/cancellation events without model calls. Ten-minute
-expiry, restart/teardown lifetime, concurrent settlement, and actual tool resumption
-are source-reviewed or future validation work, not live guarantees.
+states, and creation/reply/cancellation events without model calls. The active
+fixture verifies answering a waiting question and cancellation with model-facing
+feedback; the latter records a tool error but permits successful execution.
+Ten-minute expiry, restart/teardown lifetime, concurrent settlement and dismissal
+without feedback remain source-reviewed or future validation work.
 
 ### Generated models and hand-written behavior
 
@@ -617,8 +623,11 @@ Buffered events invalidate refreshed state rather than being reapplied over it.
 Queue overflow, EOF and failures mark the last successful bundle stale; explicit
 reconnection subscribes before refreshing again. Shutdown joins the reader and
 drop aborts it as a fallback. Deterministic tests establish convergence after
-quiescence and cancellation/lag behavior; live ordering and active model output
-remain unverified. No state-store or reconnect policy is added to the public SDK.
+quiescence and cancellation/lag behavior; live reconnect ordering remains unverified.
+The active fixture verifies text deltas and confirms that v2.2.5 history stores
+the text block on `text.ended`, not each transient delta. In-progress previews must
+remain separate from stored snapshots. No state-store or reconnect policy is
+added to the public SDK.
 
 SSE framing handles arbitrary chunks, UTF-8 replacement, BOM, CR/LF/CRLF,
 multiline data, comments, and metadata. EOF discards unfinished events. Blocks
@@ -748,7 +757,8 @@ default test suite. Use disposable server data and workspaces for those tests.
 GitHub Actions workflows cover formatting, Clippy, unit/protocol tests, docs and
 examples, default/HTTP-only features, Rust 1.88 library builds, and all checked-in
 generation targets. Regeneration pins Rust/rustfmt 1.99.1. A separate manual
-workflow runs the disposable server smoke test; ordinary tests skip it.
+workflow runs the disposable server smoke test and optionally the separate active
+fixture; ordinary tests skip both live tests.
 
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
 and commit pinned in `tools/live/server.json`. Server info, location/agent/model discovery,
@@ -757,9 +767,14 @@ prompt admission, inbox list/update/cancel, and idle interruption/waiting pass
 locally on macOS arm64. The history test imports a fixed transcript through the
 pinned experimental import route solely for fixtures, without scheduling model
 or tool execution; history reads use the SDK. This does not expose import publicly.
-Prompt checks use an idle disposable session with explicit `resume(false)` and
+Smoke prompt checks use an idle disposable session with explicit `resume(false)` and
 only queue-mode inbox updates. They verify admission/reconciliation, prepared
 inline attachments, order, conflicts, cancellation, and absent history before delivery.
+The opt-in `tools/live/active.py` runner adds a scripted authenticated localhost
+provider and built-in read/question tools in disposable state. It verifies active
+output, interruption, outcomes and waiting-tool resumption through the SDK, without
+real credentials, paid calls or changes to public APIs. Its scoped configuration
+denies other providers/tools; application-state isolation is not an OS sandbox.
 Linux is configured but awaits a workflow run. See [compatibility results](tools/live/README.md). Exercised responses
 needed no model changes; authentication and cursor semantics required clearer
 guidance. The original schema's source release remains unknown, independently of
