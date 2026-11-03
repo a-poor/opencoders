@@ -466,6 +466,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     verify_message_history(&client, &http, &url, &elsewhere).await;
     verify_selection(&client, &fallback, &elsewhere.id, workspace, other).await;
     verify_prompt_inbox(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
+    verify_execution(&client, &ids[1].parse().unwrap()).await;
     verify_events(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     verify_session_logs(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     let remaining = client
@@ -486,6 +487,161 @@ async fn pinned_server_discovery_and_session_pagination() {
             .data
             .is_empty()
     );
+}
+
+async fn verify_execution(client: &Client, id: &opencoders::models::SessionId) {
+    use opencoders::models::{SessionInboxDelivery, SessionPromptRequest};
+    use opencoders::{SessionInterruptOptions, SessionWaitOptions};
+    let wait = SessionWaitOptions::default().timeout(Duration::from_secs(5));
+    assert!(
+        client
+            .sessions()
+            .inbox(id)
+            .list()
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+    for resume in [None, Some(false), Some(true)] {
+        let mut options = SessionInterruptOptions::default();
+        options.resume = resume;
+        assert!(
+            !client
+                .sessions()
+                .interrupt(id, &options)
+                .await
+                .unwrap()
+                .interrupted
+        );
+        client
+            .sessions()
+            .experimental_wait(id, &wait)
+            .await
+            .unwrap();
+    }
+    // Waiting does not start work. resume(true) must not promote a queued prompt.
+    // Never exercise resume(true) with steering/control input: that can call a model.
+    let queued = client
+        .sessions()
+        .prompt(
+            id,
+            &SessionPromptRequest::new("held execution fixture")
+                .id("msg_live_execution_queue".parse().unwrap())
+                .delivery(SessionInboxDelivery::Queue)
+                .resume(false),
+        )
+        .await
+        .unwrap()
+        .data;
+    client
+        .sessions()
+        .experimental_wait(id, &wait)
+        .await
+        .unwrap();
+    assert!(
+        !client
+            .sessions()
+            .interrupt(id, &SessionInterruptOptions::default().resume(true))
+            .await
+            .unwrap()
+            .interrupted
+    );
+    client
+        .sessions()
+        .experimental_wait(id, &wait)
+        .await
+        .unwrap();
+    let pending = client.sessions().inbox(id).list().await.unwrap();
+    assert_eq!(pending.data.len(), 1);
+    assert_eq!(pending.data[0].id(), &queued.id);
+    client
+        .sessions()
+        .inbox(id)
+        .cancel(&queued.id)
+        .await
+        .unwrap();
+    let steering = client
+        .sessions()
+        .prompt(
+            id,
+            &SessionPromptRequest::new("held steering fixture")
+                .id("msg_live_execution_steer".parse().unwrap())
+                .delivery(SessionInboxDelivery::Steer)
+                .resume(false),
+        )
+        .await
+        .unwrap()
+        .data;
+    for options in [
+        SessionInterruptOptions::default(),
+        SessionInterruptOptions::default().resume(false),
+    ] {
+        assert!(
+            !client
+                .sessions()
+                .interrupt(id, &options)
+                .await
+                .unwrap()
+                .interrupted
+        );
+        client
+            .sessions()
+            .experimental_wait(id, &wait)
+            .await
+            .unwrap();
+        let pending = client.sessions().inbox(id).list().await.unwrap();
+        assert_eq!(pending.data.len(), 1);
+        assert_eq!(pending.data[0].id(), &steering.id);
+    }
+    assert!(
+        client
+            .sessions()
+            .messages(id)
+            .list(&MessageListOptions::default())
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+    client
+        .sessions()
+        .inbox(id)
+        .cancel(&steering.id)
+        .await
+        .unwrap();
+    assert!(
+        client
+            .sessions()
+            .inbox(id)
+            .list()
+            .await
+            .unwrap()
+            .data
+            .is_empty()
+    );
+    let missing = "ses_live_execution_missing".parse().unwrap();
+    for error in [
+        client
+            .sessions()
+            .interrupt(&missing, &SessionInterruptOptions::default())
+            .await
+            .unwrap_err(),
+        client
+            .sessions()
+            .experimental_wait(&missing, &wait)
+            .await
+            .unwrap_err(),
+    ] {
+        assert_eq!(error.status().unwrap(), 404);
+        let Error::Http(error) = error else {
+            panic!("expected missing session")
+        };
+        assert!(matches!(
+            error.api_error(),
+            Some(ApiError::SessionNotFound { .. })
+        ));
+    }
 }
 
 async fn verify_session_logs(

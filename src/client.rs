@@ -298,6 +298,39 @@ impl Client {
         self.send_json(request, operation, StatusCode::OK).await
     }
 
+    pub(crate) async fn post_query_json<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        segments: &[&str],
+        operation: &'static str,
+        query: &[(&str, String)],
+    ) -> Result<T> {
+        let mut url = self.segments_url(path, segments);
+        if !query.is_empty() {
+            url.query_pairs_mut()
+                .extend_pairs(query.iter().map(|(k, v)| (*k, v.as_str())));
+        }
+        self.send_json(self.request(Method::POST, url), operation, StatusCode::OK)
+            .await
+    }
+
+    pub(crate) async fn post_empty_with_timeout(
+        &self,
+        path: &str,
+        segments: &[&str],
+        operation: &'static str,
+        timeout: Option<Duration>,
+    ) -> Result<()> {
+        self.send_response_with_timeout(
+            self.request(Method::POST, self.segments_url(path, segments)),
+            operation,
+            StatusCode::NO_CONTENT,
+            timeout,
+        )
+        .await
+        .map(|_| ())
+    }
+
     pub(crate) async fn patch_json_empty<B: serde::Serialize + ?Sized>(
         &self,
         path: &str,
@@ -395,11 +428,22 @@ impl Client {
 
     async fn send_response(
         &self,
-        mut request: reqwest::RequestBuilder,
+        request: reqwest::RequestBuilder,
         operation: &'static str,
         expected: StatusCode,
     ) -> Result<(StatusCode, Vec<u8>)> {
-        if let Some(timeout) = self.inner.request_timeout {
+        self.send_response_with_timeout(request, operation, expected, self.inner.request_timeout)
+            .await
+    }
+
+    async fn send_response_with_timeout(
+        &self,
+        mut request: reqwest::RequestBuilder,
+        operation: &'static str,
+        expected: StatusCode,
+        timeout: Option<Duration>,
+    ) -> Result<(StatusCode, Vec<u8>)> {
+        if let Some(timeout) = timeout {
             request = request.timeout(timeout);
         }
         let mut response = request
@@ -536,6 +580,7 @@ impl ClientBuilder {
 
     /// Set the ordinary request deadline, including body reads (30s default).
     /// This overrides a supplied HTTP client's total-request timeout.
+    /// SSE streams and experimental session waits use their own options.
     pub fn request_timeout(mut self, timeout: Duration) -> Self {
         self.request_timeout = Some(timeout);
         self

@@ -102,10 +102,10 @@ pub use sessions::{
     FileDiffInfo, FileDiffInfoStatus, MoneyUsd, PermissionRuleInput, PermissionRulesetInput,
     RelativePath, SessionCreateRequest, SessionForkBoundary, SessionForkBoundaryVariant0Type,
     SessionForkBoundaryVariant1Type, SessionId, SessionInfo, SessionInfoFork, SessionInfoOutcome,
-    SessionInfoTime, SessionLocationInput, SessionMessageId, SessionMetadata, SessionModelInput,
-    SessionResponse, SessionRevert, SessionSwitchAgentRequest, SessionSwitchModelRequest,
-    SessionUpdateRequest, SessionsCursor, SessionsResponse, SessionsResponseCursor, SnapshotId,
-    TokenUsageInfo, TokenUsageInfoCache,
+    SessionInfoTime, SessionInterruptResponse, SessionLocationInput, SessionMessageId,
+    SessionMetadata, SessionModelInput, SessionResponse, SessionRevert, SessionSwitchAgentRequest,
+    SessionSwitchModelRequest, SessionUpdateRequest, SessionsCursor, SessionsResponse,
+    SessionsResponseCursor, SnapshotId, TokenUsageInfo, TokenUsageInfoCache,
 };
 
 fn deserialize_optional_value<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>

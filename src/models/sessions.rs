@@ -497,6 +497,15 @@ pub struct SessionInfoTime {
     #[serde(flatten)]
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
+///`SessionInterruptResponse`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionInterruptResponse {
+    ///Whether an active execution owned by this OpenCode process was interrupted.
+    pub interrupted: bool,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
 ///`SessionLocationInput`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]

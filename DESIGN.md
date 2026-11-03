@@ -150,6 +150,10 @@ Long-lived streams and operations that wait for execution need timeout behavior
 separate from ordinary requests. Dropping a request or stream cancels local
 consumption; it does not promise to undo a request already accepted by the server.
 Interrupting an agent is an explicit API operation.
+`SessionWaitOptions` supplies an independent optional total deadline for waits,
+defaulting to none. A configured deadline overrides an injected reqwest total
+timeout; omission leaves transport deadlines effective. Shared response handling
+still bounds diagnostic bodies and preserves HTTP status on body-read failures.
 
 The default transport disables redirects and automatic retries. In particular,
 a transport error after prompt submission must not silently cause duplicate input. Any future retry
@@ -299,6 +303,35 @@ are no-ops, while a missing session fails. Repeating a pending user ID for the s
 session returns the original payload; cross-session reuse conflicts. This is not
 a blanket idempotency promise across lifecycle states. Execution and concurrency
 remain separate validation work; current live checks admit only with resume(false).
+
+### Execution control
+
+`sessions().interrupt(&id, &SessionInterruptOptions)` sends a bodyless POST with
+an optional boolean `resume` query and returns the generated, extensible
+`SessionInterruptResponse` for HTTP 200. Omitted/false resume requests no restart
+on v2.2.5; true can wake eligible steering/control work even when nothing was
+interrupted, while queued next-turn prompts remain parked. Interruption is an
+acknowledgement before cleanup, not a settlement barrier. False also covers already
+stopping/settling execution, so neither boolean establishes idle.
+
+`sessions().experimental_wait(&id, &SessionWaitOptions)` sends a bodyless POST
+and returns `()` only for HTTP 204. It observes process-local idleness without
+starting work, rechecking after cleanup/successor executions. It does not propagate
+execution outcomes and may return with pending input. New work can start afterward;
+there is no per-prompt completion or permanent-idle guarantee. Snapshots and the
+existing typed execution events remain the outcome observation primitives.
+
+Both methods ignore discovery location defaults and use shared bounded response
+handling. Interruption keeps ordinary request deadlines; waiting uses its per-call
+deadline. Neither retries automatically. Dropping a wait cancels local observation,
+not execution; dropping an interrupt cannot undo an accepted action. The example
+requires an explicit `--interrupt` flag to request a stop before bounded waiting.
+
+Live validation covers empty/idle sessions, parked queued work with resume true,
+held steering work with omitted/false resume, and missing sessions, without model
+calls. Active provider interruption, cleanup ordering, and concurrent resumption
+remain unverified live; mocks exercise both acknowledgement booleans, cancellation,
+deadlines, disconnections, and response/error contracts.
 
 ### Generated models and hand-written behavior
 
@@ -579,7 +612,7 @@ workflow runs the disposable server smoke test; ordinary tests skip it.
 OpenCode v2.2.5 is the initial live baseline, with official archive SHA-256 hashes
 and commit pinned in `tools/live/server.json`. Server info, location/agent/model discovery,
 and session creation/retrieval/listing/update/removal/selection, message list/get,
-prompt admission, and inbox list/update/cancel pass
+prompt admission, inbox list/update/cancel, and idle interruption/waiting pass
 locally on macOS arm64. The history test imports a fixed transcript through the
 pinned experimental import route solely for fixtures, without scheduling model
 or tool execution; history reads use the SDK. This does not expose import publicly.

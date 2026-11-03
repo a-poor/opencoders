@@ -4,7 +4,8 @@
 
 The library currently supports server information, location/agent/model discovery,
 session management/listing and agent/model selection, message history/retrieval,
-prompt admission/inbox management, live event subscriptions, and experimental session logs. It targets developers building
+prompt admission/inbox management, interruption/waiting, live event subscriptions,
+and experimental session logs. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -366,6 +367,62 @@ admits with `resume(false)`, lists pending work, changes delivery to queue, canc
 the item, and removes the session. It makes no model calls. Waking execution,
 delivery during active runs, and completed model responses remain unverified.
 
+## Interruption and waiting
+
+```rust
+use opencoders::{Client, SessionInterruptOptions, SessionWaitOptions, models::SessionId};
+use std::time::Duration;
+
+async fn stop(client: &Client, id: &SessionId) -> opencoders::Result<()> {
+    let response = client.sessions().interrupt(id,
+        &SessionInterruptOptions::default().resume(false)).await?;
+    println!("Interruption accepted: {}", response.interrupted);
+    client.sessions().experimental_wait(id,
+        &SessionWaitOptions::default().timeout(Duration::from_secs(30))).await?;
+    // Idle is not a successful-execution result or a per-prompt receipt.
+    let session = client.sessions().get(id).await?;
+    println!("Latest recorded outcome: {:?}", session.data.outcome);
+    Ok(())
+}
+```
+
+`interrupt` sends a bodyless POST and returns `SessionInterruptResponse` for HTTP
+200, preserving additional response fields. Its optional `resume` query preserves
+omission, false, and true. On v2.2.5, omission/false requests no resumption;
+`resume(true)` can wake eligible steering/control work even when `interrupted` is
+false. Queued next-turn prompts remain parked, and interruption does not remove
+pending input. Use inbox cancellation separately when that is intended.
+
+The boolean describes interruption acceptance for execution owned by this server
+process. `true` returns before asynchronous cleanup completes; `false` can mean
+idle, already stopping, or settling. Neither boolean promises the session is idle.
+New concurrent admissions can start further work.
+
+`experimental_wait` sends a bodyless POST and accepts only HTTP 204. The pinned
+server waits through cleanup and successor executions until it observes no active
+execution for that session in this process. It never starts work. An idle session
+can still have pending input, and idle can follow success, failure, or interruption.
+Inspect session/history snapshots and `session.execution.*` live events for
+outcomes. A new execution can begin after the wait returns.
+
+Waiting has **no SDK deadline by default**, independent of the ordinary 30-second
+request timeout. `SessionWaitOptions::timeout` sets a per-call total deadline,
+including error-body reads; it overrides an injected reqwest total-request
+timeout. `None`/`without_timeout()` leaves injected deadlines in effect. Other
+transport policies, including read/connect timeouts, remain effective. Interruption
+uses the ordinary request deadline. Both methods ignore the discovery location
+default and retain bounded diagnostics with no automatic retries.
+
+Dropping or timing out a wait cancels only local waiting; it does not interrupt
+execution. Cancelling an interrupt request does not undo an accepted stop. The
+application owns reconnection, retry decisions, and coordination with live events.
+
+Run `cargo run --example execution` with `OPENCODE_BASE_URL`, `OPENCODE_SESSION_ID`,
+and optional `OPENCODE_PASSWORD` to wait for up to 30 seconds and inspect snapshots.
+Pass `-- --interrupt` to explicitly request a stop first. Live checks cover idle
+and parked-input behavior without model calls; active interruption/cleanup and
+resumption during provider execution remain unverified against a live server.
+
 ## Live events
 
 ```rust
@@ -540,7 +597,7 @@ checkpoint storage, and snapshot reconciliation remain application decisions. Tr
 `BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
 `Error::Http`, `Error::Decode`, `Error::ResponseTooLarge`, or `Error::Stream`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
-methods expect exactly HTTP 200; session update/remove/switch and inbox update/cancel methods expect HTTP 204 with no
+methods expect exactly HTTP 200; session update/remove/switch/wait and inbox update/cancel methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
 too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.

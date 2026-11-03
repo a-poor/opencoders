@@ -71,7 +71,9 @@ cargo run --locked --offline -p opencoders-model-spike -- --sessions --check
 Output goes to the root `src/models/sessions.rs`, selecting `SessionsResponse`,
 the inline create/get envelopes (`SessionResponse`), the inline create/update
 requests (`SessionCreateRequest` and `SessionUpdateRequest`), selection requests
-(`SessionSwitchAgentRequest` and `SessionSwitchModelRequest`), and their dependencies.
+(`SessionSwitchAgentRequest` and `SessionSwitchModelRequest`),
+`SessionInterruptResponse`, and their dependencies. The interrupt response keeps
+its required boolean and additive response fields without a custom adapter.
 `src/sessions.rs` records adaptations: shared
 discovery types are reused through named replacements, arbitrary numeric fields
 use `serde_json::Number`, and guarded adapters enforce file-diff count bounds and

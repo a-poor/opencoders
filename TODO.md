@@ -53,8 +53,9 @@ No active implementation goal.
 
 ### Crate and transport
 
-- [ ] Choose timeout behavior for long-running execution/wait operations.
-  Live subscriptions already have separate handshake and idle deadlines.
+- [ ] Choose timeout behavior for future long-running operations. Experimental
+  session waits have per-call total deadlines, independent of ordinary requests;
+  live subscriptions have separate handshake and idle deadlines.
 - [ ] Extend response handling to endpoints with multiple success statuses.
   Empty HTTP 204 responses are supported. Add typed API errors as resources need them.
 - [ ] Apply the established request/ID and omitted/null/value conventions to
@@ -75,7 +76,6 @@ No active implementation goal.
 
 - [ ] Implement session forking. Creation, retrieval, updates, and deletion are
   implemented with typed requests and appropriate response handling.
-- [ ] Implement interruption and execution observation/waiting.
 - [ ] Implement pending permission discovery, session permission requests, and
   permission replies without imposing an approval policy.
 - [ ] Implement pending form discovery and session form lifecycle/replies.
@@ -96,7 +96,8 @@ No active implementation goal.
 - [ ] Add runnable Rust examples for permission replies and form replies. Use ordinary output
   or assertions, with no GUI/TUI implementation. Session listing, creation, and
   update/deletion lifecycle, model/agent configuration, message history, and
-  prompt/inbox, live event, and explicit log resumption examples are implemented.
+  prompt/inbox, interruption/waiting, live event, and explicit log resumption
+  examples are implemented.
 - [ ] Add an example of background event consumption using minimal
   application-owned state. Explicit log resumption and snapshot refresh are
   demonstrated in `examples/session_log.rs` without a background task.
@@ -206,6 +207,10 @@ when a decision is made.
   checks use `resume(false)` and queue-only updates, confirming pending-ID
   reconciliation and same-mode update conflicts. Synthetic/compaction/move inbox
   lifecycle and experimental inbox media references also remain unverified.
+- [ ] Verify interruption of active provider/tool work, asynchronous cleanup,
+  repeated interruption during stopping/settlement, resume-true steering/control
+  execution, concurrent admissions, and waits through successor runs. These are
+  source-reviewed; current live checks cover only idle and parked-input behavior.
 - [ ] Verify snapshot reconciliation during concurrent execution and disconnection.
   Captured log watermarks are not atomic REST snapshot boundaries or retention
   guarantees; sequences can have gaps and a future `after` can exceed the marker.
@@ -214,6 +219,26 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Complete session execution control with TDD: `sessions().interrupt(&id,
+  &options)` preserves resume omission/false/true and returns the generated
+  `SessionInterruptResponse`; `experimental_wait(&id, &options)` accepts HTTP 204
+  with an independent optional total deadline. Share bounded responses, typed
+  errors, safe path encoding, and the existing default no-retry policy.
+- [x] Test required/extended response fields, both interruption booleans, request
+  encoding, statuses/errors, body bounds, injected/ordinary/per-call deadlines,
+  cancellation of independent waits, empty keep-alive responses, and disconnects.
+  Document acceptance versus cleanup, process-local idle versus execution outcome,
+  resume-true behavior, and local cancellation versus server interruption.
+- [x] Verify idle no-ops, every resume query choice on empty sessions, parked queue
+  behavior with resume true, held steering input with omitted/false resume, waits
+  with pending input, and missing sessions on disposable v2.2.5/macOS arm64 without
+  model calls. Add `examples/execution.rs` and update usage/design/compatibility docs.
+- [x] Validate 166 client tests, 34 generator tests, eleven doctests/examples,
+  HTTP-only tests, both Rust 1.88 builds, formatting, Clippy, docs, all seven
+  generation checks, eight runner tests, actionlint, and the live smoke test.
+  Active provider execution and hosted Linux validation remain tracked separately;
+  no automatic commit.
 
 - [x] Complete durable session logs with TDD: `sessions().experimental_log(&id,
   &options)` supports exclusive `after`, explicit finite/follow modes, typed

@@ -33,7 +33,14 @@ pub fn generate_sessions(spec: &Value) -> Result<String, Box<dyn std::error::Err
         return Err("session.create/get envelopes differ; review SessionResponse".into());
     }
     spec["components"]["schemas"]["SessionResponse"] = create;
-    let mut schema = select_schemas(&spec, &["SessionsResponse", "SessionResponse"])?;
+    let mut schema = select_schemas(
+        &spec,
+        &[
+            "SessionsResponse",
+            "SessionResponse",
+            "SessionInterruptResponse",
+        ],
+    )?;
     allow_additive_fields(&mut schema);
     // Inputs keep strict objects and their own nested types. Never reuse tolerant
     // response objects whose extension maps could be sent back as request fields.

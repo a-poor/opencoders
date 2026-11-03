@@ -71,6 +71,8 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.inbox.list` | Pending user payloads, enqueue order independent of ID order, and no projected history before delivery. Other inbox kinds are covered by fixtures/mocks. |
 | `session.inbox.update` | Empty HTTP 204 for steer-to-queue changes; order retained; same-mode, unavailable, and wrong-session items return typed HTTP 409; missing sessions return 404. |
 | `session.inbox.cancel` | Empty HTTP 204, repeated/missing/wrong-session cancellation no-ops, pending item removal without creating history, and missing-session HTTP 404. |
+| `session.interrupt` | HTTP 200 with `interrupted: false` on idle sessions; omitted/false/true resume on empty sessions, true leaves queued input parked, omitted/false leave held steering input pending; typed missing-session HTTP 404. |
+| `experimental.session.wait` | HTTP 204 on idle sessions, including sessions with held queue/steer input; no input is delivered or started; typed missing-session HTTP 404. |
 
 Two pagination details matter for consumers:
 
@@ -173,6 +175,29 @@ execution, heartbeat timing, slow-consumer overflow, or reconnect reconciliation
 Fragmentation, heartbeats, EOF, transport failures, protocol failure frames, and
 timeouts are deterministic mock/socket tests. The declared failure-frame contract
 does not establish how every server disconnect or overflow will be signaled.
+
+### Interruption and wait semantics
+
+The pinned [execution service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/execution.ts)
+and [coordinator](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/run-coordinator.ts)
+acknowledge interruption before finalizers settle. False can mean idle, already
+stopping, or the terminal settlement window. Resume true can wake eligible steering
+or control work even when the interruption result is false; queued prompts stay
+parked. The wait implementation observes process-local idleness, waits through
+successors, and ignores execution failure/interruption as outcomes. It never starts
+work and does not promise that the inbox is empty or a particular prompt succeeded.
+
+Live checks exercise only idle sessions: empty inboxes with every resume query
+choice, a held queued prompt with resume true, and a held steering prompt with
+omitted/false resume. Wait returns HTTP 204 while those prompts remain pending and
+message history remains empty. Fixtures are then cancelled through the SDK. No
+resume-true call has steering/control work eligible to run, and no model is invoked.
+
+Active interruption/cleanup, concurrent wakeups, failure outcomes, and actual
+steering resumption are source-reviewed but not live-validated. Deterministic
+protocol tests cover both response booleans, statuses/errors, total/error-body
+deadlines, injected timeout policies, cancellation of one independent wait,
+connection cleanup, empty keep-alive responses, and no automatic retry.
 
 ### Durable log retention and replay
 

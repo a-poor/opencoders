@@ -2,7 +2,7 @@
 //!
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, projected message history, prompt admission,
-//! pending inbox management, live event subscriptions, and experimental session logs. Run
+//! pending inbox management, interruption/waiting, live event subscriptions, and experimental session logs. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -129,6 +129,22 @@
 //! # }
 //! ```
 
+//! Request interruption, then separately wait for process-local execution to idle:
+//! ```no_run
+//! # async fn stop(client: &opencoders::Client, id: &opencoders::models::SessionId) -> opencoders::Result<()> {
+//! use opencoders::{SessionInterruptOptions, SessionWaitOptions};
+//! use std::time::Duration;
+//! let response = client.sessions().interrupt(id,
+//!     &SessionInterruptOptions::default().resume(false)).await?;
+//! println!("Interruption accepted: {}", response.interrupted);
+//! client.sessions().experimental_wait(id,
+//!     &SessionWaitOptions::default().timeout(Duration::from_secs(30))).await?;
+//! // Idle can follow failure/interruption and can coexist with pending input.
+//! // Dropping the wait only cancels local waiting; it does not request a stop.
+//! # Ok(())
+//! # }
+//! ```
+
 //! Consume a caller-owned, global live subscription:
 //! ```no_run
 //! # async fn events(client: &opencoders::Client) -> opencoders::Result<()> {
@@ -166,6 +182,8 @@ mod catalog;
 mod client;
 mod error;
 mod events;
+mod execution;
+pub use execution::{SessionInterruptOptions, SessionWaitOptions};
 mod inbox;
 mod session_log;
 mod sse;
