@@ -251,6 +251,24 @@ protocol tests cover both response booleans, statuses/errors, total/error-body
 deadlines, injected timeout policies, cancellation of one independent wait,
 connection cleanup, empty keep-alive responses, and no automatic retry.
 
+### Automation example evidence
+
+The [automation example](../../examples/automation.rs) and its
+[tests](../../tests/automation.rs) add a mock-tested fresh-session outcome policy;
+they have not been run with a live provider or tools. Source review of the pinned
+[message store](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/store.ts)
+confirms message ordering uses stored sequence, not the lexical order of caller
+IDs. The [message updater](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/message-updater.ts)
+projects terminal executions into idle history markers (excluding shutdown
+interruption), and instruction updates into system notices marked
+`metadata.notice = "instructions"`. The classifier permits those notices but
+requires matching prompt/terminal history and session outcome, an idle wait and
+no pending work before declaring observed success. This is a conservative
+application policy, not an atomic snapshot guarantee or per-prompt server receipt.
+Full active execution, actual tool resumption, shutdown and competing work still
+need live compatibility fixtures; the source review does not promote them to
+verified behavior.
+
 ### Durable log retention and replay
 
 The v2.2.5 CLI does **not** retain durable event payloads. The pinned

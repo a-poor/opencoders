@@ -3,8 +3,9 @@
 Status: 35 pinned operations have public methods and protocol tests, covering
 server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
-live events and experimental session logs. Milestone 2 still needs integrated
-examples and execution/recovery validation. See [API coverage](API_COVERAGE.md)
+live events and experimental session logs. Background observation and automation
+examples now have deterministic tests; milestone 2 still needs active execution,
+live recovery validation and release preparation. See [API coverage](API_COVERAGE.md)
 for operation-level evidence and [release readiness](RELEASE_READINESS.md) for
 the prioritized acceptance audit. Broader APIs remain the implementation plan.
 
@@ -367,6 +368,19 @@ held steering work with omitted/false resume, and missing sessions, without mode
 calls. Active provider interruption, cleanup ordering, and concurrent resumption
 remain unverified live; mocks exercise both acknowledgement booleans, cancellation,
 deadlines, disconnections, and response/error contracts.
+
+`examples/automation.rs` applies an example-owned, fresh-session policy: explicitly
+select agent/model on creation, subscribe before one identified prompt, consume
+progress alongside admission/waiting, then inspect session/history and pending
+input/permission/form snapshots. It has a shared work deadline, a separate bounded
+inspection window and event/history budgets. Admission, idleness, feed failure and
+observed execution outcomes remain distinct. Success requires matching prompt and
+terminal history, consistent session outcome, completed assistant output and no
+pending work. Ambiguous, truncated or competing history stays inconclusive.
+Recognized instruction-update notices are allowed without treating them as another
+user prompt. The example retains sessions and never automatically retries,
+interrupts, answers requests or deletes work. These are tested application choices,
+not a public orchestration API or a live per-prompt completion guarantee.
 
 ### Permission requests and replies
 

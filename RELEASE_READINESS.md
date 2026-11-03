@@ -1,13 +1,13 @@
 # Milestone 2 release readiness
 
-Audit and observer follow-up: **2026-11-02**, against the checked-in schema and the recorded OpenCode
+Audit and example follow-ups: **2026-11-02**, against the checked-in schema and the recorded OpenCode
 **v2.2.5 / macOS arm64** smoke run. This audit does not rerun that server test or
 establish Linux compatibility. It proposes the remaining work for the first
 usable release; no release or publication has been performed.
 
 The core conversation resources are implemented, but **milestone 2 is not yet
-complete**. The remaining work is chiefly integrated examples, recovery and
-execution validation, and release preparation. PTY support is milestone 3 and
+complete**. The remaining work is chiefly live recovery and active-execution
+validation, and release preparation. PTY support is milestone 3 and
 does not gate the first conversation-library release. No UI is being built.
 
 ## Coverage and evidence
@@ -40,9 +40,9 @@ The criteria below come from [DESIGN.md](DESIGN.md#implementation-milestones).
 | Session listing and history | Runnable examples, protocol tests and imported settled transcripts on the pinned server. | Concurrent/active snapshots are not validated. |
 | Incremental output | Typed SSE plus the background observer's bounded transient previews, with deterministic HTTP/SSE tests. | No active model-output run. Previews are not reconstructed transcripts. |
 | Permission/form replies | Typed lifecycle APIs, six form field kinds, reply effects and manual live fixtures. | No real waiting-tool resumption after a reply. |
-| Execution outcomes | Prompt admission, pending inbox control, interruption and bounded waits. | Live prompts are parked with `resume(false)`; interrupts/waits exercise idle sessions. Wait returning does not prove prompt success. |
+| Execution outcomes | Admission/inbox/control APIs and a bounded automation example with deterministic outcome-correlation tests. | Live prompts are parked with `resume(false)`; interrupts/waits exercise idle sessions. Active execution remains unverified. |
 | Recovery after disconnection | Background observer and deterministic missed-change, overlap, lag, cancellation and reconnect tests; explicit log cursors remain available separately. | Live reconnect ordering/overflow remains unverified; stock v2.2.5 CLI retains no event payloads. |
-| Library use outside a UI | Individual examples share the same client and runtime. | A complete bounded automation example remains to be written. |
+| Library use outside a UI | Bounded automation creates/selects a session, submits one prompt, consumes progress and inspects outcomes/pending work. | Its fresh-session policy is mock-tested; live model/tool behavior remains a separate validation goal. |
 
 ## Prioritized completion plan
 
@@ -73,13 +73,17 @@ whose documented recovery path relies on refreshed snapshots.
 
 ### 2. Demonstrate bounded automation and active execution
 
-Recommended next goal: the bounded automation example and deterministic outcome
-tests below. Active provider/tool compatibility can then be a separate scoped goal.
+Completed the bounded example as [`examples/automation.rs`](examples/automation.rs)
+with [deterministic outcome tests](tests/automation.rs). It creates/selects a fresh
+session, identifies its prompt before admission, observes progress while waiting,
+and inspects bounded history/pending work. Success, failure, interruption, pending
+input, requests requiring an answer and inconclusive evidence are distinct.
+It retains all sessions and does not equate admission/idleness with success.
+An explicit `--execute` invocation is required to run it against a server.
 
-Add an automation example that creates/selects a session, admits input, observes
-progress, waits with a deadline and inspects resulting history/pending work.
-Make success, failure, interruption and unresolved input distinguishable. Never
-equate admission or process-local idleness with a successful response.
+Recommended next goal: investigate and build an isolated deterministic
+provider/tool fixture for active compatibility testing against the pinned server.
+Keep real credentials and paid calls outside that goal unless separately requested.
 
 Extend opt-in compatibility testing to actual execution, including incremental
 output, active interruption/settlement and permission/form tool resumption.

@@ -71,12 +71,15 @@
           "label": "verify_execution"
         }
       ],
-      "source_reviewed": [],
+      "source_reviewed": [
+        "The pinned message updater projects terminal execution outcomes into idle history (except shutdown interruption), and instruction changes into marked system notices. The automation classifier is mock-tested, not live execution evidence."
+      ],
       "unverified": [
         "Interruption during active model/tool execution, interrupted:true, resuming steering input, wait through real execution and cross-server ownership."
       ],
       "examples": [
-        "examples/execution.rs"
+        "examples/execution.rs",
+        "examples/automation.rs"
       ]
     },
     "fork": {
@@ -136,7 +139,8 @@
         "History during active execution, concurrent timeline changes and experimental media-reference negotiation. Imported model/tool results are fixtures, not real executions."
       ],
       "examples": [
-        "examples/history.rs"
+        "examples/history.rs",
+        "examples/automation.rs"
       ]
     },
     "inbox": {
@@ -155,7 +159,8 @@
         "Actual delivery/execution, already delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation."
       ],
       "examples": [
-        "examples/prompt_inbox.rs"
+        "examples/prompt_inbox.rs",
+        "examples/automation.rs"
       ]
     },
     "log": {
@@ -248,7 +253,8 @@
       "examples": [
         "examples/sessions.rs",
         "examples/create_session.rs",
-        "examples/session_lifecycle.rs"
+        "examples/session_lifecycle.rs",
+        "examples/automation.rs"
       ]
     }
   },
@@ -752,6 +758,11 @@
           "file": "tests/execution.rs",
           "anchor": "fn wait_posts_without_a_body_query_or_location_and_accepts_only_204(",
           "label": "wait_posts_without_a_body_query_or_location_and_accepts_only_204"
+        },
+        {
+          "file": "tests/automation.rs",
+          "anchor": "fn deadline_stops_local_waiting_but_still_inspects_pending_requests(",
+          "label": "deadline_stops_local_waiting_but_still_inspects_pending_requests"
         }
       ],
       "evidence": "execution"
@@ -1480,6 +1491,11 @@
           "file": "tests/messages.rs",
           "anchor": "fn pagination_is_explicit_preserves_order_and_repeats_type_filter(",
           "label": "pagination_is_explicit_preserves_order_and_repeats_type_filter"
+        },
+        {
+          "file": "tests/automation.rs",
+          "anchor": "fn history_pagination_is_explicit_bounded_and_requires_a_complete_traversal(",
+          "label": "history_pagination_is_explicit_bounded_and_requires_a_complete_traversal"
         }
       ],
       "evidence": "history"
@@ -1577,6 +1593,11 @@
           "file": "tests/inbox.rs",
           "anchor": "fn prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults(",
           "label": "prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults"
+        },
+        {
+          "file": "tests/automation.rs",
+          "anchor": "fn automation_subscribes_before_admission_observes_progress_and_inspects_outcomes(",
+          "label": "automation_subscribes_before_admission_observes_progress_and_inspects_outcomes"
         }
       ],
       "evidence": "inbox"

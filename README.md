@@ -473,6 +473,70 @@ Pass `-- --interrupt` to explicitly request a stop first. Live checks cover idle
 and parked-input behavior without model calls; active interruption/cleanup and
 resumption during provider execution remain unverified against a live server.
 
+## Bounded automation
+
+[`examples/automation.rs`](examples/automation.rs) creates a fresh session with
+an explicitly selected agent/model, subscribes to events, admits one identified
+prompt with `resume(true)`, waits and inspects history plus pending work. Running
+it can spend provider credit and invoke tools that modify the server workspace,
+according to the server's agent/permission configuration. Normal tests use mocks.
+
+Set `OPENCODE_BASE_URL`, `OPENCODE_DIRECTORY`, `OPENCODE_AGENT_ID`,
+`OPENCODE_PROVIDER_ID`, `OPENCODE_MODEL_ID`, and `OPENCODE_PROMPT`;
+`OPENCODE_PASSWORD` is optional. Use the public catalog model ID, not its native
+provider `modelID`. Provider credentials must already be configured on the server.
+
+```sh
+cargo run --example automation -- --execute
+```
+
+The flag is required before any server request. Session and prompt IDs are chosen
+and printed before mutations so a lost response can be investigated. They are not
+idempotency keys. The example makes one attempt and never resubmits a mutation.
+Selection/admission do not establish model availability or successful execution.
+
+The [example-owned policy](examples/support/automation.rs) uses a shared 30-second
+deadline for creation, subscription, admission and waiting, followed by a separate
+10-second inspection window, including after a wait timeout. Ordinary requests
+also have a 10-second limit. It consumes progress alongside the requests without
+spawning a task; all global traffic counts toward a 1,024-event budget. Feed EOF,
+decode errors and budget exhaustion are reported separately from execution.
+
+Inspection reads the session, inbox, permissions, forms and up to three ascending
+history pages of 50 entries. Responses are limited to 1 MiB and SSE blocks to
+64 KiB; these are not process-memory caps. Cursors remain opaque, and reaching a
+page budget with a next cursor leaves history incomplete, even for a short page.
+Separate reads/pages are not an atomic snapshot.
+
+| Observed outcome | Required evidence |
+| --- | --- |
+| `Succeeded` | Idle wait; complete bounded traversal containing the expected user ID and no competing input; completed, error-free assistant output; matching final idle marker and session outcome; no pending work. |
+| `Failed` / `Interrupted` | Matching prompt history and corresponding terminal/session outcomes after an idle wait, without pending work. |
+| `AwaitingInput` | Pending permission requests or forms; the example does not answer them. |
+| `Pending` | The submitted prompt is still in the inbox, even if the session records an older success. |
+| `Inconclusive` | Missing/conflicting evidence, incomplete history, unsupported/competing work, or failed/timed-out waits or inspection. |
+
+This deliberately narrow policy assumes a fresh session used by this invocation.
+It allows initial agent/model selection and recognized instruction-update notices;
+other timeline kinds, concurrent work and multiple terminal markers require a
+more specialized policy. Success describes observed completion, not answer
+correctness or a per-prompt server receipt. Only stored assistant text is printed
+on success; transient text fragments are progress counts, never appended to it.
+An early idle response can still lead to `Inconclusive`; the example does not
+silently poll or restart execution. Non-success outcomes exit unsuccessfully.
+
+Every created session is retained, including on success. On errors/timeouts,
+inspect the printed IDs before another invocation: server work may still be
+running. If stopping it is intended, use the explicit interrupt/wait flow in
+`examples/execution.rs`; cancel still-pending input through
+`sessions().inbox(&id).cancel(&prompt_id)` separately. After inspecting settlement,
+`sessions().remove(&id)` removes the session and its children. These actions do
+not undo completed tool effects and are never automatic in this example.
+
+[`tests/automation.rs`](tests/automation.rs) verifies the policy and wire flow
+with deterministic fixtures. Active execution and waiting-tool resumption against
+OpenCode remain unverified; see [compatibility notes](tools/live/README.md).
+
 ## Permission requests and replies
 
 ```rust

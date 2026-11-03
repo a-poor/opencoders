@@ -83,13 +83,11 @@ No active implementation goal.
 
 ### Examples and first usable release
 
-- [ ] Next goal: add a bounded automation example using the same APIs: admit
-  input, observe progress and inspect history/pending work after waiting. Distinguish admission,
-  idleness and successful completion; document deadlines and cleanup.
-- [ ] Extend opt-in compatibility testing to active incremental output,
-  interruption/settlement and actual permission/form tool resumption. Investigate
-  deterministic local provider/tool fixtures first; keep normal tests and the
-  existing smoke runner credential-free and without model calls.
+- [ ] Next goal: investigate and build an isolated deterministic provider/tool
+  fixture for active compatibility testing against the pinned server. Exercise
+  incremental output, interruption/settlement and actual permission/form tool
+  resumption. Keep real credentials/paid calls out of this goal, and keep normal
+  tests and the existing smoke runner without model calls.
 - [ ] Prepare package metadata, review the archive's included files, and replace
   the MIT copyright placeholder with the owner's correct holder/year. Audit-only
   package listing succeeds; packaged-build and publish dry-run checks remain.
@@ -229,6 +227,25 @@ when a decision is made.
 
 ## Completed
 
+- [x] Add `examples/automation.rs` and example-owned orchestration/outcome policy.
+  Explicit `--execute` creates/selects a fresh session, identifies one prompt,
+  subscribes before admission, consumes progress while waiting, and inspects
+  session/history/inbox/permission/form snapshots. Share a work deadline across
+  setup/admission/wait, with a separate bounded inspection window and event/page
+  limits. Retain all sessions and document explicit inspection/cleanup.
+- [x] Add fourteen deterministic tests distinguishing admission and idleness from
+  observed success/failure/interruption, pending input, unanswered requests and
+  inconclusive evidence. Cover ambiguous admission, identity mismatches, partial
+  or competing history, pagination bounds, failed/timed-out waits/inspection,
+  feed degradation and recognized instruction notices. Never retry mutations or
+  automatically interrupt, approve requests or delete work.
+- [x] Update usage/design/readiness and operation evidence; source-review pinned
+  message ordering, terminal projections and instruction notices without claiming
+  live execution. Validate workspace/HTTP-only suites (214 client tests, 39
+  generator tests, fourteen doctests), all sixteen examples on Rust 1.88 with
+  both configurations, strict Clippy, formatting, warning-free docs,
+  coverage/eight checker tests and local documentation links. No live model/tool
+  calls or automatic commit.
 - [x] Add `examples/background_session.rs` with example-owned state and a bounded
   background SSE reader. Subscribe before reading session, one recent history
   page and inbox/permission/form snapshots; refresh periodically and after

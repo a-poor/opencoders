@@ -35,7 +35,7 @@ Protocol links identify representative tests; their files also contain error/bou
 | `agent.list` | `GET /api/agent` | [Agents::list / list_at](src/agents.rs#L55) | [default_location_applies_only_to_location_aware_routes](tests/discovery.rs#L48) | [discovery](#evidence-discovery) |
 | `event.subscribe` | `GET /api/event` | [Events::subscribe](src/events.rs#L81) | [subscription_uses_explicit_filters_headers_and_preserves_sse_metadata](tests/events.rs#L16), [explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations](tests/background_session.rs#L231) | [events](#evidence-events) |
 | `experimental.session.log` | `GET /api/experimental/session/{sessionID}/log` | [Sessions::experimental_log](src/session_log.rs#L97) | [log_encodes_explicit_queries_and_segments_and_retains_markers_and_sse_ids](tests/session_log.rs#L19) | [log](#evidence-log) |
-| `experimental.session.wait` | `POST /api/experimental/session/{sessionID}/wait` | [Sessions::experimental_wait](src/execution.rs#L98) | [wait_posts_without_a_body_query_or_location_and_accepts_only_204](tests/execution.rs#L72) | [execution](#evidence-execution) |
+| `experimental.session.wait` | `POST /api/experimental/session/{sessionID}/wait` | [Sessions::experimental_wait](src/execution.rs#L98) | [wait_posts_without_a_body_query_or_location_and_accepts_only_204](tests/execution.rs#L72), [deadline_stops_local_waiting_but_still_inspects_pending_requests](tests/automation.rs#L320) | [execution](#evidence-execution) |
 | `form.list` | `GET /api/form` | [Forms::list / list_at](src/forms.rs#L18) | [forms_use_location_for_discovery_and_session_paths_for_lifecycle](tests/forms.rs#L265) | [forms](#evidence-forms) |
 | `location.get` | `GET /api/location` | [Locations::get / get_at](src/location.rs#L46) | [default_location_applies_only_to_location_aware_routes](tests/discovery.rs#L48) | [discovery](#evidence-discovery) |
 | `model.default` | `GET /api/model/default` | [Models::default / default_at](src/catalog.rs#L71) | [discovery_preserves_envelopes_defaults_overrides_and_repeated_types](tests/selection.rs#L19) | [catalog](#evidence-catalog) |
@@ -56,12 +56,12 @@ Protocol links identify representative tests; their files also contain error/bou
 | `session.interrupt` | `POST /api/session/{sessionID}/interrupt` | [Sessions::interrupt](src/execution.rs#L64) | [interrupt_preserves_resume_omission_and_false_and_encodes_the_session_id](tests/execution.rs#L31) | [execution](#evidence-execution) |
 | `session.list` | `GET /api/session` | [Sessions::list](src/sessions.rs#L377) | [next_and_previous_cursors_round_trip_without_automatic_requests_or_reordering](tests/sessions.rs#L145) | [sessions](#evidence-sessions) |
 | `session.message.get` | `GET /api/session/{sessionID}/message/{messageID}` | [SessionMessages::get](src/messages.rs#L118) | [list_and_get_encode_ids_preserve_envelopes_and_ignore_default_location](tests/messages.rs#L15) | [history](#evidence-history) |
-| `session.message.list` | `GET /api/session/{sessionID}/message` | [SessionMessages::list](src/messages.rs#L98) | [pagination_is_explicit_preserves_order_and_repeats_type_filter](tests/messages.rs#L58) | [history](#evidence-history) |
+| `session.message.list` | `GET /api/session/{sessionID}/message` | [SessionMessages::list](src/messages.rs#L98) | [pagination_is_explicit_preserves_order_and_repeats_type_filter](tests/messages.rs#L58), [history_pagination_is_explicit_bounded_and_requires_a_complete_traversal](tests/automation.rs#L453) | [history](#evidence-history) |
 | `session.permission.create` | `POST /api/session/{sessionID}/permission` | [SessionPermissions::create](src/permissions.rs#L95) | [session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies](tests/permissions.rs#L70) | [permissions](#evidence-permissions) |
 | `session.permission.get` | `GET /api/session/{sessionID}/permission/{requestID}` | [SessionPermissions::get](src/permissions.rs#L75) | [session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies](tests/permissions.rs#L70) | [permissions](#evidence-permissions) |
 | `session.permission.list` | `GET /api/session/{sessionID}/permission` | [SessionPermissions::list](src/permissions.rs#L62) | [session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies](tests/permissions.rs#L70) | [permissions](#evidence-permissions) |
 | `session.permission.reply` | `POST /api/session/{sessionID}/permission/{requestID}/reply` | [SessionPermissions::reply](src/permissions.rs#L122) | [session_permissions_encode_ids_ignore_location_and_preserve_wire_bodies](tests/permissions.rs#L70) | [permissions](#evidence-permissions) |
-| `session.prompt` | `POST /api/session/{sessionID}/prompt` | [Sessions::prompt](src/sessions.rs#L176) | [prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults](tests/inbox.rs#L16) | [inbox](#evidence-inbox) |
+| `session.prompt` | `POST /api/session/{sessionID}/prompt` | [Sessions::prompt](src/sessions.rs#L176) | [prompt_and_inbox_preserve_wire_contracts_and_ignore_location_defaults](tests/inbox.rs#L16), [automation_subscribes_before_admission_observes_progress_and_inspects_outcomes](tests/automation.rs#L264) | [inbox](#evidence-inbox) |
 | `session.remove` | `DELETE /api/session/{sessionID}` | [Sessions::remove](src/sessions.rs#L361) | [update_and_remove_encode_one_segment_and_accept_empty_204_without_json](tests/session_mutations.rs#L9) | [sessions](#evidence-sessions) |
 | `session.switchAgent` | `POST /api/session/{sessionID}/agent` | [Sessions::switch_agent](src/sessions.rs#L210) | [switches_send_strict_json_accept_204_and_ignore_discovery_location](tests/selection.rs#L112) | [selection](#evidence-selection) |
 | `session.switchModel` | `POST /api/session/{sessionID}/model` | [Sessions::switch_model](src/sessions.rs#L232) | [switches_send_strict_json_accept_204_and_ignore_discovery_location](tests/selection.rs#L112) | [selection](#evidence-selection) |
@@ -247,8 +247,9 @@ The smoke run checks independent filtered SSE subscriptions, connected markers, 
 The smoke run checks interrupt on idle/parked sessions, including omitted/false/true resume, interrupted:false, unchanged held input, idle wait HTTP 204 and missing-session errors.
 
 - **Live assertions:** [verify_execution](tests/live.rs#L1115).
+- **Source-reviewed only:** The pinned message updater projects terminal execution outcomes into idle history (except shutdown interruption), and instruction changes into marked system notices. The automation classifier is mock-tested, not live execution evidence.
 - **Still unverified live:** Interruption during active model/tool execution, interrupted:true, resuming steering input, wait through real execution and cross-server ownership.
-- **Examples:** [execution](examples/execution.rs).
+- **Examples:** [execution](examples/execution.rs), [automation](examples/automation.rs).
 
 ### Evidence: fork
 
@@ -274,7 +275,7 @@ The smoke run reads imported settled messages with attachments, reasoning/tool c
 
 - **Live assertions:** [verify_message_history](tests/live.rs#L2010).
 - **Still unverified live:** History during active execution, concurrent timeline changes and experimental media-reference negotiation. Imported model/tool results are fixtures, not real executions.
-- **Examples:** [history](examples/history.rs).
+- **Examples:** [history](examples/history.rs), [automation](examples/automation.rs).
 
 ### Evidence: inbox
 
@@ -283,7 +284,7 @@ The smoke run uses resume(false) on idle sessions: prompt admission and ID recon
 - **Live assertions:** [verify_prompt_inbox](tests/live.rs#L1569).
 - **Source-reviewed only:** Omitted/null resume wakes execution; queue delivery alone does not prevent it. Updating queued input to steer wakes execution.
 - **Still unverified live:** Actual delivery/execution, already delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation.
-- **Examples:** [prompt_inbox](examples/prompt_inbox.rs).
+- **Examples:** [prompt_inbox](examples/prompt_inbox.rs), [automation](examples/automation.rs).
 
 ### Evidence: log
 
@@ -326,4 +327,4 @@ The smoke run checks create/get/list/update/remove with idle disposable sessions
 - **Live assertions:** [pinned_server_discovery_and_session_pagination](tests/live.rs#L23).
 - **Source-reviewed only:** The pinned title generator can call a model for populated sessions; updates are sequential rather than an atomic transaction.
 - **Still unverified live:** Generated titles on populated sessions, deletion during active work, concurrent page consistency, maximum list limits and all project/subpath filters.
-- **Examples:** [sessions](examples/sessions.rs), [create_session](examples/create_session.rs), [session_lifecycle](examples/session_lifecycle.rs).
+- **Examples:** [sessions](examples/sessions.rs), [create_session](examples/create_session.rs), [session_lifecycle](examples/session_lifecycle.rs), [automation](examples/automation.rs).
