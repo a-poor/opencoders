@@ -6,8 +6,8 @@ This does not establish Linux or remote-provider compatibility. It tracks remain
 work for the first usable release; no release or publication has been performed.
 
 The core conversation resources are implemented, but **milestone 2 is not yet
-complete**. The remaining work is chiefly live recovery validation and release
-preparation. PTY support is milestone 3 and does not gate the first
+complete**. The remaining work is chiefly package/release preparation and hosted
+validation. PTY support is milestone 3 and does not gate the first
 conversation-library release. No UI is being built.
 
 ## Coverage and evidence
@@ -38,10 +38,10 @@ The criteria below come from [DESIGN.md](DESIGN.md#implementation-milestones).
 | Criterion | Present evidence | Remaining gap |
 | --- | --- | --- |
 | Session listing and history | Runnable examples, protocol tests, imported transcripts and active streaming/waiting-tool snapshots on the pinned server. | Concurrent timeline changes during pagination remain unverified. |
-| Incremental output | Typed SSE, bounded transient previews with deterministic tests, and gated live text deltas from a scripted localhost provider. | Live recovery remains unverified. An unfinished block is absent from persisted text until it ends. |
+| Incremental output | Typed SSE, bounded transient previews, gated live text deltas, and snapshot recovery after a missed fragment. | An unfinished block is absent from persisted text until it ends; reconnect cannot reconstruct its missed deltas. |
 | Permission/form replies | Typed lifecycle APIs, manual fixtures, and actual read/question tool resumption after SDK replies. Cancellation with feedback also resumes execution. | Other waiting-tool reply modes, dismissal without feedback, races and restart lifetime remain unverified. |
 | Execution outcomes | Bounded automation tests plus active success/failure/interruption, provider connection cancellation and wait settlement on the pinned server. | Tool interruption, steering/successor runs, remote providers and concurrent clients remain unverified. |
-| Recovery after disconnection | Background observer and deterministic missed-change, overlap, lag, cancellation and reconnect tests; explicit log cursors remain available separately. | Live reconnect ordering/overflow remains unverified; stock v2.2.5 CLI retains no event payloads. |
+| Recovery after disconnection | Shared background observer passes live transport-cut, missed text/form events, delayed old history and explicit reconnect/refresh scenarios. Deterministic tests cover queue lag and cancellation. | General concurrent ordering, server overflow, restart recovery and the CLI timer/backoff loop remain unverified; stock v2.2.5 CLI retains no event payloads. |
 | Library use outside a UI | Bounded automation creates/selects a session, submits one prompt, consumes progress and inspects outcomes/pending work. The active fixture exercises the SDK primitives. | The example's complete fresh-session policy remains mock-tested. |
 
 ## Prioritized completion plan
@@ -54,7 +54,7 @@ It uses the existing API and caller-owned Tokio runtime, without a GUI/TUI
 dependency or public state-store abstraction. Its bounded queue reports failure
 out of band; snapshots and transient text previews remain separate.
 
-Implemented checks (deterministic fixtures, not a new live-server claim):
+Implemented deterministic checks, supplemented by the controlled live cases below:
 
 - Read an initial session/history/pending-request snapshot and consume relevant
   events without describing the combination as an atomic snapshot.
@@ -71,10 +71,20 @@ available. Snapshot refresh is necessary for the stock CLI baseline. Verifying
 natural retention across restart/forks remains open; it need not block a release
 whose documented recovery path relies on refreshed snapshots.
 
-Recommended next goal: extend the isolated active fixture to verify disconnect,
-reconnect and snapshot refresh during gated execution. Keep transient previews
-separate from persisted text; the server does not project individual text deltas.
-Record server overflow separately unless the fixture can reliably induce it.
+Completed the [controlled live recovery cases](tests/support/live_recovery.rs):
+the test relay cuts three real SSE transports while OpenCode keeps running. The
+shared observer reports stale state, reconnects only when explicitly instructed,
+and refreshes missed text/form changes. A captured old history response is released
+after execution settles; queued events invalidate it and a subsequent refresh
+converges without duplicating text. Relay traces contain only GETs and no replay
+cursor. Independent witness events synchronize tests but never populate recovered
+state. These are controlled quiescent scenarios, not atomicity or general recovery
+guarantees. Server overflow/restart remain separately tracked.
+
+The unfiltered feed uncovered a generated instruction-delta decoder bug. The fix
+changes `EventSessionInstructionsUpdatedDataDeltaValue` from a flattened struct
+to a scalar enum matching the hash-or-`"removed"` schema. Include this source-level
+type correction in initial release notes and the public API review.
 
 ### 2. Demonstrate bounded automation and active execution
 
@@ -87,19 +97,23 @@ It retains all sessions and does not equate admission/idleness with success.
 An explicit `--execute` invocation is required to run it against a server.
 
 Completed the separate [`tools/live/active.py`](tools/live/active.py) fixture:
-six active scenarios pass on v2.2.5/macOS arm64 using nine scripted localhost
+eight active scenarios pass on v2.2.5/macOS arm64 using twelve scripted localhost
 provider requests, disposable state and no real credentials/paid calls. It verifies
 text deltas versus snapshots, active interruption and provider cancellation,
 success/failure/interrupted outcomes, permission-approved reading, and question
 answer/cancellation-feedback resumption. Each checks settlement and empty pending
-work; all six sessions are deleted through the SDK. Ordinary tests compile and
+work; all eight sessions are deleted through the SDK. Ordinary tests compile and
 skip this fixture; the existing smoke runner still makes no model calls.
 
-Record unsupported or untested outcome paths individually. A package may be
-described as a limited preview before these checks pass, but that would not
-satisfy the full milestone 2 acceptance criteria above.
+The conversation workflow now has controlled live evidence. Keep unsupported or
+untested outcome paths explicit in release notes; package preparation and hosted
+validation still gate release readiness.
 
 ### 3. Prepare the package and release notes
+
+Recommended next goal: prepare the package metadata, archive contents, licensing
+attribution and initial release notes, then validate the packaged crate without
+publishing. Confirm the license holder/year with the owner if not established.
 
 The audit ran `cargo package --list --allow-dirty --locked --offline`. Listing
 succeeds, but Cargo warns about missing package metadata. This checks the file

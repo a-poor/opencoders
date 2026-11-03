@@ -54,7 +54,8 @@ python3 tools/live/active.py
 ```
 
 Local run: **2026-11-03, macOS arm64, OpenCode 2.2.5, Rust 1.99.1**.
-All six scenarios in [`tests/live_active.rs`](../../tests/live_active.rs) pass.
+All eight scenarios in [`tests/live_active.rs`](../../tests/live_active.rs) pass,
+including the [recovery cases](../../tests/support/live_recovery.rs).
 Ordinary `cargo test` compiles and skips this test. The manual compatibility
 workflow has a separate `active_execution` checkbox, off by default; hosted and
 Linux execution remain unverified.
@@ -88,12 +89,14 @@ temporary data is removed on completion, failure or normal interruption.
 | Permission | A real `read` call waits on a pending request with matching tool ID/resource. Session/location lists expose it. `once` unblocks the read; the provider verifies the file content in the next request; the tool and execution complete. |
 | Question | A real `question` call creates a pending form tied to its tool ID. Replying with `q0` produces the expected tool result at the provider, completed tool history and successful execution. |
 | Cancellation feedback | Cancelling a waiting question with a message produces cancelled form state/events, failed tool history/events and model-facing feedback; the next provider step succeeds. Tool failure alone does not imply execution failure. |
+| Streaming recovery | Cutting the observer's SSE transport leaves the provider running. A reconnect during the unfinished block cannot recover a missed delta from history. A history response captured before settlement is held while execution completes; queued events invalidate it, and another refresh converges to the complete text without duplication. |
+| Form recovery | A question is created while disconnected, then discovered as pending through refreshed snapshots. Its answer and execution completion occur during another disconnect; a further reconnect clears the stale pending form and recovers successful terminal history. |
 
 Wait deadlines expire while the provider or a tool is held; those local timeouts
-do not stop execution. After settlement, all six cases have matching prompt and
+do not stop execution. After settlement, all eight cases have matching prompt and
 terminal history, no pending inbox/permission/form entries, and the expected
-session outcome. The runner asserts exactly nine provider requests and removes
-all six sessions through the SDK.
+session outcome. The runner asserts exactly twelve provider requests and removes
+all eight sessions through the SDK.
 
 The text-snapshot distinction agrees with the pinned
 [message updater](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/message-updater.ts):
@@ -109,8 +112,46 @@ These tests validate SDK/server/protocol integration, not actual model reasoning
 remote-provider compatibility, billing or provider authentication. Active tool
 interruption, permission rejection/always with waiting tools, question dismissal
 without feedback, steering/successor runs, retries, shutdown, concurrent clients,
-live reconnect/overflow and other platforms remain separate validation work.
-The automation/background examples themselves remain mock-tested.
+server overflow, restart recovery and other platforms remain separate validation work.
+The complete automation policy remains mock-tested. The background observer's
+shared connection/state module is exercised live as described below.
+
+### Controlled live recovery
+
+[`tests/support/recovery_proxy.rs`](../../tests/support/recovery_proxy.rs) is a
+test-only localhost GET relay. It forwards the pinned server's response bodies
+and deliberately closes selected SSE responses without a terminating HTTP chunk.
+The SDK reports a stream error; the example-owned reader marks its old snapshot
+stale, clears previews and closes its reader. OpenCode and its provider connection
+remain running. Two deterministic relay tests independently check forwarding,
+transport cancellation, captured-history gates and rejection of mutations.
+
+Recovery uses the same [`Connection` and `State`](../../examples/support/session_observer.rs)
+as the background example. The test explicitly reconnects, subscribes before
+refreshing, and fetches the session, one recent 50-message page and pending
+inbox/permission/form snapshots. Every relay request is a GET; the test asserts
+exactly two subscriptions for text recovery and three for form recovery, with no
+`Last-Event-ID`. An independent direct subscription is only a test synchronization
+barrier: none of its missed event payloads enter the recovering observer's state.
+
+When disconnected midway through a text block, an empty stored text part and a
+new subscription cannot reconstruct the missing fragment. Once the block ends,
+snapshot refresh recovers the complete text. A delayed old history response can
+arrive after execution settles; queued events are treated as invalidations, never
+applied as patches. After the controlled execution stops changing, bounded repeated
+refreshes converge. This does not establish an atomic snapshot boundary, general
+ordering across resources, lossless transient recovery or convergence under
+continuous writes. Server-originated overflow, restart recovery, remote-network
+failures and the example CLI's timer/backoff loop remain untested live.
+
+The unfiltered observer also exposed and now verifies a corrected generated
+`session.instructions.updated` payload: delta values are scalar 64-character
+lowercase hexadecimal hashes or `"removed"`, not objects. The generator now emits
+a checked scalar enum after guarding the disjoint schema alternatives; malformed
+hashes, nulls and objects still fail decoding. This corrects the public generated
+`EventSessionInstructionsUpdatedDataDeltaValue` from a struct with `subtype_*`
+fields to an enum (`InstructionHash` or `String(Removed)`). No endpoint or
+orchestration API was added.
 
 ## Verified smoke behavior
 

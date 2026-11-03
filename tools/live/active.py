@@ -16,7 +16,7 @@ import time
 
 import run as smoke
 
-SCENARIOS = ("output", "interrupt", "failure", "permission", "question", "cancel")
+SCENARIOS = ("output", "interrupt", "failure", "permission", "question", "cancel", "recovery", "recovery_question")
 FILE_TEXT = "fixture-file-content"
 
 
@@ -63,9 +63,10 @@ def plan(body, count):
     messages = body.get("messages")
     if not isinstance(messages, list) or not messages:
         raise ValueError("missing conversation")
-    if count == 2 and scenario in {"permission", "question", "cancel"}:
+    if count == 2 and scenario in {"permission", "question", "cancel", "recovery_question"}:
         results = [item for item in messages if item.get("role") == "tool"]
-        marker = {"permission": FILE_TEXT, "question": "fixture-answer", "cancel": "fixture-feedback"}[scenario]
+        marker = {"permission": FILE_TEXT, "question": "fixture-answer", "cancel": "fixture-feedback",
+                  "recovery_question": "fixture-answer"}[scenario]
         if (len(results) != 1 or results[0].get("tool_call_id") != "call_" + scenario
                 or marker not in json.dumps(results[0].get("content"))):
             raise ValueError("missing expected tool result")
@@ -74,6 +75,12 @@ def plan(body, count):
         raise ValueError("unexpected extra provider request")
     if scenario == "failure":
         return {"error": "fixture provider rejected request"}
+    if scenario == "recovery":
+        return {"segments": [
+            {"text": "before ", "gate": "recovery/missed"},
+            {"text": "missed ", "gate": "recovery/after"},
+            {"text": "after", "gate": "recovery/end"},
+        ], "last": ""}
     if scenario in {"output", "interrupt"}:
         return {"first": "first ", "last": "second", "hold": True}
     name = "read" if scenario == "permission" else "question"
@@ -105,7 +112,9 @@ class Fixture(ThreadingHTTPServer):
         self.counts = {}
         self.aborted = []
         self.errors = []
-        self.gates = {name: threading.Event() for name in ["output", "interrupt"]}
+        self.gates = {name: threading.Event() for name in [
+            "output", "interrupt", "recovery/missed", "recovery/after", "recovery/end",
+        ]}
 
     def snapshot(self):
         with self.lock:
@@ -145,8 +154,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.authorized():
             return
-        if self.path == "/release/output":
-            self.server.gates["output"].set()
+        gate = self.path.removeprefix("/release/")
+        if self.path.startswith("/release/") and gate in self.server.gates and gate != "interrupt":
+            self.server.gates[gate].set()
             self.reply(200, {})
             return
         if self.path != "/v1/chat/completions":
@@ -176,11 +186,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "close")
         self.end_headers()
         try:
+            segments = response.get("segments", [])
             if response.get("hold"):
-                self.wfile.write(chunk({"role": "assistant", "content": response["first"]}))
+                segments = [{"text": response["first"], "gate": scenario}]
+            for segment in segments:
+                self.wfile.write(chunk({"role": "assistant", "content": segment["text"]}))
                 self.wfile.flush()
                 deadline = time.monotonic() + 45
-                while not self.server.gates[scenario].wait(0.02):
+                while not self.server.gates[segment["gate"]].wait(0.02):
                     readable, _, _ = select.select([self.connection], [], [], 0)
                     if readable and not self.connection.recv(1):
                         raise ConnectionResetError
@@ -195,7 +208,8 @@ class Handler(BaseHTTPRequestHandler):
                 }]}))
                 self.wfile.write(chunk({}, "tool_calls"))
             else:
-                self.wfile.write(chunk({"content": response["last"]}))
+                if response["last"]:
+                    self.wfile.write(chunk({"content": response["last"]}))
                 self.wfile.write(chunk({}, "stop"))
             self.wfile.write(b'data: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":2,"total_tokens":12}}\n\n')
             self.wfile.write(b"data: [DONE]\n\n")

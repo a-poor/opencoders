@@ -38,7 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active implementation goal.
+No active goal.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -78,15 +78,13 @@ No active implementation goal.
   retention; current live replay/follow checks use explicitly seeded fixture rows.
 - [ ] Exercise server queue overflow/slow-consumer behavior against the pinned
   implementation; deterministic tests already cover visible failures and EOF.
-- [ ] Next goal: extend the active localhost fixture to verify disconnect,
-  reconnect and snapshot refresh during gated execution. Keep previews separate
-  from persisted text; record which recovery steps remain application-owned.
 
 ### Examples and first usable release
 
-- [ ] Prepare package metadata, review the archive's included files, and replace
-  the MIT copyright placeholder with the owner's correct holder/year. Audit-only
-  package listing succeeds; packaged-build and publish dry-run checks remain.
+- [ ] Next goal: prepare package metadata, review the archive's included files,
+  and replace the MIT copyright placeholder with the owner's correct holder/year.
+  Audit-only package listing succeeds; packaged-build and publish dry-run checks
+  remain.
 - [ ] Write initial release notes and finish the documentation/API ergonomics
   review. Setup, authentication, runtime, operation coverage and tested-version
   guidance already exist; retain the documented execution/recovery limits.
@@ -217,7 +215,9 @@ when a decision is made.
   all field kinds, validation/default/condition/hidden semantics, answering and
   cancellation, immediate terminal retrieval, ownership, and form events. The
   ten-minute terminal retention is source-reviewed, not tested by waiting.
-- [ ] Verify snapshot reconciliation during concurrent execution and disconnection.
+- [ ] Extend recovery validation to arbitrary concurrent changes, server restart
+  and remote-network failures. Controlled live cuts now verify missed text/form
+  changes and delayed old history with the shared observer after quiescence.
   Captured log watermarks are not atomic REST snapshot boundaries or retention
   guarantees; sequences can have gaps and a future `after` can exceed the marker.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
@@ -225,6 +225,26 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Extend the isolated active fixture with a test-only GET relay and two live
+  recovery scenarios using the background example's unchanged connection/state
+  module. Verify real SSE transport cuts, stale snapshots/cleared previews,
+  explicit reconnect, missed text/form changes, and a captured old history
+  response delivered after settlement. Bounded refresh converges after quiescence;
+  witness events only synchronize tests and never populate recovered state.
+- [x] Fix the instruction-update decoder exposed by the unfiltered live feed.
+  Guard the disjoint hash-or-`"removed"` schema before generating a scalar enum
+  instead of an incorrect flattened struct. Add a failing-then-passing decoding
+  regression and schema-drift guards; document the generated public type change.
+- [x] Verify all eight active scenarios on v2.2.5/macOS arm64 (2026-11-03), with
+  exactly twelve localhost provider requests and deletion of all eight sessions.
+  Add two deterministic relay tests and an eighth pure active-fixture test.
+  Validate workspace/HTTP-only suites (217 client tests, 40 generator tests,
+  14 doctests), strict Clippy/docs, rustfmt, Rust 1.88 compilation of the library
+  and recovery tests in both feature sets, all nine generation checks, 16 runner
+  tests and 8 coverage tests/report checks. Record the unfinished-text recovery
+  gap; arbitrary concurrent ordering, server overflow, restart, remote networks,
+  the example CLI timer/backoff loop and Linux remain unverified live.
 
 - [x] Add the separate opt-in `tools/live/active.py` runner and
   `tests/live_active.rs`, reusing the checksum-pinned server and isolated

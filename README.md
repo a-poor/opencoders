@@ -781,9 +781,13 @@ the integration policy:
 [`tests/background_session.rs`](tests/background_session.rs) uses controlled
 HTTP/SSE fixtures to verify missed-change convergence, overlapping snapshots,
 incremental previews, queue overflow, failed/cancelled refreshes and independent
-shutdown. Convergence is demonstrated after changes settle; concurrent server
-reads are still not atomic. This is mock-tested application policy, not a live
-validation of model output, server overflow, or reconnect ordering on v2.2.5.
+shutdown. The [active recovery fixture](tools/live/README.md#controlled-live-recovery)
+also runs the shared observer against v2.2.5 with forced SSE transport cuts,
+missed text/form events and a delayed old history response. Explicit reconnect
+and refresh converge after execution settles. Missing text deltas cannot be
+recovered from history until the text block ends; previews stay separate.
+Concurrent reads are still not atomic. Server overflow, restart recovery and
+the example CLI's timer/backoff loop remain untested live.
 The SDK itself still creates no tasks, queues or automatic reconnect loop.
 
 ## Experimental durable session logs
@@ -942,8 +946,9 @@ checksums, verified behavior, and limitations. Other endpoints remain unimplemen
 fixtures because the stock CLI disables retention. Run `python3 tools/live/active.py`
 separately for active execution with a scripted localhost provider and disposable
 tools: streaming, interruption, failure and permission/form resumption pass on the
-same macOS baseline. It uses no real credentials or paid calls. Remote providers,
-server overflow, live reconnect and Linux remain unverified.
+same macOS baseline. It also verifies controlled disconnect/reconnect and snapshot
+recovery using the background observer. It uses no real credentials or paid calls.
+Remote providers, server overflow, restart recovery and Linux remain unverified.
 
 The [API coverage inventory](API_COVERAGE.md) classifies all 169 pinned operations:
 35 supported, 129 planned and 5 deferred. Each supported route links to its Rust

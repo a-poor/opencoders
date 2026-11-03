@@ -38,6 +38,7 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
     let mut schema = select_schemas(&spec, &names.iter().map(String::as_str).collect::<Vec<_>>())?;
     guard_constraints(&schema)?;
     crate::forms::normalize_form_values(&mut schema, "_1")?;
+    normalize_instruction_delta(&mut schema)?;
     schema["definitions"]["EventLog.Synced"]["description"] = json!(
         "Captured replay watermark over retained log rows. Not proof of complete event retention or reconstructible state. The sequence may exceed emitted events or precede a requested future cursor; absence represents an empty watermark."
     );
@@ -218,6 +219,27 @@ pub(crate) fn pascal(s: &str) -> String {
             format!("{}{}", s[..1].to_ascii_uppercase(), &s[1..])
         })
         .collect()
+}
+
+// These string branches are disjoint. Typify flattens anyOf into an object,
+// whereas oneOf produces a checked scalar enum for the same accepted values.
+fn normalize_instruction_delta(schema: &mut Value) -> Result<(), Box<dyn std::error::Error>> {
+    let branches = json!([
+        {"$ref":"#/definitions/Instruction.Hash"},
+        {"type":"string","enum":["removed"]},
+    ]);
+    if schema["definitions"]["Instruction.Hash"]
+        != json!({"type":"string","pattern":"^[a-f0-9]{64}$"})
+    {
+        return Err("instruction hash changed; review disjoint delta branches".into());
+    }
+    let delta = schema.pointer_mut("/definitions/EventSessionInstructionsUpdated/properties/data/properties/delta/additionalProperties")
+        .ok_or("instruction delta missing")?;
+    if *delta != json!({"anyOf":branches}) {
+        return Err("instruction delta changed; review scalar union".into());
+    }
+    *delta = json!({"oneOf":branches});
+    Ok(())
 }
 
 fn enum_dispatch(name: &str, variants: &[(String, String, String)], unknown: bool) -> String {
@@ -436,6 +458,24 @@ mod tests {
     use super::*;
     fn spec() -> Value {
         serde_json::from_str(include_str!("../../../openapi/opencode-v2.json")).unwrap()
+    }
+    #[test]
+    fn instruction_delta_guard_rejects_overlapping_or_changed_scalar_contracts() {
+        for (pointer, value) in [
+            ("/components/schemas/Instruction.Hash/pattern", json!(".*")),
+            (
+                "/components/schemas/session.instructions.updated/properties/data/properties/delta/additionalProperties/anyOf/1/enum/0",
+                json!("deleted"),
+            ),
+            (
+                "/components/schemas/session.instructions.updated/properties/data/properties/delta/additionalProperties",
+                json!({"type":"string"}),
+            ),
+        ] {
+            let mut spec = spec();
+            *spec.pointer_mut(pointer).unwrap() = value;
+            assert!(generate_events(&spec).is_err(), "{pointer}");
+        }
     }
     #[test]
     fn log_generation_guards_watermark_and_durable_envelope_adapters() {

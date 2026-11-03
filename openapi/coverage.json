@@ -43,7 +43,7 @@
       ]
     },
     "events": {
-      "live_scope": "The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events. The active fixture (2026-11-03) adds gated text deltas, execution outcomes and real tool lifecycle events from a scripted localhost provider.",
+      "live_scope": "The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events. The active fixture (2026-11-03) adds gated text deltas, execution outcomes and real tool lifecycle events from a scripted localhost provider. Controlled recovery runs the shared background observer through transport cuts, missed text/form events, a captured history response delayed across settlement, and explicit reconnect/refresh; the unfiltered feed now decodes instruction hashes correctly.",
       "live_tests": [
         {
           "file": "tests/live.rs",
@@ -54,13 +54,18 @@
           "file": "tests/live_active.rs",
           "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
           "label": "pinned_server_active_execution_and_waiting_tools"
+        },
+        {
+          "file": "tests/support/live_recovery.rs",
+          "anchor": "fn verify(",
+          "label": "controlled observer recovery"
         }
       ],
       "source_reviewed": [
         "The pinned global feed is live-only, sends heartbeat comments and uses a bounded subscriber queue."
       ],
       "unverified": [
-        "Heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live recovery ordering."
+        "Heartbeat timing, server slow-consumer overflow, restart/remote-network recovery and general snapshot/event ordering under concurrent or continuous writers. The live fixture establishes convergence only after controlled execution settles; it does not run the example CLI timer/backoff loop."
       ],
       "examples": [
         "examples/events.rs",
@@ -117,7 +122,7 @@
       ]
     },
     "forms": {
-      "live_scope": "Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending. The active fixture (2026-11-03) answers a real waiting question and cancels another with feedback; the provider validates the tool result and execution continues. Tool/form events, running/terminal snapshots and pending lists are asserted.",
+      "live_scope": "Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending. The active fixture (2026-11-03) answers a real waiting question and cancels another with feedback; the provider validates the tool result and execution continues. Tool/form events, running/terminal snapshots and pending lists are asserted. The shared observer recovers a form created while disconnected and clears its stale pending snapshot after an answer/completion missed during another disconnect.",
       "live_tests": [
         {
           "file": "tests/live.rs",
@@ -128,6 +133,11 @@
           "file": "tests/live_active.rs",
           "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
           "label": "pinned_server_active_execution_and_waiting_tools"
+        },
+        {
+          "file": "tests/support/live_recovery.rs",
+          "anchor": "fn question(",
+          "label": "pending and settled form recovery"
         }
       ],
       "source_reviewed": [
@@ -142,7 +152,7 @@
       ]
     },
     "history": {
-      "live_scope": "The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method. The active fixture (2026-11-03) reads incomplete assistant and running tool snapshots, then completed/failed tools and terminal history. A text delta arrives while the stored text part is empty; final/interrupted text is retained after settlement.",
+      "live_scope": "The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method. The active fixture (2026-11-03) reads incomplete assistant and running tool snapshots, then completed/failed tools and terminal history. A text delta arrives while the stored text part is empty; final/interrupted text is retained after settlement. Controlled recovery verifies that an unfinished block cannot be reconstructed after missing a delta, but final history is recovered after settlement; delayed older responses are invalidated and refreshed without patching or duplicating text.",
       "live_tests": [
         {
           "file": "tests/live.rs",
@@ -153,6 +163,11 @@
           "file": "tests/live_active.rs",
           "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
           "label": "pinned_server_active_execution_and_waiting_tools"
+        },
+        {
+          "file": "tests/support/live_recovery.rs",
+          "anchor": "fn streaming(",
+          "label": "streaming snapshot recovery"
         }
       ],
       "source_reviewed": [
@@ -421,6 +436,16 @@
           "file": "tests/background_session.rs",
           "anchor": "fn explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations(",
           "label": "explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations"
+        },
+        {
+          "file": "tests/recovery_proxy.rs",
+          "anchor": "fn relays_real_frames_then_cuts_transport_without_reopening_upstream(",
+          "label": "relay forwarding and transport cancellation"
+        },
+        {
+          "file": "tests/event_models.rs",
+          "anchor": "fn instruction_updates_round_trip_hashes_and_removed_markers_as_scalars(",
+          "label": "instruction delta scalar regression"
         }
       ],
       "evidence": "events"

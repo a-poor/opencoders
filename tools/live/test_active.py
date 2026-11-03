@@ -51,6 +51,16 @@ class ActiveFixtureTests(unittest.TestCase):
         self.assertEqual(plan["last"], "second")
         self.assertTrue(plan["hold"])
 
+    def test_recovery_has_separately_gated_missed_and_reconnected_fragments(self):
+        plan = active.plan(self.request("recovery"), 1)
+        self.assertEqual(plan["segments"], [
+            {"text": "before ", "gate": "recovery/missed"},
+            {"text": "missed ", "gate": "recovery/after"},
+            {"text": "after", "gate": "recovery/end"},
+        ])
+        with self.assertRaises(ValueError):
+            active.plan(self.request("recovery"), 2)
+
     def test_permission_call_reads_only_fixture_file(self):
         plan = active.plan(self.request("permission"), 1)
         self.assertEqual(plan["tool"], "read")
@@ -58,7 +68,7 @@ class ActiveFixtureTests(unittest.TestCase):
 
     def test_tool_continuation_requires_matching_result(self):
         for scenario, marker in [("permission", active.FILE_TEXT), ("question", "fixture-answer"),
-                                 ("cancel", "fixture-feedback")]:
+                                 ("cancel", "fixture-feedback"), ("recovery_question", "fixture-answer")]:
             messages = [
                 {"role": "assistant", "content": None, "tool_calls": [{
                     "id": "call_" + scenario, "type": "function", "function": {"name": "read"}}]},

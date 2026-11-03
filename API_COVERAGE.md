@@ -33,7 +33,7 @@ Protocol links identify representative tests; their files also contain error/bou
 | --- | --- | --- | --- | --- |
 | `agent.get` | `GET /api/agent/{agentID}` | [Agents::get / get_at](src/agents.rs#L21) | [discovery_preserves_envelopes_defaults_overrides_and_repeated_types](tests/selection.rs#L19) | [catalog](#evidence-catalog) |
 | `agent.list` | `GET /api/agent` | [Agents::list / list_at](src/agents.rs#L55) | [default_location_applies_only_to_location_aware_routes](tests/discovery.rs#L48) | [discovery](#evidence-discovery) |
-| `event.subscribe` | `GET /api/event` | [Events::subscribe](src/events.rs#L81) | [subscription_uses_explicit_filters_headers_and_preserves_sse_metadata](tests/events.rs#L16), [explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations](tests/background_session.rs#L231) | [events](#evidence-events) |
+| `event.subscribe` | `GET /api/event` | [Events::subscribe](src/events.rs#L81) | [subscription_uses_explicit_filters_headers_and_preserves_sse_metadata](tests/events.rs#L16), [explicit_reconnect_refreshes_missed_changes_without_replay_or_mutations](tests/background_session.rs#L231), [relay forwarding and transport cancellation](tests/recovery_proxy.rs#L20), [instruction delta scalar regression](tests/event_models.rs#L5) | [events](#evidence-events) |
 | `experimental.session.log` | `GET /api/experimental/session/{sessionID}/log` | [Sessions::experimental_log](src/session_log.rs#L97) | [log_encodes_explicit_queries_and_segments_and_retains_markers_and_sse_ids](tests/session_log.rs#L19) | [log](#evidence-log) |
 | `experimental.session.wait` | `POST /api/experimental/session/{sessionID}/wait` | [Sessions::experimental_wait](src/execution.rs#L98) | [wait_posts_without_a_body_query_or_location_and_accepts_only_204](tests/execution.rs#L72), [deadline_stops_local_waiting_but_still_inspects_pending_requests](tests/automation.rs#L320) | [execution](#evidence-execution) |
 | `form.list` | `GET /api/form` | [Forms::list / list_at](src/forms.rs#L18) | [forms_use_location_for_discovery_and_session_paths_for_lifecycle](tests/forms.rs#L265) | [forms](#evidence-forms) |
@@ -235,18 +235,18 @@ The smoke run checks location directory encoding/overrides, header fallback and 
 
 ### Evidence: events
 
-The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events. The active fixture (2026-11-03) adds gated text deltas, execution outcomes and real tool lifecycle events from a scripted localhost provider.
+The smoke run checks independent filtered SSE subscriptions, connected markers, typed rename/inbox events, exclusion and continued delivery after another stream is dropped. Permission/form/fork profiles add their lifecycle events. The active fixture (2026-11-03) adds gated text deltas, execution outcomes and real tool lifecycle events from a scripted localhost provider. Controlled recovery runs the shared background observer through transport cuts, missed text/form events, a captured history response delayed across settlement, and explicit reconnect/refresh; the unfiltered feed now decodes instruction hashes correctly.
 
-- **Live assertions:** [verify_events](tests/live.rs#L1472), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Live assertions:** [verify_events](tests/live.rs#L1472), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L128), [controlled observer recovery](tests/support/live_recovery.rs#L200).
 - **Source-reviewed only:** The pinned global feed is live-only, sends heartbeat comments and uses a bounded subscriber queue.
-- **Still unverified live:** Heartbeat timing, server slow-consumer overflow and live reconnect/snapshot reconciliation. The background observer has deterministic HTTP/SSE tests for missed-change convergence, snapshot overlap, local queue overflow and cancellation; these do not establish live recovery ordering.
+- **Still unverified live:** Heartbeat timing, server slow-consumer overflow, restart/remote-network recovery and general snapshot/event ordering under concurrent or continuous writers. The live fixture establishes convergence only after controlled execution settles; it does not run the example CLI timer/backoff loop.
 - **Examples:** [events](examples/events.rs), [background_session](examples/background_session.rs).
 
 ### Evidence: execution
 
 The smoke run checks interrupt on idle/parked sessions, including omitted/false/true resume, interrupted:false, unchanged held input, idle wait HTTP 204 and missing-session errors. The active fixture (2026-11-03) verifies interrupted:true during a gated local provider stream, provider connection cancellation, local wait timeout without stopping execution, final wait settlement, and matching success/failure/interrupted session and history outcomes.
 
-- **Live assertions:** [verify_execution](tests/live.rs#L1115), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Live assertions:** [verify_execution](tests/live.rs#L1115), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L128).
 - **Source-reviewed only:** The pinned message updater projects terminal execution outcomes into idle history (except shutdown interruption), and instruction changes into marked system notices. The automation classifier is mock-tested, not live execution evidence.
 - **Still unverified live:** Active tool interruption, repeated interrupts while stopping, steering/successor execution, concurrent wakeups, cross-server ownership and remote providers. The complete automation policy remains mock-tested.
 - **Examples:** [execution](examples/execution.rs), [automation](examples/automation.rs).
@@ -262,18 +262,18 @@ The smoke run forks imported settled transcripts: exclusive/before-first/default
 
 ### Evidence: forms
 
-Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending. The active fixture (2026-11-03) answers a real waiting question and cancels another with feedback; the provider validates the tool result and execution continues. Tool/form events, running/terminal snapshots and pending lists are asserted.
+Manual forms cover six field kinds, location/session isolation, create/list/get, ID conflicts, answer/default/condition validation, reply/cancel terminal states, feedback and typed lifecycle events. Invalid answers remain pending. The active fixture (2026-11-03) answers a real waiting question and cancels another with feedback; the provider validates the tool result and execution continues. Tool/form events, running/terminal snapshots and pending lists are asserted. The shared observer recovers a form created while disconnected and clears its stale pending snapshot after an answer/completion missed during another disconnect.
 
-- **Live assertions:** [verify_forms](tests/live.rs#L520), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Live assertions:** [verify_forms](tests/live.rs#L520), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L128), [pending and settled form recovery](tests/support/live_recovery.rs#L311).
 - **Source-reviewed only:** The pinned service retains terminal forms in memory for ten minutes. The pinned question tool treats dismissal without feedback differently from cancellation with model-facing feedback; only the feedback path is active-tested.
 - **Still unverified live:** Timed eviction, restart/teardown, concurrent replies and question dismissal without feedback. Active calls target a scripted localhost provider; external URLs are never opened.
 - **Examples:** [forms](examples/forms.rs).
 
 ### Evidence: history
 
-The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method. The active fixture (2026-11-03) reads incomplete assistant and running tool snapshots, then completed/failed tools and terminal history. A text delta arrives while the stored text part is empty; final/interrupted text is retained after settlement.
+The smoke run reads imported settled messages with attachments, reasoning/tool content, both cursor directions, type filters, ordering conflicts, empty pages and missing/wrong-session errors. Raw import is fixture setup, not a public SDK method. The active fixture (2026-11-03) reads incomplete assistant and running tool snapshots, then completed/failed tools and terminal history. A text delta arrives while the stored text part is empty; final/interrupted text is retained after settlement. Controlled recovery verifies that an unfinished block cannot be reconstructed after missing a delta, but final history is recovered after settlement; delayed older responses are invalidated and refreshed without patching or duplicating text.
 
-- **Live assertions:** [verify_message_history](tests/live.rs#L2010), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Live assertions:** [verify_message_history](tests/live.rs#L2010), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L128), [streaming snapshot recovery](tests/support/live_recovery.rs#L205).
 - **Source-reviewed only:** The pinned message updater stores text on text.ended, not transient text.delta; live previews must remain separate from stored history.
 - **Still unverified live:** Concurrent timeline changes during pagination and experimental media-reference negotiation. Remote-provider behavior and arbitrary tool histories remain unverified.
 - **Examples:** [history](examples/history.rs), [automation](examples/automation.rs).
@@ -282,7 +282,7 @@ The smoke run reads imported settled messages with attachments, reasoning/tool c
 
 The smoke run uses resume(false) on idle sessions: prompt admission and ID reconciliation, prepared inline attachments, pending order, steer-to-queue updates, cancellation, conflicts and absent history before delivery. The active fixture (2026-11-03) admits an identified resume(true) prompt in each fresh session, observes delivery and execution through a scripted local provider, then checks matching user history and empty inbox after settlement.
 
-- **Live assertions:** [verify_prompt_inbox](tests/live.rs#L1569), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Live assertions:** [verify_prompt_inbox](tests/live.rs#L1569), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L128).
 - **Source-reviewed only:** Omitted/null resume wakes execution; queue delivery alone does not prevent it. Updating queued input to steer wakes execution.
 - **Still unverified live:** Delivery during an already active run, delivered/cancelled ID reuse, concurrent admissions, synthetic/compaction/move lifecycles and experimental media negotiation.
 - **Examples:** [prompt_inbox](examples/prompt_inbox.rs), [automation](examples/automation.rs).
@@ -300,7 +300,7 @@ The smoke run checks stock-CLI marker-only behavior and finite/follow modes. Cap
 
 Manually created idle-session requests exercise allow/deny/ask, pending lists and ownership, location isolation, once/reject/always replies, saved-rule effects across sessions, deny precedence, feedback and asked/replied events. The active fixture (2026-11-03) discovers a real waiting read by session/location and tool ID, replies once, and verifies the file content reaches the local provider, the tool completes and execution succeeds.
 
-- **Live assertions:** [verify_permissions](tests/live.rs#L791), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L121).
+- **Live assertions:** [verify_permissions](tests/live.rs#L791), [pinned_server_active_execution_and_waiting_tools](tests/live_active.rs#L128).
 - **Source-reviewed only:** Duplicate pending-ID rejection is source-reviewed only.
 - **Still unverified live:** Reject/always and feedback with actual waiting tools, plugin hooks, concurrent replies/partial failures and reload/restart behavior. Saved-rule smoke fixtures use only the disposable database.
 - **Examples:** [permissions](examples/permissions.rs).

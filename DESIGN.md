@@ -5,9 +5,10 @@ server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events and experimental session logs. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
-active execution and waiting tools on v2.2.5/macOS; milestone 2 still needs live
-recovery validation and release preparation. See [API coverage](API_COVERAGE.md)
-for operation-level evidence and [release readiness](RELEASE_READINESS.md) for
+active execution, waiting tools and controlled observer recovery on v2.2.5/macOS;
+milestone 2 still needs release preparation and hosted validation. See
+[API coverage](API_COVERAGE.md) for operation-level evidence and
+[release readiness](RELEASE_READINESS.md) for
 the prioritized acceptance audit. Broader APIs remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
@@ -623,7 +624,12 @@ Buffered events invalidate refreshed state rather than being reapplied over it.
 Queue overflow, EOF and failures mark the last successful bundle stale; explicit
 reconnection subscribes before refreshing again. Shutdown joins the reader and
 drop aborts it as a fallback. Deterministic tests establish convergence after
-quiescence and cancellation/lag behavior; live reconnect ordering remains unverified.
+quiescence and cancellation/lag behavior. The active fixture now runs the shared
+observer against forced SSE transport cuts, missed text and form changes, and an
+old history response delayed across settlement. Explicit reconnect plus bounded
+refresh converges once the controlled execution stops changing. This does not
+establish arbitrary concurrent ordering, an atomic snapshot boundary, server
+overflow behavior or restart recovery.
 The active fixture verifies text deltas and confirms that v2.2.5 history stores
 the text block on `text.ended`, not each transient delta. In-progress previews must
 remain separate from stored snapshots. No state-store or reconnect policy is
@@ -772,13 +778,17 @@ only queue-mode inbox updates. They verify admission/reconciliation, prepared
 inline attachments, order, conflicts, cancellation, and absent history before delivery.
 The opt-in `tools/live/active.py` runner adds a scripted authenticated localhost
 provider and built-in read/question tools in disposable state. It verifies active
-output, interruption, outcomes and waiting-tool resumption through the SDK, without
-real credentials, paid calls or changes to public APIs. Its scoped configuration
-denies other providers/tools; application-state isolation is not an OS sandbox.
-Linux is configured but awaits a workflow run. See [compatibility results](tools/live/README.md). Exercised responses
-needed no model changes; authentication and cursor semantics required clearer
-guidance. The original schema's source release remains unknown, independently of
-this tested baseline. No release is downloaded during normal builds/tests.
+output, interruption, outcomes, waiting-tool resumption and controlled observer
+recovery through the SDK, without real credentials or paid calls. Its scoped
+configuration denies other providers/tools; application-state isolation is not
+an OS sandbox.
+Linux is configured but awaits a workflow run. See [compatibility results](tools/live/README.md).
+The unfiltered observer exposed an instruction-update delta bug: the generated
+value now uses a checked scalar enum for a hash or `"removed"`, guarded against
+schema drift, instead of an incorrect flattened object. Authentication and cursor
+semantics required clearer guidance. The original schema's source release remains
+unknown, independently of this tested baseline. No release is downloaded during
+normal builds/tests.
 
 Record endpoint coverage by upstream operation ID in `openapi/coverage.json`,
 including deliberate deferrals and protocol-specific implementations. Regenerate

@@ -3875,17 +3875,65 @@ pub struct EventSessionInstructionsUpdatedData {
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
 ///`EventSessionInstructionsUpdatedDataDeltaValue`
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
 #[non_exhaustive]
-pub struct EventSessionInstructionsUpdatedDataDeltaValue {
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_0: ::std::option::Option<InstructionHash>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_1: ::std::option::Option<
-        EventSessionInstructionsUpdatedDataDeltaValueSubtype1,
-    >,
+pub enum EventSessionInstructionsUpdatedDataDeltaValue {
+    InstructionHash(InstructionHash),
+    String(EventSessionInstructionsUpdatedDataDeltaValueString),
 }
-///`EventSessionInstructionsUpdatedDataDeltaValueSubtype1`
+impl ::std::fmt::Display for EventSessionInstructionsUpdatedDataDeltaValue {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            Self::InstructionHash(x) => x.fmt(f),
+            Self::String(x) => x.fmt(f),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionInstructionsUpdatedDataDeltaValue {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if let Ok(v) = value.parse() {
+            Ok(Self::InstructionHash(v))
+        } else if let Ok(v) = value.parse() {
+            Ok(Self::String(v))
+        } else {
+            Err("string conversion failed for all variants".into())
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionInstructionsUpdatedDataDeltaValue {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for EventSessionInstructionsUpdatedDataDeltaValue {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::From<InstructionHash>
+for EventSessionInstructionsUpdatedDataDeltaValue {
+    fn from(value: InstructionHash) -> Self {
+        Self::InstructionHash(value)
+    }
+}
+impl ::std::convert::From<EventSessionInstructionsUpdatedDataDeltaValueString>
+for EventSessionInstructionsUpdatedDataDeltaValue {
+    fn from(value: EventSessionInstructionsUpdatedDataDeltaValueString) -> Self {
+        Self::String(value)
+    }
+}
+///`EventSessionInstructionsUpdatedDataDeltaValueString`
 #[derive(
     ::serde::Deserialize,
     ::serde::Serialize,
@@ -3899,18 +3947,18 @@ pub struct EventSessionInstructionsUpdatedDataDeltaValue {
     PartialOrd
 )]
 #[non_exhaustive]
-pub enum EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+pub enum EventSessionInstructionsUpdatedDataDeltaValueString {
     #[serde(rename = "removed")]
     Removed,
 }
-impl ::std::fmt::Display for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+impl ::std::fmt::Display for EventSessionInstructionsUpdatedDataDeltaValueString {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Removed => f.write_str("removed"),
         }
     }
 }
-impl ::std::str::FromStr for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+impl ::std::str::FromStr for EventSessionInstructionsUpdatedDataDeltaValueString {
     type Err = self::error::ConversionError;
     fn from_str(
         value: &str,
@@ -3922,7 +3970,7 @@ impl ::std::str::FromStr for EventSessionInstructionsUpdatedDataDeltaValueSubtyp
     }
 }
 impl ::std::convert::TryFrom<&str>
-for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+for EventSessionInstructionsUpdatedDataDeltaValueString {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &str,
@@ -3931,7 +3979,7 @@ for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
     }
 }
 impl ::std::convert::TryFrom<::std::string::String>
-for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+for EventSessionInstructionsUpdatedDataDeltaValueString {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,

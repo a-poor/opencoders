@@ -2,6 +2,33 @@ use opencoders::models::Event;
 use serde_json::{Value, json};
 
 #[test]
+fn instruction_updates_round_trip_hashes_and_removed_markers_as_scalars() {
+    let fixtures: Vec<Value> = serde_json::from_str(include_str!("fixtures/events.json")).unwrap();
+    let mut raw = fixtures
+        .into_iter()
+        .find(|event| event["type"] == "session.instructions.updated")
+        .unwrap();
+    raw["data"]["delta"] = json!({"system": "a".repeat(64), "old-file": "removed"});
+    let event: Event = serde_json::from_value(raw.clone()).unwrap();
+    assert!(matches!(event, Event::SessionInstructionsUpdated(_)));
+    assert_eq!(serde_json::to_value(event).unwrap(), raw);
+    for invalid in [
+        Value::Null,
+        json!({}),
+        json!([]),
+        json!(1),
+        json!(""),
+        json!("REMOVED"),
+        json!("a".repeat(63)),
+        json!("g".repeat(64)),
+        json!("a".repeat(65)),
+    ] {
+        raw["data"]["delta"]["system"] = invalid;
+        assert!(serde_json::from_value::<Event>(raw.clone()).is_err());
+    }
+}
+
+#[test]
 fn event_envelopes_retain_ids_location_durable_metadata_and_extensions() {
     let raw = json!({"id":"evt_test","created":9007199254740993_u64,"type":"session.renamed","metadata":{"x":1},"location":{"directory":"/remote","future":true},"durable":{"aggregateID":"ses_test","seq":9007199254740991_u64,"version":1,"future":2},"data":{"sessionID":"ses_test","title":"renamed","future":3},"future":4});
     let event: Event = serde_json::from_value(raw.clone()).unwrap();

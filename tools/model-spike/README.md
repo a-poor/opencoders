@@ -168,6 +168,13 @@ kind; nested union tests verify required fields and extension retention. The
 generator rejects changed root tags, RPC patterns, unreviewed numeric constraints,
 and nonempty-array/tagged-union shapes.
 
+Instruction-update deltas normalize the reviewed hash-or-`"removed"` `anyOf`
+to equivalent disjoint `oneOf` branches before generation. This avoids Typify's
+flattened-object representation for scalar values. Guards reject changes to the
+hash pattern or sentinel before assuming disjointness. Regression tests reject
+malformed hashes, nulls and objects; the unfiltered active recovery fixture covers
+real hash-bearing instruction events.
+
 The same path generates `EventLogSynced` and guarded durable-event accessors for
 all 47 members of `Session.Event.Durable`. Two of these kinds are only in the
 pinned durable union, so root membership accepts either reviewed event union.
