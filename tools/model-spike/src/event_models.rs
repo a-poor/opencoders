@@ -17,10 +17,14 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
     let mut names = Vec::new();
     for root in &roots {
         let schema = spec["components"]["schemas"][&root.schema].clone();
-        if !spec["components"]["schemas"]["V2Event"]["anyOf"]
+        if !(spec["components"]["schemas"]["V2Event"]["anyOf"]
             .as_array()
             .ok_or("event union missing")?
             .contains(&json!({"$ref":format!("#/components/schemas/{}",root.schema)}))
+            || spec["components"]["schemas"]["Session.Event.Durable"]["anyOf"]
+                .as_array()
+                .ok_or("durable event union missing")?
+                .contains(&json!({"$ref":format!("#/components/schemas/{}",root.schema)})))
             || (root.r#type != "rpc.*"
                 && schema["properties"]["type"] != json!({"type":"string","enum":[root.r#type]}))
         {
@@ -30,8 +34,12 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
         spec["components"]["schemas"][&name] = schema;
         names.push(name);
     }
+    names.push("EventLog.Synced".into());
     let mut schema = select_schemas(&spec, &names.iter().map(String::as_str).collect::<Vec<_>>())?;
     guard_constraints(&schema)?;
+    schema["definitions"]["EventLog.Synced"]["description"] = json!(
+        "Captured replay watermark over retained log rows. Not proof of complete event retention or reconstructible state. The sequence may exceed emitted events or precede a requested future cursor; absence represents an empty watermark."
+    );
     if spec["components"]["schemas"]["V2Event.rpc"]["properties"]["type"]
         != json!({"type":"string","pattern":"^rpc\\.[\\s\\S]*?$"})
     {
@@ -71,9 +79,19 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
         "PromptFileSource",
         "PromptBase64",
         "PromptSkillAttachment",
+        "ShellId",
+        "SessionRevert",
+        "SessionMessageAssistantText",
+        "SessionMessageAssistantReasoning",
+        "SessionMessageAssistantTool",
     ] {
         settings.with_replacement(name, format!("super::{name}"), std::iter::empty());
     }
+    settings.with_replacement(
+        "SessionMessageAssistantContentEncoded",
+        "super::SessionMessageAssistantContentItem",
+        std::iter::empty(),
+    );
     for (wire, rust) in [
         (json!({"type":"number"}), "::serde_json::Number"),
         (json!({"not":{"type":"null"}}), "super::NonNullValue"),
@@ -179,6 +197,7 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
         })
         .collect::<Vec<_>>();
     dispatch.push_str(&enum_dispatch("Event", &variants, true));
+    dispatch.push_str(&log_accessors(&spec, &roots)?);
     let mut output = prettyplease::unparse(&syntax);
     output.push_str(&prettyplease::unparse(&syn::parse_file(&dispatch)?));
     Ok(format!(
@@ -294,11 +313,9 @@ fn optional_constraint(ty: &syn::Type) -> bool {
     let Some(syn::GenericArgument::Type(syn::Type::Path(inner))) = args.args.first() else {
         return false;
     };
-    inner
-        .path
-        .segments
-        .iter()
-        .any(|s| s.ident == "EventInteger" || s.ident == "NonEmptyEventItems")
+    inner.path.segments.iter().any(|s| {
+        s.ident == "EventInteger" || s.ident == "NonEmptyEventItems" || s.ident == "EventSeq"
+    })
 }
 
 // Refuse new numeric/non-null shapes instead of silently losing constraints in
@@ -343,11 +360,98 @@ fn guard_constraints(value: &Value) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn log_accessors(spec: &Value, roots: &[Root]) -> Result<String, Box<dyn std::error::Error>> {
+    let reference = |name: &str| json!({"$ref":format!("#/components/schemas/{name}")});
+    let schemas = &spec["components"]["schemas"];
+    if schemas["SessionLogItem"]
+        != json!({"anyOf":[reference("Session.Event.Durable"),reference("EventLog.Synced")]})
+        || schemas["EventLog.Synced"]["required"] != json!(["type", "aggregateID"])
+        || schemas["EventLog.Synced"]["properties"]
+            != json!({"type":{"type":"string","enum":["log.synced"]},"aggregateID":{"type":"string"},"seq":reference("Event.Seq")})
+    {
+        return Err(
+            "session log union/watermark changed; review dispatch and optional sequence".into(),
+        );
+    }
+    if schemas["Session.Message.AssistantContent.Encoded"]
+        != json!({"anyOf":[reference("Session.Message.Assistant.Text"),reference("Session.Message.Assistant.Reasoning"),reference("Session.Message.Assistant.Tool")]})
+    {
+        return Err(
+            "encoded assistant-content union changed; review shared model replacement".into(),
+        );
+    }
+    let members = schemas["Session.Event.Durable"]["anyOf"]
+        .as_array()
+        .ok_or("durable log union missing")?;
+    let mut durable = Vec::new();
+    for member in members {
+        let root = roots
+            .iter()
+            .find(|r| reference(&r.schema) == *member)
+            .ok_or("unreviewed durable log kind")?;
+        let schema = &schemas[&root.schema];
+        if !schema["required"]
+            .as_array()
+            .is_some_and(|r| r.contains(&json!("durable")))
+            || schema["properties"]["durable"]["required"]
+                != json!(["aggregateID", "seq", "version"])
+            || schema["properties"]["durable"]["properties"]["seq"] != reference("Event.Seq")
+            || schema["properties"]["durable"]["properties"]["aggregateID"]
+                != json!({"type":"string"})
+        {
+            return Err("durable log envelope changed; review accessors".into());
+        }
+        durable.push(&root.variant);
+    }
+    let mut out = String::from(
+        "impl Event { /// Aggregate sequence for reviewed durable session events; no cursor is inferred for unknown kinds.\npub fn durable_sequence(&self)->Option<u64>{match self{",
+    );
+    for variant in &durable {
+        out.push_str(&format!(
+            "Self::{variant}(event)=>Some(event.durable.seq.0.get()),"
+        ));
+    }
+    out.push_str("_=>None,}} /// Aggregate ID for reviewed durable session events.\npub fn durable_aggregate_id(&self)->Option<&str>{match self{");
+    for variant in &durable {
+        out.push_str(&format!(
+            "Self::{variant}(event)=>Some(&event.durable.aggregate_id),"
+        ));
+    }
+    out.push_str("_=>None,}}}");
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     fn spec() -> Value {
         serde_json::from_str(include_str!("../../../openapi/opencode-v2.json")).unwrap()
+    }
+    #[test]
+    fn log_generation_guards_watermark_and_durable_envelope_adapters() {
+        for (pointer, value) in [
+            (
+                "/components/schemas/EventLog.Synced/required",
+                json!(["type", "aggregateID", "seq"]),
+            ),
+            (
+                "/components/schemas/EventLog.Synced/properties/seq",
+                json!({"type":"number"}),
+            ),
+            ("/components/schemas/SessionLogItem/anyOf", json!([])),
+            (
+                "/components/schemas/session.renamed/properties/durable/required",
+                json!(["aggregateID", "version"]),
+            ),
+            (
+                "/components/schemas/Session.Message.AssistantContent.Encoded/anyOf",
+                json!([]),
+            ),
+        ] {
+            let mut spec = spec();
+            *spec.pointer_mut(pointer).unwrap() = value;
+            assert!(generate_events(&spec).is_err(), "{pointer}");
+        }
     }
     #[test]
     fn event_generation_guards_tags_numeric_constraints_and_nonempty_arrays() {

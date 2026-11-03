@@ -36,20 +36,19 @@ impl Client {
         crate::Events { client: self }
     }
 
-    pub(crate) async fn open_event_response(
+    pub(crate) async fn open_sse_response(
         &self,
-        options: &crate::EventOptions,
+        path: &str,
+        segments: &[&str],
+        operation: &'static str,
+        query: &[(&str, String)],
+        handshake_timeout: Option<Duration>,
     ) -> Result<(reqwest::Response, usize)> {
         use crate::{StreamError, StreamErrorKind};
-        const OP: &str = "event.subscribe";
-        let mut url = self
-            .inner
-            .base_url
-            .join("api/event")
-            .expect("validated base URL");
-        if !options.types.is_empty() {
+        let mut url = self.segments_url(path, segments);
+        if !query.is_empty() {
             url.query_pairs_mut()
-                .extend_pairs(options.types.iter().map(|value| ("types", value)));
+                .extend_pairs(query.iter().map(|(k, v)| (*k, v.as_str())));
         }
         let mut status = None;
         let handshake = async {
@@ -60,7 +59,7 @@ impl Client {
                 .headers(headers)
                 .send()
                 .await
-                .map_err(|source| Error::Transport(TransportError::new(OP, None, source)))?;
+                .map_err(|source| Error::Transport(TransportError::new(operation, None, source)))?;
             let code = response.status();
             status = Some(code);
             if code != StatusCode::OK {
@@ -68,7 +67,7 @@ impl Client {
                 let mut body = Vec::new();
                 let mut truncated = false;
                 while let Some(chunk) = response.chunk().await.map_err(|source| {
-                    Error::Transport(TransportError::new(OP, Some(code), source))
+                    Error::Transport(TransportError::new(operation, Some(code), source))
                 })? {
                     let remaining = limit - body.len();
                     body.extend_from_slice(&chunk[..remaining.min(chunk.len())]);
@@ -78,7 +77,7 @@ impl Client {
                     }
                 }
                 return Err(Error::Http(Box::new(HttpError::new(
-                    OP, code, body, truncated,
+                    operation, code, body, truncated,
                 ))));
             }
             let valid = response
@@ -94,16 +93,18 @@ impl Client {
                 });
             if !valid {
                 return Err(Error::Stream(StreamError::new(
+                    operation,
                     StreamErrorKind::InvalidContentType,
                     Some(code),
                 )));
             }
             Ok((response, self.inner.max_error_body_bytes))
         };
-        if let Some(timeout) = options.handshake_timeout {
+        if let Some(timeout) = handshake_timeout {
             match tokio::time::timeout(timeout, handshake).await {
                 Ok(result) => result,
                 Err(_) => Err(Error::Stream(StreamError::new(
+                    operation,
                     StreamErrorKind::HandshakeTimeout,
                     status,
                 ))),

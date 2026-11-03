@@ -2,7 +2,7 @@
 //!
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, projected message history, prompt admission,
-//! pending inbox management, and live event subscriptions. Run
+//! pending inbox management, live event subscriptions, and experimental session logs. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -145,13 +145,32 @@
 //! # }
 //! ```
 
+//! Read an experimental retained session log, with explicit resume/follow options:
+//! ```no_run
+//! # async fn log(client: &opencoders::Client, id: &opencoders::models::SessionId) -> opencoders::Result<()> {
+//! use opencoders::{SessionLogOptions, models::SessionLogItem};
+//! let mut stream = client.sessions().experimental_log(id,
+//!     &SessionLogOptions::default().after(10).follow(false)).await?;
+//! while let Some(message) = stream.next().await {
+//!     if let SessionLogItem::Synced(marker) = message?.item {
+//!         println!("Captured watermark: {:?}", marker.seq);
+//!     }
+//! }
+//! // v2.2.5 CLI retention is disabled; always refresh authoritative snapshots.
+//! # Ok(())
+//! # }
+//! ```
+
 mod agents;
 mod catalog;
 mod client;
 mod error;
 mod events;
 mod inbox;
+mod session_log;
 mod sse;
+mod sse_stream;
+pub use session_log::{SessionLogMessage, SessionLogOptions, SessionLogStream};
 mod stream_error;
 pub use events::{EventMessage, EventOptions, EventStream, Events};
 pub use stream_error::{StreamError, StreamErrorKind};

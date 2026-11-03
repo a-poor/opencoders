@@ -12,7 +12,9 @@
 /// Generated live-event envelopes and their payloads.
 #[rustfmt::skip]
 pub mod events;
-pub use events::Event;
+pub use events::{Event, EventLogSynced};
+mod session_log_adapters;
+pub use session_log_adapters::SessionLogItem;
 mod event_adapters;
 pub use event_adapters::{EventInteger, EventVersion, NonEmptyEventItems};
 

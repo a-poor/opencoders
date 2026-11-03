@@ -4,7 +4,7 @@
 
 The library currently supports server information, location/agent/model discovery,
 session management/listing and agent/model selection, message history/retrieval,
-prompt admission/inbox management, and live event subscriptions. It targets developers building
+prompt admission/inbox management, live event subscriptions, and experimental session logs. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
 
@@ -394,9 +394,9 @@ even with filters. No model calls are needed to subscribe. Run the read-only
 `cargo run --example events` with `OPENCODE_BASE_URL`, optional
 `OPENCODE_PASSWORD`, and optional `OPENCODE_EVENT_TYPE`; stop it with Ctrl-C.
 
-`models::Event` covers 52 kinds: connection/RPC, session lifecycle and selections,
+`models::Event` covers 62 kinds across live feeds and durable logs: connection/RPC, session lifecycle and selections,
 inbox, execution, steps, text/reasoning, tools, retries, compaction, permissions,
-and forms. The exact set is in [event-roots.json](tools/model-spike/event-roots.json).
+forms, and durable history changes. The exact set is in [event-roots.json](tools/model-spike/event-roots.json).
 Envelope/payload types live in `models::events`. Other kinds, including currently
 unimplemented native events, retain their complete JSON in `Event::Unknown`.
 Malformed implemented kinds produce `Error::Decode`. Nested closed enums remain
@@ -415,7 +415,8 @@ or calling `close()` releases the subscription; it does not interrupt server wor
 Cancelling a pending `next()` retains parser/read state. Clean EOF returns `None`;
 a failure returns one error then `None`. A slow reader can overflow the server's
 queue and lose its connection. Recover by reopening and refreshing authoritative
-snapshots; snapshot ordering/deduplication and durable replay remain separate work.
+snapshots; application snapshot ordering/deduplication remains separate work.
+Experimental durable log replay is available subject to server retention (below).
 
 The handshake deadline defaults to 30 seconds, including bounded HTTP error-body
 reads. Body inactivity timeout is opt-in; heartbeat bytes count as activity.
@@ -432,6 +433,75 @@ IDs, and retry hints. Unterminated events at EOF are discarded. A special
 idle timeouts, invalid content types, and oversized frames. Default error formatting
 is redacted; event/model `Debug` and explicit diagnostic access can contain private
 conversation data.
+
+## Experimental durable session logs
+
+```rust
+use opencoders::{Client, SessionLogOptions, models::{SessionId, SessionLogItem}};
+
+async fn replay(client: &Client, id: &SessionId, saved: Option<u64>) -> opencoders::Result<()> {
+    let mut options = SessionLogOptions::default().follow(false);
+    options.after = saved;
+    let mut log = client.sessions().experimental_log(id, &options).await?;
+    while let Some(message) = log.next().await {
+        match message?.item {
+            SessionLogItem::Event(event) => println!("{}", event.kind()),
+            SessionLogItem::Synced(marker) => println!("Replay boundary: {:?}", marker.seq),
+            _ => { /* Handle unknown items before acknowledging a later watermark. */ }
+        }
+    }
+    Ok(())
+}
+```
+
+`experimental_log` opens `GET /api/experimental/session/{sessionID}/log`, ignoring
+the discovery location default. `after` is an exclusive aggregate sequence:
+omission includes sequence zero; `after(0)` excludes it. The server validates
+its nonnegative safe-integer range. `follow` defaults to omission (false on
+v2.2.5); `follow(true)` reads retained history, emits one captured watermark, then
+tails retained events. Both modes return an independent `SessionLogStream`.
+
+**The v2.2.5 CLI does not enable event payload retention.** Its sequence counters
+still advance, but log reads can return only a marker; following need not deliver
+new payloads either. The SDK does not turn retention on. Refresh authoritative
+session/message/inbox snapshots after reconnecting, and verify retention for the
+server deployment before relying on replay. The pinned server library has an
+`events.persist` option, but the CLI does not forward it. See the
+[verified scope and upstream sources](tools/live/README.md).
+
+`SessionLogItem` distinguishes all 47 reviewed durable session events from
+`log.synced` markers and unknown JSON. It reuses `models::Event`, adding typed
+instruction, synthetic, skill, shell, revert, usage, and message-content events.
+Known transient events and malformed known log items fail decoding. Unknown kinds
+retain their full JSON; `sequence()` and `aggregate_id()` do not infer fields from
+them. Handle unknown data deliberately before advancing a checkpoint.
+
+A marker describes the captured read watermark over retained rows. Its optional
+sequence can be absent, greater than the last emitted event, or lower than a
+requested future cursor. Gaps are valid: the server can skip non-session or unknown
+stored event kinds, and payload retention may be disabled. Do not interpret the
+marker as a coherent transaction with REST snapshots or evidence that all session
+state can be reconstructed. EOF without a marker does not prove replay completion.
+
+`SessionLogMessage` preserves SSE IDs, event names, and retry hints separately
+from JSON event IDs and sequences. The tested v2.2.5 encoder omits SSE IDs for
+these log payloads. The SDK neither converts IDs to `after` nor synthesizes
+`Last-Event-ID`. `sequence()` is a convenience accessor, not automatic cursor
+management. Acknowledge only successfully handled items; never replace an absent
+watermark with zero or regress a saved cursor to an older marker.
+
+Log streams share the live feed's bounded SSE parser, separate 30-second handshake
+deadline, optional idle deadline, terminal errors/EOF, and close/drop behavior.
+No automatic retries, reconnections, collection of the entire log, or background
+tasks are added. The log need not emit heartbeats; an idle timeout is a caller
+policy. Dropping the stream does not interrupt session execution.
+
+Run `cargo run --example session_log` with `OPENCODE_BASE_URL`,
+`OPENCODE_SESSION_ID`, and optional `OPENCODE_PASSWORD`. This read-only example
+handles replay, saves an in-memory acknowledged sequence, explicitly closes and
+reopens with following, and refreshes snapshots. Observation is limited to ten events and a ten-second read
+window; snapshot requests use ordinary request deadlines. Deduplication, durable
+checkpoint storage, and snapshot reconciliation remain application decisions. Transient text deltas are not replayable log events.
 
 ## Configuration and behavior
 
@@ -511,8 +581,9 @@ The pinned schema and provenance live in [`openapi/`](openapi/). The implemented
 operations also pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
 arm64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
 see [compatibility details and CI](tools/live/README.md) for prerequisites, release
-checksums, verified behavior, and limitations. Durable session logs and other endpoints remain unimplemented; live model execution
-and server-overflow behavior are not yet exercised.
+checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded
+fixtures because the stock CLI disables retention; live model execution and server-overflow
+behavior are not yet exercised.
 
 The private [`tools/model-spike/`](tools/model-spike/README.md) workspace tool
 contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event generation commands.

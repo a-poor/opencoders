@@ -176,6 +176,7 @@ def run(manifest, archive):
                 stderr=log, text=True, start_new_session=True,
             )
             try:
+                (root / "fixture-owner.json").write_text(json.dumps({"pid": process.pid}))
                 url = await_startup(process)
                 print(f"Testing OpenCode {manifest['version']} at {url} (isolated data)", flush=True)
                 test_env = os.environ.copy()

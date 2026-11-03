@@ -4,7 +4,7 @@ Status: foundation implemented through `server.info()`, location/agent/model dis
 with configurable location selection, plus session creation,
 retrieval, updates, deletion, agent/model selection, filtered/paginated listing,
 message history/retrieval, prompt admission, inbox management, and live event
-subscriptions. Broader APIs and durable session logs remain the implementation plan.
+subscriptions and experimental durable session logs. Broader APIs remain the implementation plan.
 
 `opencoders` is an async Rust client for the OpenCode v2 HTTP API. Its initial
 audience is developers building GUI, TUI, desktop, and other interactive OpenCode
@@ -73,8 +73,9 @@ Several contract details affect the client design:
   represent a completed assistant reply.
 - The global event stream is live-only, spans server locations, and can fail when
   a consumer falls behind. Events during disconnection are missed.
-- The experimental session log supports replay after an exclusive aggregate
-  sequence and can follow subsequent events. Its durable event set excludes
+- The experimental session log supports retained replay after an exclusive aggregate
+  sequence and can follow retained events. The tested v2.2.5 CLI disables payload
+  retention, so counters/markers can advance without replayable data. Its durable event set excludes
   transient text deltas, so it does not replace the live feed for incremental
   rendering.
 - Many operations return data envelopes, sometimes with location information;
@@ -438,7 +439,7 @@ requests all events. Location defaults do not scope this route. Each call owns
 an independent connection and returns `EventStream`, implementing
 `Stream<Item = Result<EventMessage>>` and an inherent async `next()`.
 
-Generated `models::events` envelopes cover the 52 reviewed kinds listed in
+Generated `models::events` envelopes cover the 62 reviewed live/log kinds listed in
 `tools/model-spike/event-roots.json`; `models::Event` dispatches tags explicitly.
 Unimplemented/future kinds retain raw JSON. Malformed implemented kinds fail.
 Nested inbox, status, and form unions use explicit dispatch; checked wrappers
@@ -464,6 +465,36 @@ Ordinary request deadlines/response limits do not apply; injected HTTP-client
 policies still apply. No automatic retry or `Last-Event-ID` is synthesized.
 The server's bounded feed can overflow for slow consumers; no continuity is
 promised, and overflow-specific signaling is not yet live-tested.
+
+`sessions().experimental_log(id, options)` implements the experimental durable
+session endpoint with typed `SessionLogItem::{Event, Synced, Unknown}` and
+`SessionLogMessage` SSE metadata. All 47 pinned durable session kinds reuse the
+shared `Event` model; known transient kinds and malformed known payloads fail.
+Sequence/aggregate accessors expose reviewed data without inferring unknown
+cursors. Missing marker sequences remain absent; they are never converted to zero.
+
+`SessionLogOptions` omits `after`/`follow` by default. `after` is exclusive and
+server-validated; omitted follow is finite replay on v2.2.5. Following subscribes
+before the pinned implementation captures its watermark, reads retained rows in
+sequence order, emits one marker, then uses durable notifications to read further
+rows. Other/unknown stored kinds can be skipped, so sequence gaps are valid and
+watermarks can exceed emitted session events. A future cursor can exceed the
+captured watermark; client code must not move its checkpoint backwards.
+
+Both resources share private `SseStream<T>` and the same handshake path, bounds,
+error handling, and ownership behavior. Public stream types retain their existing
+resource-specific fields. Stream errors now retain the originating operation ID.
+No replay validation, automatic checkpointing, deduplication, or reconnection is
+hidden in transport. Applications acknowledge successful handling and explicitly
+reopen; EOF alone does not establish that a sync marker was received.
+
+The stock v2.2.5 CLI advances durable counters with payload persistence disabled.
+Its live compatibility check observes marker-only replay/follow. A separate fixture
+adapter inserts actual captured rename events into only the runner-owned temporary
+SQLite database, without changing projections/counters, to verify retained replay,
+exclusive boundaries, aggregate isolation, and following. These checks do not
+establish retention for normal CLI deployments. Keep snapshot refresh mandatory in
+examples; a watermark is not proof of reconstructible state or snapshot consistency.
 
 Library usage examples and documentation should demonstrate a recovery lifecycle:
 

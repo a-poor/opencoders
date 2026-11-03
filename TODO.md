@@ -83,9 +83,9 @@ No active implementation goal.
 
 ### Events and session logs
 
-- [ ] Implement durable session log reads with exclusive `after` sequences,
-  optional following, SSE identifiers, and synchronization markers.
-- [ ] Test durable replay boundaries and synchronization markers.
+- [ ] Verify retained logs across server restarts and forked sessions using a
+  server configuration that enables payload persistence. The v2.2.5 CLI disables
+  retention; current live replay/follow checks use explicitly seeded fixture rows.
 - [ ] Exercise server queue overflow/slow-consumer behavior against the pinned
   implementation; deterministic tests already cover visible failures and EOF.
 - [ ] Verify snapshot/event ordering and recovery behavior against upstream;
@@ -96,9 +96,10 @@ No active implementation goal.
 - [ ] Add runnable Rust examples for permission replies and form replies. Use ordinary output
   or assertions, with no GUI/TUI implementation. Session listing, creation, and
   update/deletion lifecycle, model/agent configuration, message history, and
-  prompt/inbox and live event examples are implemented.
-- [ ] Add an example of background event consumption and recovery after
-  disconnection using minimal application-owned state.
+  prompt/inbox, live event, and explicit log resumption examples are implemented.
+- [ ] Add an example of background event consumption using minimal
+  application-owned state. Explicit log resumption and snapshot refresh are
+  demonstrated in `examples/session_log.rs` without a background task.
 - [ ] Add an automation example using the same API surface.
 - [ ] Expand crate documentation and the README with setup, authentication,
   runtime requirements, supported operations, and tested server versions.
@@ -205,14 +206,33 @@ when a decision is made.
   checks use `resume(false)` and queue-only updates, confirming pending-ID
   reconciliation and same-mode update conflicts. Synthetic/compaction/move inbox
   lifecycle and experimental inbox media references also remain unverified.
-- [ ] Confirm event ordering, connection-marker guarantees, log watermarks, and
-  snapshot reconciliation without assuming gap-free global events.
-- [ ] Choose how to expose SSE IDs, log sequences, pagination, and location
-  metadata while keeping common calls convenient.
+- [ ] Verify snapshot reconciliation during concurrent execution and disconnection.
+  Captured log watermarks are not atomic REST snapshot boundaries or retention
+  guarantees; sequences can have gaps and a future `after` can exceed the marker.
+  SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 - [ ] Determine the earliest useful PTY/WebSocket subset and document any protocol
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Complete durable session logs with TDD: `sessions().experimental_log(&id,
+  &options)` supports exclusive `after`, explicit finite/follow modes, typed
+  `log.synced` markers, and separate SSE metadata. Reuse bounded caller-driven
+  transport with explicit cancellation, deadlines, terminal errors, and no retries.
+- [x] Extend reviewed event generation to 62 kinds across live/log models,
+  including all 47 durable session events. Preserve empty versus zero watermarks,
+  unknown payloads, extensions, and numeric bounds; reject known transient log
+  kinds and guard durable-envelope/marker adapters against schema drift.
+- [x] Test replay gaps, future cursors, marker handling, explicit resumption,
+  cancelled reads, independent connections, and errors. Confirm the v2.2.5 CLI
+  advances markers without retaining payloads; separately verify replay/follow
+  with actual captured events seeded into its disposable database, without model
+  calls. Record the retention limitation and keep snapshot policy application-owned.
+- [x] Add `examples/session_log.rs`, public API guidance, and architecture/live
+  compatibility notes. Validate 153 client tests, 34 generator tests, ten doctests
+  and examples, HTTP-only tests, both Rust 1.88 builds, formatting, Clippy, docs,
+  all seven generation checks, eight runner tests, actionlint, and the live smoke
+  test. Hosted Linux checks remain pending; no automatic commit.
 
 - [x] Complete live event subscriptions with TDD: `events().subscribe(&options)`
   returns an independent `EventStream`, with repeated type filters, SSE metadata,

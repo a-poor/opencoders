@@ -1,7 +1,7 @@
 use crate::StatusCode;
 use std::fmt;
 
-/// A terminal failure specific to live subscriptions.
+/// A terminal failure specific to SSE streams.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum StreamErrorKind {
@@ -19,8 +19,9 @@ pub enum StreamErrorKind {
 
 /// Bounded stream diagnostics. Default formatting omits server-supplied text.
 #[derive(thiserror::Error)]
-#[error("event.subscribe: stream failed ({kind:?})")]
+#[error("{operation}: stream failed ({kind:?})")]
 pub struct StreamError {
+    operation: &'static str,
     kind: StreamErrorKind,
     status: Option<StatusCode>,
     limit: Option<usize>,
@@ -28,8 +29,13 @@ pub struct StreamError {
     truncated: bool,
 }
 impl StreamError {
-    pub(crate) fn new(kind: StreamErrorKind, status: Option<StatusCode>) -> Self {
+    pub(crate) fn new(
+        operation: &'static str,
+        kind: StreamErrorKind,
+        status: Option<StatusCode>,
+    ) -> Self {
         Self {
+            operation,
             kind,
             status,
             limit: None,
@@ -56,7 +62,7 @@ impl StreamError {
     }
     /// Upstream operation ID.
     pub fn operation(&self) -> &'static str {
-        "event.subscribe"
+        self.operation
     }
     /// Configured frame limit, for an oversized block.
     pub fn limit(&self) -> Option<usize> {
@@ -74,6 +80,7 @@ impl StreamError {
 impl fmt::Debug for StreamError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("StreamError")
+            .field("operation", &self.operation)
             .field("kind", &self.kind)
             .field("status", &self.status)
             .field("limit", &self.limit)

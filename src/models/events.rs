@@ -1549,6 +1549,72 @@ impl ::std::convert::TryFrom<::std::string::String> for EventInboxItemUserType {
         value.parse()
     }
 }
+///Captured replay watermark over retained log rows. Not proof of complete event retention or reconstructible state. The sequence may exceed emitted events or precede a requested future cursor; absence represents an empty watermark.
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventLogSynced {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    #[serde(default, deserialize_with = "super::deserialize_optional_value")]
+    pub seq: ::std::option::Option<EventSeq>,
+    #[serde(rename = "type")]
+    pub type_: EventLogSyncedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventLogSyncedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventLogSyncedType {
+    #[serde(rename = "log.synced")]
+    LogSynced,
+}
+impl ::std::fmt::Display for EventLogSyncedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::LogSynced => f.write_str("log.synced"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventLogSyncedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "log.synced" => Ok(Self::LogSynced),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventLogSyncedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventLogSyncedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 ///`EventPermissionAsked`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[non_exhaustive]
@@ -3776,6 +3842,264 @@ impl ::std::convert::TryFrom<::std::string::String> for EventSessionInboxEnqueue
         value.parse()
     }
 }
+///`EventSessionInstructionsUpdated`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionInstructionsUpdated {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionInstructionsUpdatedData,
+    pub durable: EventSessionInstructionsUpdatedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionInstructionsUpdatedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionInstructionsUpdatedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionInstructionsUpdatedData {
+    pub delta: ::std::collections::HashMap<
+        ::std::string::String,
+        EventSessionInstructionsUpdatedDataDeltaValue,
+    >,
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub text: ::std::option::Option<::std::string::String>,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionInstructionsUpdatedDataDeltaValue`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
+#[non_exhaustive]
+pub struct EventSessionInstructionsUpdatedDataDeltaValue {
+    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
+    pub subtype_0: ::std::option::Option<InstructionHash>,
+    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
+    pub subtype_1: ::std::option::Option<
+        EventSessionInstructionsUpdatedDataDeltaValueSubtype1,
+    >,
+}
+///`EventSessionInstructionsUpdatedDataDeltaValueSubtype1`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+    #[serde(rename = "removed")]
+    Removed,
+}
+impl ::std::fmt::Display for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Removed => f.write_str("removed"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "removed" => Ok(Self::Removed),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for EventSessionInstructionsUpdatedDataDeltaValueSubtype1 {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionInstructionsUpdatedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionInstructionsUpdatedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC3ea984aceae,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionInstructionsUpdatedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionInstructionsUpdatedType {
+    #[serde(rename = "session.instructions.updated")]
+    SessionInstructionsUpdated,
+}
+impl ::std::fmt::Display for EventSessionInstructionsUpdatedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionInstructionsUpdated => {
+                f.write_str("session.instructions.updated")
+            }
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionInstructionsUpdatedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.instructions.updated" => Ok(Self::SessionInstructionsUpdated),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionInstructionsUpdatedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for EventSessionInstructionsUpdatedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionMessageContentUpdated`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionMessageContentUpdated {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionMessageContentUpdatedData,
+    pub durable: EventSessionMessageContentUpdatedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionMessageContentUpdatedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionMessageContentUpdatedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionMessageContentUpdatedData {
+    pub content: ::std::vec::Vec<super::SessionMessageAssistantContentItem>,
+    #[serde(rename = "messageID")]
+    pub message_id: super::SessionMessageId,
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionMessageContentUpdatedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionMessageContentUpdatedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionMessageContentUpdatedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionMessageContentUpdatedType {
+    #[serde(rename = "session.message.content.updated")]
+    SessionMessageContentUpdated,
+}
+impl ::std::fmt::Display for EventSessionMessageContentUpdatedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionMessageContentUpdated => {
+                f.write_str("session.message.content.updated")
+            }
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionMessageContentUpdatedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.message.content.updated" => Ok(Self::SessionMessageContentUpdated),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionMessageContentUpdatedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for EventSessionMessageContentUpdatedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 ///`EventSessionMetadataUpdated`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[non_exhaustive]
@@ -4597,6 +4921,559 @@ impl ::std::convert::TryFrom<::std::string::String> for EventSessionRetrySchedul
         value.parse()
     }
 }
+///`EventSessionRevertCleared`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertCleared {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionRevertClearedData,
+    pub durable: EventSessionRevertClearedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionRevertClearedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertClearedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertClearedData {
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertClearedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertClearedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertClearedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionRevertClearedType {
+    #[serde(rename = "session.revert.cleared")]
+    SessionRevertCleared,
+}
+impl ::std::fmt::Display for EventSessionRevertClearedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionRevertCleared => f.write_str("session.revert.cleared"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionRevertClearedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.revert.cleared" => Ok(Self::SessionRevertCleared),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionRevertClearedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionRevertClearedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionRevertCommitted`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertCommitted {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionRevertCommittedData,
+    pub durable: EventSessionRevertCommittedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionRevertCommittedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertCommittedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertCommittedData {
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    pub to: super::SessionMessageId,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertCommittedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertCommittedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertCommittedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionRevertCommittedType {
+    #[serde(rename = "session.revert.committed")]
+    SessionRevertCommitted,
+}
+impl ::std::fmt::Display for EventSessionRevertCommittedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionRevertCommitted => f.write_str("session.revert.committed"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionRevertCommittedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.revert.committed" => Ok(Self::SessionRevertCommitted),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionRevertCommittedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionRevertCommittedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionRevertStaged`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertStaged {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionRevertStagedData,
+    pub durable: EventSessionRevertStagedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionRevertStagedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertStagedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertStagedData {
+    pub revert: super::SessionRevert,
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertStagedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionRevertStagedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionRevertStagedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionRevertStagedType {
+    #[serde(rename = "session.revert.staged")]
+    SessionRevertStaged,
+}
+impl ::std::fmt::Display for EventSessionRevertStagedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionRevertStaged => f.write_str("session.revert.staged"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionRevertStagedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.revert.staged" => Ok(Self::SessionRevertStaged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionRevertStagedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionRevertStagedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionShellEnded`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionShellEnded {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionShellEndedData,
+    pub durable: EventSessionShellEndedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionShellEndedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionShellEndedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionShellEndedData {
+    pub output: EventSessionShellEndedDataOutput,
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    pub shell: ShellInfo,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionShellEndedDataOutput`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionShellEndedDataOutput {
+    pub cursor: super::EventInteger<0, 9007199254740991>,
+    pub output: ::std::string::String,
+    pub size: super::EventInteger<0, 9007199254740991>,
+    pub truncated: bool,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionShellEndedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionShellEndedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionShellEndedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionShellEndedType {
+    #[serde(rename = "session.shell.ended")]
+    SessionShellEnded,
+}
+impl ::std::fmt::Display for EventSessionShellEndedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionShellEnded => f.write_str("session.shell.ended"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionShellEndedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.shell.ended" => Ok(Self::SessionShellEnded),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionShellEndedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionShellEndedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionShellStarted`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionShellStarted {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionShellStartedData,
+    pub durable: EventSessionShellStartedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionShellStartedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionShellStartedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionShellStartedData {
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    pub shell: ShellInfo,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionShellStartedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionShellStartedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionShellStartedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionShellStartedType {
+    #[serde(rename = "session.shell.started")]
+    SessionShellStarted,
+}
+impl ::std::fmt::Display for EventSessionShellStartedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionShellStarted => f.write_str("session.shell.started"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionShellStartedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.shell.started" => Ok(Self::SessionShellStarted),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionShellStartedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionShellStartedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionSkillActivated`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionSkillActivated {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionSkillActivatedData,
+    pub durable: EventSessionSkillActivatedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionSkillActivatedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionSkillActivatedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionSkillActivatedData {
+    pub id: super::SkillId,
+    pub name: super::SkillName,
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    pub text: ::std::string::String,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionSkillActivatedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionSkillActivatedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionSkillActivatedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionSkillActivatedType {
+    #[serde(rename = "session.skill.activated")]
+    SessionSkillActivated,
+}
+impl ::std::fmt::Display for EventSessionSkillActivatedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionSkillActivated => f.write_str("session.skill.activated"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionSkillActivatedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.skill.activated" => Ok(Self::SessionSkillActivated),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionSkillActivatedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionSkillActivatedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 ///`EventSessionStatus`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[non_exhaustive]
@@ -5194,6 +6071,100 @@ impl ::std::convert::TryFrom<&str> for EventSessionStepStreamedType {
     }
 }
 impl ::std::convert::TryFrom<::std::string::String> for EventSessionStepStreamedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionSynthetic`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionSynthetic {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionSyntheticData,
+    pub durable: EventSessionSyntheticDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionSyntheticType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionSyntheticData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionSyntheticData {
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub description: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    pub text: ::std::string::String,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionSyntheticDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionSyntheticDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionSyntheticType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionSyntheticType {
+    #[serde(rename = "session.synthetic")]
+    SessionSynthetic,
+}
+impl ::std::fmt::Display for EventSessionSyntheticType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionSynthetic => f.write_str("session.synthetic"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionSyntheticType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.synthetic" => Ok(Self::SessionSynthetic),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionSyntheticType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionSyntheticType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -6202,6 +7173,155 @@ impl ::std::convert::TryFrom<::std::string::String> for EventSessionUnarchivedTy
         value.parse()
     }
 }
+///`EventSessionUsageRecorded`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionUsageRecorded {
+    pub created: ::serde_json::Number,
+    pub data: EventSessionUsageRecordedData,
+    pub durable: EventSessionUsageRecordedDurable,
+    pub id: EventId,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub location: ::std::option::Option<LocationRef>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(rename = "type")]
+    pub type_: EventSessionUsageRecordedType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionUsageRecordedData`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionUsageRecordedData {
+    pub cost: super::MoneyUsd,
+    #[serde(rename = "sessionID")]
+    pub session_id: super::SessionId,
+    pub source: EventSessionUsageRecordedDataSource,
+    pub tokens: super::TokenUsageInfo,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionUsageRecordedDataSource`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionUsageRecordedDataSource {
+    #[serde(rename = "title")]
+    Title,
+    #[serde(rename = "compaction")]
+    Compaction,
+}
+impl ::std::fmt::Display for EventSessionUsageRecordedDataSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Title => f.write_str("title"),
+            Self::Compaction => f.write_str("compaction"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionUsageRecordedDataSource {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "title" => Ok(Self::Title),
+            "compaction" => Ok(Self::Compaction),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionUsageRecordedDataSource {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for EventSessionUsageRecordedDataSource {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`EventSessionUsageRecordedDurable`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct EventSessionUsageRecordedDurable {
+    #[serde(rename = "aggregateID")]
+    pub aggregate_id: ::std::string::String,
+    pub seq: EventSeq,
+    pub version: EventVersionEncodedC77c5abcb68d,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`EventSessionUsageRecordedType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum EventSessionUsageRecordedType {
+    #[serde(rename = "session.usage.recorded")]
+    SessionUsageRecorded,
+}
+impl ::std::fmt::Display for EventSessionUsageRecordedType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionUsageRecorded => f.write_str("session.usage.recorded"),
+        }
+    }
+}
+impl ::std::str::FromStr for EventSessionUsageRecordedType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session.usage.recorded" => Ok(Self::SessionUsageRecorded),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for EventSessionUsageRecordedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for EventSessionUsageRecordedType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 ///`EventSessionUsageUpdated`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[non_exhaustive]
@@ -6611,6 +7731,80 @@ impl ::std::convert::From<EventVersionEncodedC77c5abcb68d> for super::EventVersi
 impl ::std::convert::From<super::EventVersion<1>> for EventVersionEncodedC77c5abcb68d {
     fn from(value: super::EventVersion<1>) -> Self {
         Self(value)
+    }
+}
+///`FileDiffInfo`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct FileDiffInfo {
+    pub additions: super::EventInteger<0, 9007199254740991>,
+    pub deletions: super::EventInteger<0, 9007199254740991>,
+    pub file: ::std::string::String,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub more: ::std::option::Option<bool>,
+    pub patch: ::std::string::String,
+    pub status: FileDiffInfoStatus,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`FileDiffInfoStatus`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum FileDiffInfoStatus {
+    #[serde(rename = "added")]
+    Added,
+    #[serde(rename = "deleted")]
+    Deleted,
+    #[serde(rename = "modified")]
+    Modified,
+}
+impl ::std::fmt::Display for FileDiffInfoStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Added => f.write_str("added"),
+            Self::Deleted => f.write_str("deleted"),
+            Self::Modified => f.write_str("modified"),
+        }
+    }
+}
+impl ::std::str::FromStr for FileDiffInfoStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "added" => Ok(Self::Added),
+            "deleted" => Ok(Self::Deleted),
+            "modified" => Ok(Self::Modified),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for FileDiffInfoStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for FileDiffInfoStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 ///`FormAnswer1`
@@ -8402,6 +9596,361 @@ pub struct SessionInboxMovePayload1 {
     #[serde(flatten)]
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
+///`SessionMessageToolStateCompleted`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionMessageToolStateCompleted {
+    pub content: super::NonEmptyEventItems<super::ToolContent>,
+    pub input: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    pub status: SessionMessageToolStateCompletedStatus,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`SessionMessageToolStateCompletedStatus`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum SessionMessageToolStateCompletedStatus {
+    #[serde(rename = "completed")]
+    Completed,
+}
+impl ::std::fmt::Display for SessionMessageToolStateCompletedStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Completed => f.write_str("completed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageToolStateCompletedStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "completed" => Ok(Self::Completed),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionMessageToolStateCompletedStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for SessionMessageToolStateCompletedStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`SessionMessageToolStateError`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionMessageToolStateError {
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    #[serde(default, deserialize_with = "super::deserialize_optional_value")]
+    pub content: ::std::option::Option<super::NonEmptyEventItems<super::ToolContent>>,
+    pub error: super::SessionStructuredError,
+    pub input: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(default, skip_serializing_if = "::serde_json::Map::is_empty")]
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    pub status: SessionMessageToolStateErrorStatus,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`SessionMessageToolStateErrorStatus`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum SessionMessageToolStateErrorStatus {
+    #[serde(rename = "error")]
+    Error,
+}
+impl ::std::fmt::Display for SessionMessageToolStateErrorStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Error => f.write_str("error"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageToolStateErrorStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "error" => Ok(Self::Error),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionMessageToolStateErrorStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for SessionMessageToolStateErrorStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`SessionMessageToolStateRunning`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionMessageToolStateRunning {
+    pub input: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    pub status: SessionMessageToolStateRunningStatus,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`SessionMessageToolStateRunningStatus`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum SessionMessageToolStateRunningStatus {
+    #[serde(rename = "running")]
+    Running,
+}
+impl ::std::fmt::Display for SessionMessageToolStateRunningStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Running => f.write_str("running"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageToolStateRunningStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "running" => Ok(Self::Running),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionMessageToolStateRunningStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for SessionMessageToolStateRunningStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`SessionMessageToolStateStreaming`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionMessageToolStateStreaming {
+    pub input: ::std::string::String,
+    pub status: SessionMessageToolStateStreamingStatus,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`SessionMessageToolStateStreamingStatus`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum SessionMessageToolStateStreamingStatus {
+    #[serde(rename = "streaming")]
+    Streaming,
+}
+impl ::std::fmt::Display for SessionMessageToolStateStreamingStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Streaming => f.write_str("streaming"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageToolStateStreamingStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "streaming" => Ok(Self::Streaming),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionMessageToolStateStreamingStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+for SessionMessageToolStateStreamingStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`ShellInfo`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct ShellInfo {
+    pub command: ::std::string::String,
+    pub cwd: ::std::string::String,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub exit: ::std::option::Option<::serde_json::Number>,
+    pub file: ::std::string::String,
+    pub id: super::ShellId,
+    pub metadata: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    #[serde(default, deserialize_with = "super::deserialize_optional_value")]
+    pub pid: ::std::option::Option<super::EventInteger<0, 9007199254740991>>,
+    pub shell: ::std::string::String,
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub signal: ::std::option::Option<::std::string::String>,
+    pub status: ShellInfoStatus,
+    pub time: ShellInfoTime,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`ShellInfoStatus`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum ShellInfoStatus {
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "exited")]
+    Exited,
+    #[serde(rename = "timeout")]
+    Timeout,
+    #[serde(rename = "killed")]
+    Killed,
+}
+impl ::std::fmt::Display for ShellInfoStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Running => f.write_str("running"),
+            Self::Exited => f.write_str("exited"),
+            Self::Timeout => f.write_str("timeout"),
+            Self::Killed => f.write_str("killed"),
+        }
+    }
+}
+impl ::std::str::FromStr for ShellInfoStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "running" => Ok(Self::Running),
+            "exited" => Ok(Self::Exited),
+            "timeout" => Ok(Self::Timeout),
+            "killed" => Ok(Self::Killed),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for ShellInfoStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for ShellInfoStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+///`ShellInfoTime`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct ShellInfoTime {
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub completed: ::std::option::Option<::serde_json::Number>,
+    ///Start time in milliseconds since the Unix epoch
+    pub started: ::serde_json::Number,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
 ///`ToolFileContent`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[non_exhaustive]
@@ -8770,6 +10319,10 @@ pub enum Event {
     SessionInboxDeliveryChanged(Box<EventSessionInboxDeliveryChanged>),
     /// Wire kind `session.inbox.enqueued`.
     SessionInboxEnqueued(Box<EventSessionInboxEnqueued>),
+    /// Wire kind `session.instructions.updated`.
+    SessionInstructionsUpdated(Box<EventSessionInstructionsUpdated>),
+    /// Wire kind `session.message.content.updated`.
+    SessionMessageContentUpdated(Box<EventSessionMessageContentUpdated>),
     /// Wire kind `session.metadata.updated`.
     SessionMetadataUpdated(Box<EventSessionMetadataUpdated>),
     /// Wire kind `session.model.selected`.
@@ -8788,6 +10341,18 @@ pub enum Event {
     SessionRenamed(Box<EventSessionRenamed>),
     /// Wire kind `session.retry.scheduled`.
     SessionRetryScheduled(Box<EventSessionRetryScheduled>),
+    /// Wire kind `session.revert.cleared`.
+    SessionRevertCleared(Box<EventSessionRevertCleared>),
+    /// Wire kind `session.revert.committed`.
+    SessionRevertCommitted(Box<EventSessionRevertCommitted>),
+    /// Wire kind `session.revert.staged`.
+    SessionRevertStaged(Box<EventSessionRevertStaged>),
+    /// Wire kind `session.shell.ended`.
+    SessionShellEnded(Box<EventSessionShellEnded>),
+    /// Wire kind `session.shell.started`.
+    SessionShellStarted(Box<EventSessionShellStarted>),
+    /// Wire kind `session.skill.activated`.
+    SessionSkillActivated(Box<EventSessionSkillActivated>),
     /// Wire kind `session.step.ended`.
     SessionStepEnded(Box<EventSessionStepEnded>),
     /// Wire kind `session.step.failed`.
@@ -8796,6 +10361,8 @@ pub enum Event {
     SessionStepStarted(Box<EventSessionStepStarted>),
     /// Wire kind `session.step.streamed`.
     SessionStepStreamed(Box<EventSessionStepStreamed>),
+    /// Wire kind `session.synthetic`.
+    SessionSynthetic(Box<EventSessionSynthetic>),
     /// Wire kind `session.text.delta`.
     SessionTextDelta(Box<EventSessionTextDelta>),
     /// Wire kind `session.text.ended`.
@@ -8818,6 +10385,8 @@ pub enum Event {
     SessionToolSuccess(Box<EventSessionToolSuccess>),
     /// Wire kind `session.unarchived`.
     SessionUnarchived(Box<EventSessionUnarchived>),
+    /// Wire kind `session.usage.recorded`.
+    SessionUsageRecorded(Box<EventSessionUsageRecorded>),
     /// Wire kind `session.usage.updated`.
     SessionUsageUpdated(Box<EventSessionUsageUpdated>),
     /// Wire kind `session.viewed`.
@@ -8901,6 +10470,12 @@ impl<'de> ::serde::Deserialize<'de> for Event {
             Some("session.inbox.enqueued") => {
                 ::serde_json::from_value(raw).map(Self::SessionInboxEnqueued)
             }
+            Some("session.instructions.updated") => {
+                ::serde_json::from_value(raw).map(Self::SessionInstructionsUpdated)
+            }
+            Some("session.message.content.updated") => {
+                ::serde_json::from_value(raw).map(Self::SessionMessageContentUpdated)
+            }
             Some("session.metadata.updated") => {
                 ::serde_json::from_value(raw).map(Self::SessionMetadataUpdated)
             }
@@ -8928,6 +10503,24 @@ impl<'de> ::serde::Deserialize<'de> for Event {
             Some("session.retry.scheduled") => {
                 ::serde_json::from_value(raw).map(Self::SessionRetryScheduled)
             }
+            Some("session.revert.cleared") => {
+                ::serde_json::from_value(raw).map(Self::SessionRevertCleared)
+            }
+            Some("session.revert.committed") => {
+                ::serde_json::from_value(raw).map(Self::SessionRevertCommitted)
+            }
+            Some("session.revert.staged") => {
+                ::serde_json::from_value(raw).map(Self::SessionRevertStaged)
+            }
+            Some("session.shell.ended") => {
+                ::serde_json::from_value(raw).map(Self::SessionShellEnded)
+            }
+            Some("session.shell.started") => {
+                ::serde_json::from_value(raw).map(Self::SessionShellStarted)
+            }
+            Some("session.skill.activated") => {
+                ::serde_json::from_value(raw).map(Self::SessionSkillActivated)
+            }
             Some("session.step.ended") => {
                 ::serde_json::from_value(raw).map(Self::SessionStepEnded)
             }
@@ -8939,6 +10532,9 @@ impl<'de> ::serde::Deserialize<'de> for Event {
             }
             Some("session.step.streamed") => {
                 ::serde_json::from_value(raw).map(Self::SessionStepStreamed)
+            }
+            Some("session.synthetic") => {
+                ::serde_json::from_value(raw).map(Self::SessionSynthetic)
             }
             Some("session.text.delta") => {
                 ::serde_json::from_value(raw).map(Self::SessionTextDelta)
@@ -8972,6 +10568,9 @@ impl<'de> ::serde::Deserialize<'de> for Event {
             }
             Some("session.unarchived") => {
                 ::serde_json::from_value(raw).map(Self::SessionUnarchived)
+            }
+            Some("session.usage.recorded") => {
+                ::serde_json::from_value(raw).map(Self::SessionUsageRecorded)
             }
             Some("session.usage.updated") => {
                 ::serde_json::from_value(raw).map(Self::SessionUsageUpdated)
@@ -9019,6 +10618,8 @@ impl Event {
             Self::SessionInboxDelivered(_) => "session.inbox.delivered",
             Self::SessionInboxDeliveryChanged(_) => "session.inbox.delivery.changed",
             Self::SessionInboxEnqueued(_) => "session.inbox.enqueued",
+            Self::SessionInstructionsUpdated(_) => "session.instructions.updated",
+            Self::SessionMessageContentUpdated(_) => "session.message.content.updated",
             Self::SessionMetadataUpdated(_) => "session.metadata.updated",
             Self::SessionModelSelected(_) => "session.model.selected",
             Self::SessionMoved(_) => "session.moved",
@@ -9028,10 +10629,17 @@ impl Event {
             Self::SessionReasoningStarted(_) => "session.reasoning.started",
             Self::SessionRenamed(_) => "session.renamed",
             Self::SessionRetryScheduled(_) => "session.retry.scheduled",
+            Self::SessionRevertCleared(_) => "session.revert.cleared",
+            Self::SessionRevertCommitted(_) => "session.revert.committed",
+            Self::SessionRevertStaged(_) => "session.revert.staged",
+            Self::SessionShellEnded(_) => "session.shell.ended",
+            Self::SessionShellStarted(_) => "session.shell.started",
+            Self::SessionSkillActivated(_) => "session.skill.activated",
             Self::SessionStepEnded(_) => "session.step.ended",
             Self::SessionStepFailed(_) => "session.step.failed",
             Self::SessionStepStarted(_) => "session.step.started",
             Self::SessionStepStreamed(_) => "session.step.streamed",
+            Self::SessionSynthetic(_) => "session.synthetic",
             Self::SessionTextDelta(_) => "session.text.delta",
             Self::SessionTextEnded(_) => "session.text.ended",
             Self::SessionTextStarted(_) => "session.text.started",
@@ -9043,11 +10651,122 @@ impl Event {
             Self::SessionToolProgress(_) => "session.tool.progress",
             Self::SessionToolSuccess(_) => "session.tool.success",
             Self::SessionUnarchived(_) => "session.unarchived",
+            Self::SessionUsageRecorded(_) => "session.usage.recorded",
             Self::SessionUsageUpdated(_) => "session.usage.updated",
             Self::SessionViewed(_) => "session.viewed",
             Self::Unknown(v) => {
                 v.get("type").and_then(::serde_json::Value::as_str).unwrap_or("")
             }
+        }
+    }
+}
+impl Event {
+    /// Aggregate sequence for reviewed durable session events; no cursor is inferred for unknown kinds.
+    pub fn durable_sequence(&self) -> Option<u64> {
+        match self {
+            Self::SessionCreated(event) => Some(event.durable.seq.0.get()),
+            Self::SessionAgentSelected(event) => Some(event.durable.seq.0.get()),
+            Self::SessionModelSelected(event) => Some(event.durable.seq.0.get()),
+            Self::SessionMoved(event) => Some(event.durable.seq.0.get()),
+            Self::SessionRenamed(event) => Some(event.durable.seq.0.get()),
+            Self::SessionMetadataUpdated(event) => Some(event.durable.seq.0.get()),
+            Self::SessionPermissions(event) => Some(event.durable.seq.0.get()),
+            Self::SessionViewed(event) => Some(event.durable.seq.0.get()),
+            Self::SessionArchived(event) => Some(event.durable.seq.0.get()),
+            Self::SessionUnarchived(event) => Some(event.durable.seq.0.get()),
+            Self::SessionDeleted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionForked(event) => Some(event.durable.seq.0.get()),
+            Self::SessionInboxDelivered(event) => Some(event.durable.seq.0.get()),
+            Self::SessionInboxEnqueued(event) => Some(event.durable.seq.0.get()),
+            Self::SessionInboxCancelled(event) => Some(event.durable.seq.0.get()),
+            Self::SessionInboxDeliveryChanged(event) => Some(event.durable.seq.0.get()),
+            Self::SessionExecutionStarted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionExecutionSucceeded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionExecutionFailed(event) => Some(event.durable.seq.0.get()),
+            Self::SessionExecutionInterrupted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionInstructionsUpdated(event) => Some(event.durable.seq.0.get()),
+            Self::SessionSynthetic(event) => Some(event.durable.seq.0.get()),
+            Self::SessionSkillActivated(event) => Some(event.durable.seq.0.get()),
+            Self::SessionShellStarted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionShellEnded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionStepStarted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionStepStreamed(event) => Some(event.durable.seq.0.get()),
+            Self::SessionStepEnded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionStepFailed(event) => Some(event.durable.seq.0.get()),
+            Self::SessionTextStarted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionTextEnded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionReasoningStarted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionReasoningEnded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionToolInputStarted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionToolInputEnded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionToolCalled(event) => Some(event.durable.seq.0.get()),
+            Self::SessionToolSuccess(event) => Some(event.durable.seq.0.get()),
+            Self::SessionToolFailed(event) => Some(event.durable.seq.0.get()),
+            Self::SessionRetryScheduled(event) => Some(event.durable.seq.0.get()),
+            Self::SessionCompactionStarted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionCompactionEnded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionCompactionFailed(event) => Some(event.durable.seq.0.get()),
+            Self::SessionRevertStaged(event) => Some(event.durable.seq.0.get()),
+            Self::SessionRevertCleared(event) => Some(event.durable.seq.0.get()),
+            Self::SessionRevertCommitted(event) => Some(event.durable.seq.0.get()),
+            Self::SessionUsageRecorded(event) => Some(event.durable.seq.0.get()),
+            Self::SessionMessageContentUpdated(event) => Some(event.durable.seq.0.get()),
+            _ => None,
+        }
+    }
+    /// Aggregate ID for reviewed durable session events.
+    pub fn durable_aggregate_id(&self) -> Option<&str> {
+        match self {
+            Self::SessionCreated(event) => Some(&event.durable.aggregate_id),
+            Self::SessionAgentSelected(event) => Some(&event.durable.aggregate_id),
+            Self::SessionModelSelected(event) => Some(&event.durable.aggregate_id),
+            Self::SessionMoved(event) => Some(&event.durable.aggregate_id),
+            Self::SessionRenamed(event) => Some(&event.durable.aggregate_id),
+            Self::SessionMetadataUpdated(event) => Some(&event.durable.aggregate_id),
+            Self::SessionPermissions(event) => Some(&event.durable.aggregate_id),
+            Self::SessionViewed(event) => Some(&event.durable.aggregate_id),
+            Self::SessionArchived(event) => Some(&event.durable.aggregate_id),
+            Self::SessionUnarchived(event) => Some(&event.durable.aggregate_id),
+            Self::SessionDeleted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionForked(event) => Some(&event.durable.aggregate_id),
+            Self::SessionInboxDelivered(event) => Some(&event.durable.aggregate_id),
+            Self::SessionInboxEnqueued(event) => Some(&event.durable.aggregate_id),
+            Self::SessionInboxCancelled(event) => Some(&event.durable.aggregate_id),
+            Self::SessionInboxDeliveryChanged(event) => Some(&event.durable.aggregate_id),
+            Self::SessionExecutionStarted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionExecutionSucceeded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionExecutionFailed(event) => Some(&event.durable.aggregate_id),
+            Self::SessionExecutionInterrupted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionInstructionsUpdated(event) => Some(&event.durable.aggregate_id),
+            Self::SessionSynthetic(event) => Some(&event.durable.aggregate_id),
+            Self::SessionSkillActivated(event) => Some(&event.durable.aggregate_id),
+            Self::SessionShellStarted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionShellEnded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionStepStarted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionStepStreamed(event) => Some(&event.durable.aggregate_id),
+            Self::SessionStepEnded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionStepFailed(event) => Some(&event.durable.aggregate_id),
+            Self::SessionTextStarted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionTextEnded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionReasoningStarted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionReasoningEnded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionToolInputStarted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionToolInputEnded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionToolCalled(event) => Some(&event.durable.aggregate_id),
+            Self::SessionToolSuccess(event) => Some(&event.durable.aggregate_id),
+            Self::SessionToolFailed(event) => Some(&event.durable.aggregate_id),
+            Self::SessionRetryScheduled(event) => Some(&event.durable.aggregate_id),
+            Self::SessionCompactionStarted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionCompactionEnded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionCompactionFailed(event) => Some(&event.durable.aggregate_id),
+            Self::SessionRevertStaged(event) => Some(&event.durable.aggregate_id),
+            Self::SessionRevertCleared(event) => Some(&event.durable.aggregate_id),
+            Self::SessionRevertCommitted(event) => Some(&event.durable.aggregate_id),
+            Self::SessionUsageRecorded(event) => Some(&event.durable.aggregate_id),
+            Self::SessionMessageContentUpdated(event) => {
+                Some(&event.durable.aggregate_id)
+            }
+            _ => None,
         }
     }
 }

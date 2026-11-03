@@ -150,7 +150,7 @@ cargo run --locked --offline -p opencoders-model-spike -- --events
 cargo run --locked --offline -p opencoders-model-spike -- --events --check
 ```
 
-`event-roots.json` records the 52 selected wire kinds, component schemas, and
+`event-roots.json` records the 62 selected live/log wire kinds, component schemas, and
 public variants. `src/event_models.rs` emits root `src/models/events.rs`, including
 explicit outer and nested inbox/status/form tag dispatch. Other kinds remain raw
 JSON; malformed selected kinds fail decoding. This production path is separate
@@ -162,7 +162,18 @@ durable versions; nonempty array wrappers avoid Typify's tuple representation.
 Optional constrained values reject null. Event fixtures exercise every selected
 kind; nested union tests verify required fields and extension retention. The
 generator rejects changed root tags, RPC patterns, unreviewed numeric constraints,
-and nonempty-array/tagged-union shapes. Generation remains offline and explicit.
+and nonempty-array/tagged-union shapes.
+
+The same path generates `EventLogSynced` and guarded durable-event accessors for
+all 47 members of `Session.Event.Durable`. Two of these kinds are only in the
+pinned durable union, so root membership accepts either reviewed event union.
+`SessionLogItem` explicitly dispatches markers, reviewed durable events, and raw
+unknowns; known transient events are errors. Marker sequences reject explicit
+null and preserve absence. Shell PID/output constraints use checked wrappers;
+message content reuses the existing strict assistant-content union. Guards check
+watermark optionality, durable envelopes, and the shared content replacement.
+The generated marker description qualifies the upstream wording with the verified
+retention limitation. Generation remains offline and explicit.
 
 
 ## Run the experiment

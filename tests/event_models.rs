@@ -55,7 +55,7 @@ fn rpc_events_have_a_reviewed_shape_and_unimplemented_kinds_keep_json() {
 #[test]
 fn every_reviewed_event_fixture_decodes_and_roundtrips() {
     let fixtures: Vec<Value> = serde_json::from_str(include_str!("fixtures/events.json")).unwrap();
-    assert_eq!(fixtures.len(), 52);
+    assert_eq!(fixtures.len(), 62);
     for mut raw in fixtures {
         raw["future"] = json!({"extension":true});
         let event: Event =

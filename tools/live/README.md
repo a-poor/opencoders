@@ -34,7 +34,9 @@ state; it is not an OS sandbox or a guarantee against upstream network activity.
 The test checks the server PID, version, temporary path, and initially empty
 session list before writing fixtures. It creates eight initially empty sessions through the
 SDK and imports one additional transcript with seven fixed messages through raw
-HTTP solely for fixture setup. All covered operations use the SDK, and all nine
+HTTP solely for fixture setup. The log test also seeds captured rename events
+into the runner-owned SQLite database (details below). All covered operations use
+the SDK, and all nine
 sessions are deleted before completion. Prompt fixtures explicitly use `resume(false)`
 and inbox updates only queue work, so the test does not wake model execution or connect
 to an existing server. Do not manually point its environment
@@ -64,6 +66,7 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.message.list` | Empty/populated history, newest-first default, both ordering directions and next/previous traversal, type filters, empty boundary pages, invalid cursor and cursor/order conflicts, zero-limit rejection, and missing-session errors. |
 | `session.message.get` | Every imported message round-trips, including user attachments and assistant reasoning/tool content; missing and wrong-session message errors are typed. |
 | `event.subscribe` | Independent filtered SSE subscriptions, connected markers, typed renames across directories, inbox enqueue/cancel events, filter exclusion, and continued observation after dropping another subscription. |
+| `experimental.session.log` | Stock CLI marker-only behavior; finite/default and follow modes; optional/future `after`, empty replay and watermark gaps; typed missing-session/bad-sequence errors. Seeded captured events verify exclusive replay, cross-aggregate isolation, follow, and resumption. |
 | `session.prompt` | Durable admission with `resume(false)`, explicit/generated IDs, omitted/null delivery defaulting to steer, empty text, inline file preparation, agent attachments, metadata, duplicate-ID reconciliation, cross-session conflicts, and preparation/missing-session errors. |
 | `session.inbox.list` | Pending user payloads, enqueue order independent of ID order, and no projected history before delivery. Other inbox kinds are covered by fixtures/mocks. |
 | `session.inbox.update` | Empty HTTP 204 for steer-to-queue changes; order retained; same-mode, unavailable, and wrong-session items return typed HTTP 409; missing sessions return 404. |
@@ -171,11 +174,45 @@ Fragmentation, heartbeats, EOF, transport failures, protocol failure frames, and
 timeouts are deterministic mock/socket tests. The declared failure-frame contract
 does not establish how every server disconnect or overflow will be signaled.
 
+### Durable log retention and replay
+
+The v2.2.5 CLI does **not** retain durable event payloads. The pinned
+[CLI launch code](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/cli/src/server-process.ts)
+does not pass `events.persist`; the [server route setup](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/routes.ts)
+forwards this optional setting, and the [bus implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/bus.ts)
+defaults persistence to false. Live checks confirm that a normal session log emits
+only `log.synced`, its sequence advances after a rename, and following receives
+no payload for that unretained change. The SDK does not change server retention.
+
+To verify decoding and replay against the actual server encoder, the test captures
+real SDK-triggered rename events from the live feed. [`seed_log.py`](seed_log.py)
+inserts those exact event IDs, sequences, timestamps, and payloads into the owned
+runner database, using the pinned [event table format](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/event/sql.ts).
+It verifies the runner ownership marker, confines writes to its temporary root,
+requires existing committed sequences, and leaves projections/counters untouched.
+This is fixture preparation, not an SDK feature or a claim of normal CLI retention.
+
+Seeded checks assert ordered replay, exclusive `after`, marker-only reads at/beyond
+the watermark, cross-session isolation, explicit resumption, and follow delivery.
+For the last case, the test seeds a captured event and uses a subsequent ordinary
+rename to wake the DB-backed tail. Subsequent events and gaps remain observable;
+the sync marker can exceed the last retained/returned event. The tested encoder
+omits SSE IDs for both event and marker payloads; the SDK preserves IDs when present
+in protocol tests without deriving a cursor from them.
+
+The pinned [session implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session.ts)
+filters the bus log to durable session kinds. The bus subscribes before capturing
+the watermark, reads retained rows in pages, emits one marker, and tails on durable
+notifications. Missing/unknown stored kinds can produce gaps. This does not prove
+REST snapshot consistency, persistence across restart, fork-inherited replay,
+retention guarantees, or provider-generated history. Those remain unverified;
+applications must refresh authoritative snapshots and own their checkpoints.
+
 The existing [`openapi/provenance.json`](../../openapi/provenance.json) describes
 the original schema download, whose originating server release remains unknown.
 Its `info.version: 0.0.1` is not this server's version. Testing v2.2.5 does not
 retroactively identify that schema's source release. Concurrent session changes,
-maximum page sizes, project/subpath filtering, explicit-null discovery queries, durable session logs,
+maximum page sizes, project/subpath filtering, explicit-null discovery queries, durable log retention across restarts/forks,
 provider execution, and other platforms remain unverified.
 
 ## CI

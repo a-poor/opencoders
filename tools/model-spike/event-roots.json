@@ -130,6 +130,16 @@
     "type": "session.inbox.enqueued"
   },
   {
+    "schema": "session.instructions.updated",
+    "variant": "SessionInstructionsUpdated",
+    "type": "session.instructions.updated"
+  },
+  {
+    "schema": "session.message.content.updated",
+    "variant": "SessionMessageContentUpdated",
+    "type": "session.message.content.updated"
+  },
+  {
     "schema": "session.metadata.updated",
     "variant": "SessionMetadataUpdated",
     "type": "session.metadata.updated"
@@ -175,6 +185,36 @@
     "type": "session.retry.scheduled"
   },
   {
+    "schema": "session.revert.cleared",
+    "variant": "SessionRevertCleared",
+    "type": "session.revert.cleared"
+  },
+  {
+    "schema": "session.revert.committed",
+    "variant": "SessionRevertCommitted",
+    "type": "session.revert.committed"
+  },
+  {
+    "schema": "session.revert.staged",
+    "variant": "SessionRevertStaged",
+    "type": "session.revert.staged"
+  },
+  {
+    "schema": "session.shell.ended",
+    "variant": "SessionShellEnded",
+    "type": "session.shell.ended"
+  },
+  {
+    "schema": "session.shell.started",
+    "variant": "SessionShellStarted",
+    "type": "session.shell.started"
+  },
+  {
+    "schema": "session.skill.activated",
+    "variant": "SessionSkillActivated",
+    "type": "session.skill.activated"
+  },
+  {
     "schema": "session.step.ended",
     "variant": "SessionStepEnded",
     "type": "session.step.ended"
@@ -193,6 +233,11 @@
     "schema": "session.step.streamed",
     "variant": "SessionStepStreamed",
     "type": "session.step.streamed"
+  },
+  {
+    "schema": "session.synthetic",
+    "variant": "SessionSynthetic",
+    "type": "session.synthetic"
   },
   {
     "schema": "session.text.delta",
@@ -248,6 +293,11 @@
     "schema": "session.unarchived",
     "variant": "SessionUnarchived",
     "type": "session.unarchived"
+  },
+  {
+    "schema": "session.usage.recorded",
+    "variant": "SessionUsageRecorded",
+    "type": "session.usage.recorded"
   },
   {
     "schema": "session.usage.updated",

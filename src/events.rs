@@ -1,7 +1,4 @@
-use crate::{
-    Client, DecodeError, Error, Result, StatusCode, StreamError, StreamErrorKind, TransportError,
-    models::Event, sse::Decoder,
-};
+use crate::{Client, Result, models::Event, sse_stream::SseStream};
 use futures_core::{Stream, stream::FusedStream};
 use std::{
     fmt,
@@ -82,86 +79,31 @@ impl Events<'_> {
     /// No `Last-Event-ID` is synthesized. Reopening can miss or duplicate events;
     /// applications must refresh authoritative state after a disconnect.
     pub async fn subscribe(&self, options: &EventOptions) -> Result<EventStream> {
-        let (response, diagnostic_limit) = self.client.open_event_response(options).await?;
-        let state = State {
-            response,
-            decoder: Decoder::new(options.max_event_bytes),
-            pending: bytes::Bytes::new(),
-            idle_timeout: options.idle_timeout,
-            frame_limit: options.max_event_bytes,
-            diagnostic_limit,
-        };
-        let inner = futures_util::stream::try_unfold(state, |mut state| async move {
-            loop {
-                while !state.pending.is_empty() {
-                    let b = state.pending[0];
-                    use bytes::Buf;
-                    state.pending.advance(1);
-                    if let Some(frame) = state.decoder.push(b).map_err(|()| {
-                        Error::Stream(
-                            StreamError::new(StreamErrorKind::FrameTooLarge, Some(StatusCode::OK))
-                                .with_limit(state.frame_limit),
-                        )
-                    })? {
-                        if frame.event == "effect/http-api/stream/failure" {
-                            return Err(Error::Stream(
-                                StreamError::new(
-                                    StreamErrorKind::ServerFailure,
-                                    Some(StatusCode::OK),
-                                )
-                                .with_body(frame.data.as_bytes(), state.diagnostic_limit),
-                            ));
-                        }
-                        let event = serde_json::from_str(&frame.data).map_err(|source| {
-                            Error::Decode(DecodeError::new(
-                                OPERATION,
-                                StatusCode::OK,
-                                frame.data.as_bytes(),
-                                state.diagnostic_limit,
-                                source,
-                            ))
-                        })?;
-                        let message = EventMessage {
-                            event,
-                            id: frame.id,
-                            event_name: frame.event,
-                            retry: frame.retry,
-                        };
-                        return Ok(Some((message, state)));
-                    }
-                }
-                let chunk = if let Some(timeout) = state.idle_timeout {
-                    tokio::time::timeout(timeout, state.response.chunk())
-                        .await
-                        .map_err(|_| {
-                            Error::Stream(StreamError::new(
-                                StreamErrorKind::IdleTimeout,
-                                Some(StatusCode::OK),
-                            ))
-                        })?
-                } else {
-                    state.response.chunk().await
-                };
-                match chunk.map_err(|source| {
-                    Error::Transport(TransportError::new(OPERATION, Some(StatusCode::OK), source))
-                })? {
-                    Some(chunk) => state.pending = chunk,
-                    None => return Ok(None),
-                }
-            }
-        });
+        let query = options
+            .types
+            .iter()
+            .map(|v| ("types", v.clone()))
+            .collect::<Vec<_>>();
+        let (response, diagnostic_limit) = self
+            .client
+            .open_sse_response(
+                "api/event",
+                &[],
+                OPERATION,
+                &query,
+                options.handshake_timeout,
+            )
+            .await?;
         Ok(EventStream {
-            inner: Some(Box::pin(inner)),
+            inner: SseStream::new(
+                response,
+                OPERATION,
+                options.idle_timeout,
+                options.max_event_bytes,
+                diagnostic_limit,
+            ),
         })
     }
-}
-struct State {
-    response: reqwest::Response,
-    decoder: Decoder,
-    pending: bytes::Bytes,
-    idle_timeout: Option<Duration>,
-    frame_limit: usize,
-    diagnostic_limit: usize,
 }
 
 /// Decoded payload and independent SSE framing metadata. Debug includes payloads.
@@ -187,7 +129,7 @@ pub struct EventMessage {
 /// Cancelling a pending `next()` future leaves the subscription and parser intact.
 /// No task, unbounded event queue, broadcast channel, or reconnect loop is spawned.
 pub struct EventStream {
-    inner: Option<Pin<Box<dyn Stream<Item = Result<EventMessage>> + Send>>>,
+    inner: SseStream<Event>,
 }
 impl EventStream {
     /// Read the next event. Also implements [`Stream`] for stream combinators.
@@ -196,32 +138,35 @@ impl EventStream {
     }
     /// Release the connection immediately; subsequent reads return `None`.
     pub fn close(&mut self) {
-        self.inner = None;
+        self.inner.close();
     }
 }
 impl Stream for EventStream {
     type Item = Result<EventMessage>;
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let this = self.get_mut();
-        let Some(inner) = this.inner.as_mut() else {
-            return Poll::Ready(None);
-        };
-        let result = inner.as_mut().poll_next(cx);
-        if matches!(&result, Poll::Ready(None | Some(Err(_)))) {
-            this.inner = None;
-        }
-        result
+        Pin::new(&mut self.get_mut().inner)
+            .poll_next(cx)
+            .map(|item| {
+                item.map(|result| {
+                    result.map(|message| EventMessage {
+                        event: message.data,
+                        id: message.id,
+                        event_name: message.event_name,
+                        retry: message.retry,
+                    })
+                })
+            })
     }
 }
 impl FusedStream for EventStream {
     fn is_terminated(&self) -> bool {
-        self.inner.is_none()
+        self.inner.is_terminated()
     }
 }
 impl fmt::Debug for EventStream {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("EventStream")
-            .field("closed", &self.inner.is_none())
+            .field("closed", &self.inner.is_terminated())
             .finish_non_exhaustive()
     }
 }

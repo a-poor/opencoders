@@ -467,6 +467,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     verify_selection(&client, &fallback, &elsewhere.id, workspace, other).await;
     verify_prompt_inbox(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     verify_events(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
+    verify_session_logs(&client, &ids[1].parse().unwrap(), &elsewhere.id).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())
@@ -485,6 +486,208 @@ async fn pinned_server_discovery_and_session_pagination() {
             .data
             .is_empty()
     );
+}
+
+async fn verify_session_logs(
+    client: &Client,
+    id: &opencoders::models::SessionId,
+    other: &opencoders::models::SessionId,
+) {
+    use opencoders::{
+        EventOptions, SessionLogOptions, SessionLogStream,
+        models::{Event, SessionLogItem},
+    };
+    async fn read(stream: &mut SessionLogStream) -> Option<opencoders::SessionLogMessage> {
+        tokio::time::timeout(Duration::from_secs(5), stream.next())
+            .await
+            .expect("log deadline")
+            .map(|v| v.expect("log item"))
+    }
+    async fn collect(
+        client: &Client,
+        id: &opencoders::models::SessionId,
+        options: &SessionLogOptions,
+    ) -> Vec<opencoders::SessionLogMessage> {
+        let mut stream = client
+            .sessions()
+            .experimental_log(id, options)
+            .await
+            .unwrap();
+        let mut items = Vec::new();
+        while let Some(item) = read(&mut stream).await {
+            items.push(item);
+            assert!(items.len() < 100);
+        }
+        items
+    }
+    fn seed(events: &[serde_json::Value]) {
+        use std::{
+            io::Write,
+            process::{Command, Stdio},
+        };
+        let mut child = Command::new("python3")
+            .arg("tools/live/seed_log.py")
+            .stdin(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(&serde_json::to_vec(events).unwrap())
+            .unwrap();
+        assert!(child.wait().unwrap().success());
+    }
+    let options = SessionLogOptions::default();
+    // Stock CLI behavior: sequence counters exist, but event payloads are not retained.
+    let initial = collect(client, id, &options).await;
+    assert_eq!(initial.len(), 1);
+    assert!(matches!(initial[0].item, SessionLogItem::Synced(_)));
+    let initial_seq = initial[0].item.sequence().unwrap();
+    assert!(initial_seq > 0);
+    assert!(initial[0].id.is_none());
+    let mut stock = client
+        .sessions()
+        .experimental_log(id, &options.clone().follow(true))
+        .await
+        .unwrap();
+    assert!(matches!(
+        read(&mut stock).await.unwrap().item,
+        SessionLogItem::Synced(_)
+    ));
+    client
+        .sessions()
+        .update(
+            id,
+            &SessionUpdateRequest::default().title("Log stock retention check"),
+        )
+        .await
+        .unwrap();
+    assert!(
+        tokio::time::timeout(Duration::from_millis(150), stock.next())
+            .await
+            .is_err()
+    );
+    stock.close();
+    let advanced = collect(client, id, &options).await;
+    assert_eq!(advanced.len(), 1);
+    assert!(advanced[0].item.sequence().unwrap() > initial_seq);
+    // Seed only real captured events into the owned DB; projections/counters stay untouched.
+    let mut feed = client
+        .events()
+        .subscribe(&EventOptions::default().types(["session.renamed"]))
+        .await
+        .unwrap();
+    assert!(matches!(
+        feed.next().await.unwrap().unwrap().event,
+        Event::ServerConnected(_)
+    ));
+    let mut recorded = Vec::new();
+    for (session, title) in [
+        (id, "Log replay first"),
+        (other, "Log other aggregate"),
+        (id, "Log replay second"),
+    ] {
+        client
+            .sessions()
+            .update(session, &SessionUpdateRequest::default().title(title))
+            .await
+            .unwrap();
+        let message = tokio::time::timeout(Duration::from_secs(5), feed.next())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert_eq!(message.event.durable_aggregate_id(), Some(session.as_str()));
+        recorded.push(serde_json::to_value(message.event).unwrap());
+    }
+    seed(&recorded);
+    let replay = collect(client, id, &options).await;
+    assert_eq!(replay.len(), 3);
+    let first = recorded[0]["durable"]["seq"].as_u64().unwrap();
+    let second = recorded[2]["durable"]["seq"].as_u64().unwrap();
+    assert_eq!(
+        replay
+            .iter()
+            .map(|v| v.item.sequence().unwrap())
+            .collect::<Vec<_>>(),
+        [first, second, second]
+    );
+    assert!(matches!(replay[2].item, SessionLogItem::Synced(_)));
+    // The Effect SSE encoder does not add IDs for these payloads.
+    assert!(replay.iter().all(|v| v.id.is_none()));
+    let after = collect(client, id, &options.clone().after(first).follow(false)).await;
+    assert_eq!(after.len(), 2);
+    assert_eq!(after[0].item.sequence(), Some(second));
+    for after in [second, second + 100] {
+        let items = collect(client, id, &options.clone().after(after)).await;
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].item.sequence(), Some(second));
+    }
+    let elsewhere = collect(client, other, &options).await;
+    assert_eq!(elsewhere.len(), 2);
+    assert_eq!(elsewhere[0].item.aggregate_id(), Some(other.as_str()));
+    let mut follow = client
+        .sessions()
+        .experimental_log(id, &options.clone().after(second).follow(true))
+        .await
+        .unwrap();
+    assert!(matches!(
+        read(&mut follow).await.unwrap().item,
+        SessionLogItem::Synced(_)
+    ));
+    client
+        .sessions()
+        .update(
+            id,
+            &SessionUpdateRequest::default().title("Log retained follow fixture"),
+        )
+        .await
+        .unwrap();
+    let event = tokio::time::timeout(Duration::from_secs(5), feed.next())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .event;
+    let seq = event.durable_sequence().unwrap();
+    seed(&[serde_json::to_value(event).unwrap()]);
+    // A later ordinary commit wakes the pinned DB-backed tail after fixture seeding.
+    client
+        .sessions()
+        .update(
+            id,
+            &SessionUpdateRequest::default().title("Log follow wake"),
+        )
+        .await
+        .unwrap();
+    let item = read(&mut follow).await.unwrap();
+    assert_eq!(item.item.sequence(), Some(seq));
+    assert!(matches!(item.item, SessionLogItem::Event(_)));
+    follow.close();
+    drop(feed);
+    let resumed = collect(client, id, &options.clone().after(seq)).await;
+    assert_eq!(resumed.len(), 1);
+    assert!(resumed[0].item.sequence().unwrap() > seq);
+    let Error::Http(e) = client
+        .sessions()
+        .experimental_log(&"ses_missing_log".parse().unwrap(), &options)
+        .await
+        .unwrap_err()
+    else {
+        panic!("missing session")
+    };
+    assert_eq!(e.status(), 404);
+    assert!(matches!(
+        e.api_error(),
+        Some(ApiError::SessionNotFound { .. })
+    ));
+    let error = client
+        .sessions()
+        .experimental_log(id, &options.after(u64::MAX))
+        .await
+        .unwrap_err();
+    assert_eq!(error.status().unwrap(), 400);
 }
 
 async fn verify_events(
