@@ -8957,76 +8957,28 @@ impl ::std::convert::TryFrom<::std::string::String> for FormStringField1Type {
     }
 }
 ///`FormValue1`
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
 #[non_exhaustive]
-pub struct FormValue1 {
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_0: ::std::option::Option<::std::string::String>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_1: ::std::option::Option<::serde_json::Number>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_2: ::std::option::Option<FormValue1Subtype2>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_3: ::std::option::Option<bool>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_4: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+pub enum FormValue1 {
+    String(::std::string::String),
+    Number(::serde_json::Number),
+    Boolean(bool),
+    Array(::std::vec::Vec<::std::string::String>),
 }
-///`FormValue1Subtype2`
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd
-)]
-#[non_exhaustive]
-pub enum FormValue1Subtype2 {
-    NaN,
-    Infinity,
-    #[serde(rename = "-Infinity")]
-    XInfinity,
-}
-impl ::std::fmt::Display for FormValue1Subtype2 {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::NaN => f.write_str("NaN"),
-            Self::Infinity => f.write_str("Infinity"),
-            Self::XInfinity => f.write_str("-Infinity"),
-        }
+impl ::std::convert::From<::serde_json::Number> for FormValue1 {
+    fn from(value: ::serde_json::Number) -> Self {
+        Self::Number(value)
     }
 }
-impl ::std::str::FromStr for FormValue1Subtype2 {
-    type Err = self::error::ConversionError;
-    fn from_str(
-        value: &str,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "NaN" => Ok(Self::NaN),
-            "Infinity" => Ok(Self::Infinity),
-            "-Infinity" => Ok(Self::XInfinity),
-            _ => Err("invalid value".into()),
-        }
+impl ::std::convert::From<bool> for FormValue1 {
+    fn from(value: bool) -> Self {
+        Self::Boolean(value)
     }
 }
-impl ::std::convert::TryFrom<&str> for FormValue1Subtype2 {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &str,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for FormValue1Subtype2 {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
+impl ::std::convert::From<::std::vec::Vec<::std::string::String>> for FormValue1 {
+    fn from(value: ::std::vec::Vec<::std::string::String>) -> Self {
+        Self::Array(value)
     }
 }
 ///`FormWhen1`
@@ -9096,74 +9048,22 @@ impl ::std::convert::TryFrom<::std::string::String> for FormWhen1Op {
     }
 }
 ///`FormWhen1Value`
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug, Default)]
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
 #[non_exhaustive]
-pub struct FormWhen1Value {
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_0: ::std::option::Option<::std::string::String>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_1: ::std::option::Option<::serde_json::Number>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_2: ::std::option::Option<FormWhen1ValueSubtype2>,
-    #[serde(flatten, skip_serializing_if = "::std::option::Option::is_none")]
-    pub subtype_3: ::std::option::Option<bool>,
+pub enum FormWhen1Value {
+    String(::std::string::String),
+    Number(::serde_json::Number),
+    Boolean(bool),
 }
-///`FormWhen1ValueSubtype2`
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd
-)]
-#[non_exhaustive]
-pub enum FormWhen1ValueSubtype2 {
-    NaN,
-    Infinity,
-    #[serde(rename = "-Infinity")]
-    XInfinity,
-}
-impl ::std::fmt::Display for FormWhen1ValueSubtype2 {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::NaN => f.write_str("NaN"),
-            Self::Infinity => f.write_str("Infinity"),
-            Self::XInfinity => f.write_str("-Infinity"),
-        }
+impl ::std::convert::From<::serde_json::Number> for FormWhen1Value {
+    fn from(value: ::serde_json::Number) -> Self {
+        Self::Number(value)
     }
 }
-impl ::std::str::FromStr for FormWhen1ValueSubtype2 {
-    type Err = self::error::ConversionError;
-    fn from_str(
-        value: &str,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "NaN" => Ok(Self::NaN),
-            "Infinity" => Ok(Self::Infinity),
-            "-Infinity" => Ok(Self::XInfinity),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for FormWhen1ValueSubtype2 {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &str,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for FormWhen1ValueSubtype2 {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
+impl ::std::convert::From<bool> for FormWhen1Value {
+    fn from(value: bool) -> Self {
+        Self::Boolean(value)
     }
 }
 ///Instruction entry key (lowercase alphanumerics plus . _ -)

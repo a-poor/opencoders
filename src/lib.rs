@@ -2,7 +2,7 @@
 //!
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, projected message history, prompt admission,
-//! pending inbox management, interruption/waiting, permissions, live event subscriptions, and experimental session logs. Run
+//! pending inbox management, interruption/waiting, permissions, forms, live event subscriptions, and experimental session logs. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -160,6 +160,21 @@
 //! # }
 //! ```
 
+//! Discover forms and submit caller-provided answers:
+//! ```no_run
+//! # async fn answer_form(client: &opencoders::Client, session: &opencoders::models::SessionId,
+//! # id: &opencoders::models::FormId, answer: opencoders::models::FormAnswer) -> opencoders::Result<()> {
+//! use opencoders::models::SessionFormReplyRequest;
+//! let pending = client.forms().list().await?;
+//! let forms = client.sessions().forms(session);
+//! let current = forms.get(id).await?;
+//! forms.reply(id, &SessionFormReplyRequest::new(answer)).await?;
+//! // Applications render fields and collect answers; defaults are not submitted
+//! // implicitly. A successful reply may unblock work but does not prove success.
+//! # Ok(())
+//! # }
+//! ```
+
 //! Consume a caller-owned, global live subscription:
 //! ```no_run
 //! # async fn events(client: &opencoders::Client) -> opencoders::Result<()> {
@@ -202,6 +217,8 @@ pub use execution::{SessionInterruptOptions, SessionWaitOptions};
 mod inbox;
 mod permissions;
 pub use permissions::{Permissions, SessionPermissions};
+mod forms;
+pub use forms::{Forms, SessionFormCancelOptions, SessionForms};
 mod session_log;
 mod sse;
 mod sse_stream;

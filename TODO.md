@@ -76,7 +76,6 @@ No active implementation goal.
 
 - [ ] Implement session forking. Creation, retrieval, updates, and deletion are
   implemented with typed requests and appropriate response handling.
-- [ ] Implement pending form discovery and session form lifecycle/replies.
 - [ ] Add protocol tests for these resource methods and unknown server errors.
 
 ### Events and session logs
@@ -91,11 +90,6 @@ No active implementation goal.
 
 ### Examples and first usable release
 
-- [ ] Add a runnable Rust example for form replies. Use ordinary output
-  or assertions, with no GUI/TUI implementation. Session listing, creation, and
-  update/deletion lifecycle, model/agent configuration, message history, and
-  prompt/inbox, permission requests/replies, interruption/waiting, live event, and explicit log resumption
-  examples are implemented.
 - [ ] Add an example of background event consumption using minimal
   application-owned state. Explicit log resumption and snapshot refresh are
   demonstrated in `examples/session_log.rs` without a background task.
@@ -163,7 +157,7 @@ the additional API surface. Move an item into a milestone when it is prioritized
 
 ## Bugs
 
-No confirmed client implementation bugs are recorded yet.
+No unresolved client implementation bugs are recorded.
 
 For each new bug, add an unchecked task with the affected operation, expected
 versus actual behavior, reproduction steps or a regression fixture, relevant
@@ -216,6 +210,11 @@ when a decision is made.
   lifetime across location reload/server restart. Current live fixtures manually
   evaluate requests without executing tools; they confirm reply batching, saved
   allow effects, configured-deny precedence, and session/location ownership.
+- [ ] Verify form terminal expiry, restart/location teardown, concurrent settlement,
+  and resumption of actual waiting tools. Manual v2.2.5 fixtures cover discovery,
+  all field kinds, validation/default/condition/hidden semantics, answering and
+  cancellation, immediate terminal retrieval, ownership, and form events. The
+  ten-minute terminal retention is source-reviewed, not tested by waiting.
 - [ ] Verify snapshot reconciliation during concurrent execution and disconnection.
   Captured log watermarks are not atomic REST snapshot boundaries or retention
   guarantees; sequences can have gaps and a future `after` can exceed the marker.
@@ -224,6 +223,26 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Complete the typed form lifecycle goal with TDD: location-aware
+  `forms().list/list_at` and `sessions().forms(&id).list/get/create/reply/cancel`.
+  Preserve envelopes, encoded IDs, request optionality, bodyless cancellation
+  feedback, typed form errors, bounded diagnostics, and no automatic retries.
+- [x] Add reviewed `--forms` generation and the ninth CI generation check,
+  nonempty strict field inputs, six field kinds, scalar/list answers, and explicit
+  state dispatch. Share reviewed event response models behind equivalence guards.
+  Fix the existing event answer/condition scalar-union decoding bug with a failing
+  regression test followed by generator normalization.
+- [x] Verify manual forms on disposable v2.2.5/macOS arm64: location and session
+  isolation, null/generated/explicit IDs, duplicate IDs, all field kinds,
+  default/condition/hidden validation, invalid answers, reply/cancellation states,
+  and typed form events. No model calls or external URL fetches.
+- [x] Add `examples/forms.rs` and usage/design/compatibility documentation. Validate
+  184 client tests, 38 generator tests, thirteen doctests/examples, HTTP-only
+  tests, both Rust 1.88 builds, formatting, strict Clippy, docs, all nine generation
+  checks, eight runner tests, actionlint, and the pinned live smoke test. Timed
+  expiry, real tool resumption, concurrent settlement, and hosted Linux execution
+  remain separate validation work. No automatic commit.
 
 - [x] Complete permission request APIs with TDD: location-aware
   `permissions().list/list_at` and `sessions().permissions(&id).list/get/create/reply`.

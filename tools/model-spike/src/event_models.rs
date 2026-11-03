@@ -37,6 +37,7 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
     names.push("EventLog.Synced".into());
     let mut schema = select_schemas(&spec, &names.iter().map(String::as_str).collect::<Vec<_>>())?;
     guard_constraints(&schema)?;
+    crate::forms::normalize_form_values(&mut schema, "_1")?;
     schema["definitions"]["EventLog.Synced"]["description"] = json!(
         "Captured replay watermark over retained log rows. Not proof of complete event retention or reconstructible state. The sequence may exceed emitted events or precede a requested future cursor; absence represents an empty watermark."
     );
@@ -205,7 +206,7 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
     ))
 }
 
-fn pascal(s: &str) -> String {
+pub(crate) fn pascal(s: &str) -> String {
     s.split(|c: char| !c.is_ascii_alphanumeric())
         .filter(|s| !s.is_empty())
         .map(|s| {
@@ -220,6 +221,15 @@ fn pascal(s: &str) -> String {
 }
 
 fn enum_dispatch(name: &str, variants: &[(String, String, String)], unknown: bool) -> String {
+    enum_dispatch_tag(name, variants, unknown, "type")
+}
+
+pub(crate) fn enum_dispatch_tag(
+    name: &str,
+    variants: &[(String, String, String)],
+    unknown: bool,
+    tag_key: &str,
+) -> String {
     let mut out = format!(
         "/// Typed wire event or payload; malformed known tags fail decoding.\n#[derive(Clone,Debug,::serde::Serialize)] #[serde(untagged)] #[non_exhaustive] pub enum {name} {{"
     );
@@ -229,7 +239,7 @@ fn enum_dispatch(name: &str, variants: &[(String, String, String)], unknown: boo
     if unknown {
         out.push_str("/// Unimplemented or future kind, retaining the complete JSON object.\nUnknown(::serde_json::Value),");
     }
-    out.push_str(&format!("}} impl<'de> ::serde::Deserialize<'de> for {name} {{fn deserialize<D: ::serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{{let raw=<::serde_json::Value as ::serde::Deserialize>::deserialize(d)?; match raw.get(\"type\").and_then(::serde_json::Value::as_str){{"));
+    out.push_str(&format!("}} impl<'de> ::serde::Deserialize<'de> for {name} {{fn deserialize<D: ::serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{{let raw=<::serde_json::Value as ::serde::Deserialize>::deserialize(d)?; match raw.get({tag_key:?}).and_then(::serde_json::Value::as_str){{"));
     for (variant, _, tag) in variants {
         let pattern = if tag == "rpc.*" {
             "Some(tag) if tag.starts_with(\"rpc.\")".to_owned()

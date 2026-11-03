@@ -233,6 +233,27 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// A form is missing, expired, or belongs to another session.
+    FormNotFound {
+        /// Raw form ID; error schemas do not impose an ID prefix.
+        id: String,
+        /// Server-provided explanation.
+        message: String,
+    },
+    /// A form has already been answered or cancelled.
+    FormAlreadySettled {
+        /// Raw form ID.
+        id: String,
+        /// Server-provided explanation.
+        message: String,
+    },
+    /// Answers failed server-side form validation; the form remains pending.
+    FormInvalidAnswer {
+        /// Raw form ID.
+        id: String,
+        /// Server-provided validation explanation.
+        message: String,
+    },
     /// A permission request is missing, resolved, or belongs to another session.
     PermissionNotFound {
         /// Raw server-reported request ID; the error schema imposes no prefix.
@@ -313,6 +334,18 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            FormNotFoundError {
+                id: String,
+                message: String,
+            },
+            FormAlreadySettledError {
+                id: String,
+                message: String,
+            },
+            FormInvalidAnswerError {
+                id: String,
+                message: String,
+            },
             PermissionNotFoundError {
                 #[serde(rename = "requestID")]
                 request_id: String,
@@ -360,6 +393,13 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::FormNotFoundError { id, message }) => Self::FormNotFound { id, message },
+            Ok(Known::FormAlreadySettledError { id, message }) => {
+                Self::FormAlreadySettled { id, message }
+            }
+            Ok(Known::FormInvalidAnswerError { id, message }) => {
+                Self::FormInvalidAnswer { id, message }
+            }
             Ok(Known::PermissionNotFoundError {
                 request_id,
                 message,
@@ -413,6 +453,9 @@ impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::PermissionNotFound { .. } => "PermissionNotFound { .. }",
+            Self::FormNotFound { .. } => "FormNotFound { .. }",
+            Self::FormAlreadySettled { .. } => "FormAlreadySettled { .. }",
+            Self::FormInvalidAnswer { .. } => "FormInvalidAnswer { .. }",
             Self::Conflict { .. } => "Conflict { .. }",
             Self::AgentNotFound { .. } => "AgentNotFound { .. }",
             Self::MessageNotFound { .. } => "MessageNotFound { .. }",

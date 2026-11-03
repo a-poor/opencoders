@@ -15,6 +15,26 @@ pub mod events;
 pub use events::{
     Event, EventLogSynced, PermissionId, PermissionReply, PermissionSource, PermissionSourceType,
 };
+pub use events::{
+    EventFormField as FormField, FormAnswer1 as FormAnswer, FormFields1 as FormFields, FormId,
+    FormInfo1 as FormInfo, FormMetadata, FormValue1 as FormValue,
+    FormWhen1Value as FormConditionValue,
+};
+#[rustfmt::skip]
+mod forms;
+pub use forms::{
+    FormBooleanFieldInput, FormBooleanFieldInputType, FormDetail, FormExternalFieldInput,
+    FormExternalFieldInputType, FormFieldInput, FormIntegerFieldInput, FormIntegerFieldInputType,
+    FormListResponse, FormMultiselectFieldInput, FormMultiselectFieldInputType, FormNumber,
+    FormNumberFieldInput, FormNumberFieldInputType, FormNumberString, FormOptionInput, FormState,
+    FormStateAnswered, FormStateAnsweredStatus, FormStateCancelled, FormStateCancelledStatus,
+    FormStatePending, FormStatePendingStatus, FormStringFieldInput, FormStringFieldInputFormat,
+    FormStringFieldInputType, FormWhenInput, FormWhenInputOp, SessionFormCreateRequest,
+    SessionFormCreateResponse, SessionFormListResponse, SessionFormReplyRequest,
+    SessionFormResponse,
+};
+mod form_inputs;
+pub use form_inputs::{FormFieldsInput, FormInputError};
 #[rustfmt::skip]
 #[allow(dead_code)] // Typify emits a conversion-error helper unused by these models.
 mod permissions;
@@ -28,7 +48,7 @@ mod permission_inputs;
 mod session_log_adapters;
 pub use session_log_adapters::SessionLogItem;
 mod event_adapters;
-pub use event_adapters::{EventInteger, EventVersion, NonEmptyEventItems};
+pub use event_adapters::{EventInteger, EventIntegerError, EventVersion, NonEmptyEventItems};
 
 use crate::RequestField;
 #[rustfmt::skip]

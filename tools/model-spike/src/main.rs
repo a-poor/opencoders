@@ -9,6 +9,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut spec: Value =
         serde_json::from_slice(&fs::read(root.join("openapi/opencode-v2.json"))?)?;
     let args: Vec<_> = env::args().skip(1).collect();
+    if args == ["--forms"] || args == ["--forms", "--check"] {
+        let output = opencoders_model_spike::forms::generate_forms(&spec)?;
+        let path = root.join("src/models/forms.rs");
+        if args.len() == 2 {
+            if fs::read_to_string(&path)? != output {
+                return Err("form models are stale; regenerate with --forms".into());
+            }
+            println!("Form models match the pinned inputs");
+        } else {
+            fs::write(&path, output)?;
+            println!("Generated {}", path.display());
+        }
+        return Ok(());
+    }
     if args == ["--permissions"] || args == ["--permissions", "--check"] {
         let output = opencoders_model_spike::permissions::generate_permissions(&spec)?;
         let path = root.join("src/models/permissions.rs");
@@ -119,7 +133,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         || (check && (all || raw))
     {
         return Err(
-            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check] | --events [--check] | --permissions [--check]]".into(),
+            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check] | --events [--check] | --permissions [--check] | --forms [--check]]".into(),
         );
     }
     let config: Value = serde_json::from_str(include_str!("../probes.json"))?;

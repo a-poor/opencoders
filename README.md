@@ -4,7 +4,7 @@
 
 The library currently supports server information, location/agent/model discovery,
 session management/listing and agent/model selection, message history/retrieval,
-prompt admission/inbox management, interruption/waiting, permission requests/replies, live event subscriptions,
+prompt admission/inbox management, interruption/waiting, permission requests/replies, forms, live event subscriptions,
 and experimental session logs. It targets developers building
 GUI/TUI clients and also supports automated consumers. Applications own their UI
 and state. See [DESIGN.md](DESIGN.md) and [TODO.md](TODO.md) for the plan and backlog.
@@ -488,6 +488,64 @@ evaluates a demonstration action, inspects/rejects its own pending request, and
 removes that session. It submits no prompt or tool call and saves no allow rules.
 Live tests also cover saved rules and cross-session effects in disposable data;
 actual tool resumption, plugins, races, and restart behavior remain unverified.
+
+## Forms
+
+```rust
+use opencoders::{Client, models::{FormAnswer, FormId, SessionId, SessionFormReplyRequest}};
+
+async fn answer(client: &Client, session: &SessionId, id: &FormId,
+                answer: FormAnswer) -> opencoders::Result<()> {
+    let forms = client.sessions().forms(session);
+    let current = forms.get(id).await?;
+    // Present current.data.fields and collect explicit answers in your application.
+    forms.reply(id, &SessionFormReplyRequest::new(answer)).await
+}
+```
+
+`client.forms().list/list_at` discovers pending forms by location and preserves
+resolved location metadata. `client.sessions().forms(&id)` exposes `list`, `get`,
+`create`, `reply`, and `cancel`; session location comes from the server. Discovery
+is a snapshot and forms may settle between listing and replying.
+
+`SessionFormCreateRequest::new(title, fields)` accepts a nonempty `FormFieldsInput`.
+Construct fields with `FormStringFieldInput::new`, `FormNumberFieldInput::new`,
+`FormIntegerFieldInput::new`, `FormBooleanFieldInput::new`,
+`FormMultiselectFieldInput::new`, and `FormExternalFieldInput::new`. Public optional
+fields expose labels, constraints, options, defaults, and conditions. Creation
+returns a pending form immediately, without a model call or waiting for an answer.
+Optional ID uses `RequestField`; null acts like omission on v2.2.5. Duplicate IDs
+conflict, including IDs of retained completed forms. No mutation is retried.
+
+Answers map field keys to `FormValue`: strings, JSON numbers, booleans, or string
+lists. Numeric values retain JSON integer precision. Special-number wire strings
+remain strings in answers/conditions; numeric field limits/defaults use `FormNumber`.
+The server validates answers. In v2.2.5:
+
+- Defaults are presentation data, not automatically submitted answers.
+- Conditions refer to earlier fields and are combined with AND. An unanswered
+  reference makes either comparison false; inactive fields cannot be answered.
+- `hidden` does not bypass validation. External fields require an explicit `true`
+  acknowledgement; this library never opens their URLs.
+- Invalid answers leave the form pending. Successful replies may unblock waiting
+  server work; they do not prove that work succeeded.
+
+`get` returns `FormState::Pending`, `Answered`, or `Cancelled`. Lists contain only
+pending forms. Forms live in location-service memory; completed forms are retained
+for ten minutes in the pinned server, not as durable history. Missing/expired or
+wrong-session forms produce `ApiError::FormNotFound`; later replies/cancellations
+produce `FormAlreadySettled`, and invalid answers produce `FormInvalidAnswer`.
+
+Cancel with `SessionFormCancelOptions::default()` or `.message("reason")`. The
+message goes in a bodyless DELETE query; absent and empty remain distinct. Feedback
+is present in cancelled state but absent from the v2.2.5 cancellation event. HTTP
+responses and form events share IDs, field models, and answer values. Refresh
+snapshots after stream interruption; the library owns no UI or application state.
+
+Run `cargo run --example forms` with `OPENCODE_BASE_URL`, `OPENCODE_DIRECTORY`, and
+optional `OPENCODE_PASSWORD`. It creates a fresh session, answers and cancels only
+its own manual fixtures, then removes the session. It neither renders a UI nor
+starts model work. See [live compatibility notes](tools/live/README.md).
 
 ## Live events
 

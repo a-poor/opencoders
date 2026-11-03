@@ -167,3 +167,28 @@ fn nested_inbox_status_and_form_tags_preserve_extensions_and_required_fields() {
         .is_err()
     );
 }
+#[test]
+fn form_answers_and_conditions_round_trip_wire_scalars_without_object_flattening() {
+    use opencoders::models::events::{FormValue1, FormWhen1Value};
+    for raw in [
+        json!("hello"),
+        json!("NaN"),
+        json!("Infinity"),
+        json!("-Infinity"),
+        json!(false),
+        json!(9007199254740993_u64),
+        json!(1.25),
+    ] {
+        let answer: FormValue1 = serde_json::from_value(raw.clone()).unwrap();
+        let condition: FormWhen1Value = serde_json::from_value(raw.clone()).unwrap();
+        assert_eq!(serde_json::to_value(answer).unwrap(), raw);
+        assert_eq!(serde_json::to_value(condition).unwrap(), raw);
+    }
+    let answer: FormValue1 = serde_json::from_value(json!(["a", "a"])).unwrap();
+    assert_eq!(serde_json::to_value(answer).unwrap(), json!(["a", "a"]));
+    for raw in [json!(null), json!({}), json!([1])] {
+        assert!(serde_json::from_value::<FormValue1>(raw.clone()).is_err());
+        assert!(serde_json::from_value::<FormWhen1Value>(raw).is_err());
+    }
+    assert!(serde_json::from_value::<FormWhen1Value>(json!([])).is_err());
+}

@@ -77,6 +77,18 @@ been exercised in this repository. Hosted workflow runs require pushing the file
 | `session.permission.create` | Immediate allow/deny/ask results; only ask appears as pending; explicit/generated/null ID and null agent, tool source, metadata, resource order, save patterns, and missing-session errors. |
 | `session.permission.list/get` | Session ownership and pending snapshots; missing/resolved/wrong-session request errors. |
 | `session.permission.reply` | Once resolves one; reject resolves the session batch; always saves project rules when patterns exist and resolves matching pending requests in another session at the same location. Empty/absent patterns save nothing; configured denies win. Empty/null/nonempty feedback accepted; repeated/wrong-session replies fail. |
+| `form.list` | Pending location snapshots, resolved metadata, explicit directory, header fallback and query precedence; missing-location errors. |
+| `session.form.list/create/get` | All six field kinds, generated/null/explicit IDs, metadata, pending-only lists, session/location isolation, duplicate pending/settled IDs, wrong-session/missing IDs, and required field-definition validation. |
+| `session.form.reply` | Scalar/list answers, required defaults not applied, finite/integer/closed-option/external acknowledgement validation, conditional inactive fields, hidden-field validation, invalid answers remaining pending, and answered-state retention. |
+| `session.form.cancel` | Bodyless DELETE with omitted/empty/Unicode feedback; terminal state retains feedback; repeated cancellation/reply returns settled errors. |
+| Form events | Typed `form.created`, `form.replied`, and `form.cancelled`; scalar conditions and answers decode; cancellation event omits feedback. |
+
+Form fixtures are manual and do not start model calls or open external URLs.
+The [pinned service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/form.ts)
+retains terminal forms in memory for ten minutes; the smoke run checks immediate
+terminal retrieval, not timed expiry or survival across restart/location teardown.
+Concurrent replies/cancellations and resumption of actual waiting tools remain
+unverified. Snapshot discovery and live events do not provide durable form history.
 
 Two pagination details matter for consumers:
 

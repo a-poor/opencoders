@@ -11,6 +11,20 @@ impl<const MIN: u64, const MAX: u64> EventInteger<MIN, MAX> {
         self.0
     }
 }
+impl<const MIN: u64, const MAX: u64> TryFrom<u64> for EventInteger<MIN, MAX> {
+    type Error = EventIntegerError;
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        if (MIN..=MAX).contains(&value) {
+            Ok(Self(value))
+        } else {
+            Err(EventIntegerError)
+        }
+    }
+}
+/// A value outside the integer bounds of the pinned schema.
+#[derive(Clone, Copy, Debug, thiserror::Error)]
+#[error("integer outside schema bounds")]
+pub struct EventIntegerError;
 impl<'de, const MIN: u64, const MAX: u64> Deserialize<'de> for EventInteger<MIN, MAX> {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         let n = u64::deserialize(d)?;

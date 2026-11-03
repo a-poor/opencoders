@@ -369,11 +369,23 @@ impl Client {
         segments: &[&str],
         operation: &'static str,
     ) -> Result<()> {
-        self.send_empty(
-            self.request(Method::DELETE, self.segments_url(path, segments)),
-            operation,
-        )
-        .await
+        self.delete_empty_with_query(path, segments, operation, &[])
+            .await
+    }
+
+    pub(crate) async fn delete_empty_with_query(
+        &self,
+        path: &str,
+        segments: &[&str],
+        operation: &'static str,
+        query: &[(String, String)],
+    ) -> Result<()> {
+        let mut url = self.segments_url(path, segments);
+        if !query.is_empty() {
+            url.query_pairs_mut().extend_pairs(query);
+        }
+        self.send_empty(self.request(Method::DELETE, url), operation)
+            .await
     }
 
     fn json_request<B: serde::Serialize + ?Sized>(

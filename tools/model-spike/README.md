@@ -197,6 +197,29 @@ collections remain present. Response collections default to empty and omit empty
 values on serialization, consistent with event payloads. Constructors live in
 `src/models/permission_inputs.rs`; no local approval policy is generated.
 
+## Reviewed form models
+
+```sh
+cargo run --locked --offline -p opencoders-model-spike -- --forms
+cargo run --locked --offline -p opencoders-model-spike -- --forms --check
+```
+
+`src/models/forms.rs` contains discovery/lifecycle envelopes, strict inputs for
+all six field kinds, and explicit pending/answered/cancelled dispatch. Constructors
+and the nonempty field-list wrapper live in `src/models/form_inputs.rs`. Responses
+reuse event IDs/fields/answers/metadata only after structural-equivalence checks.
+Strict inputs preserve omitted/empty/false, nullable create ID uses `RequestField`,
+and all other optional inputs reject null. Guards check nonempty arrays, numeric
+constraints, request/state shapes, and union tags.
+
+The shared event generator now normalizes form answer/condition unions by removing
+a redundant enum branch already covered by arbitrary strings. Without that step,
+Typify emitted flattened structs that could not decode actual scalar answers.
+Regression tests cover strings (including special-number spellings), precise JSON
+numbers, booleans, and answer string arrays. Input numeric limits/defaults retain
+the separate number/special-string union. Server-owned semantic validation is not
+generated into the client. Run both `--events --check` and `--forms --check`.
+
 ## Run the experiment
 
 From the repository root, fetch the locked dependencies once if needed:

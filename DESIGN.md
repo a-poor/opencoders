@@ -369,6 +369,45 @@ The example rejects its own manually created request in a fresh session. Actual
 tool resumption, plugin hooks, concurrent decisions, and reload/restart lifetime
 remain separate compatibility work.
 
+### Forms and explicit answers
+
+`client.forms().list/list_at` retains location-scoped pending discovery envelopes.
+`sessions().forms(&id)` exposes pending lists, create/get/reply/cancel; the server
+resolves session ownership/location. Cancellation is a bodyless DELETE with an
+optional `message` query, preserving omission and empty strings. Reply/cancel
+accept HTTP 204. All calls share ordinary deadlines, bounded diagnostics, encoded
+ID segments, and no automatic mutation retries.
+
+The ninth generation target (`--forms`) extracts endpoint envelopes, strict
+creation/reply/field inputs, and explicit state dispatch. Response IDs, fields,
+metadata, and answers reuse event models only after guarded schema-equivalence
+checks. A scalar-union normalization removes a redundant special-number string
+branch that caused Typify to flatten answer/condition scalars into unusable objects;
+regressions cover primitive/list values and JSON integer precision. Numeric input
+limits/defaults share `FormNumber`; count constraints use checked integers, and
+`FormFieldsInput` enforces nonempty lists. Nullable create ID uses `RequestField`;
+other optional input fields preserve omission/empty/false and reject null.
+
+Applications own form rendering, default selection, condition display, external
+navigation, and explicit answer collection. The server owns semantic validation;
+the SDK does not duplicate its regex, condition, or option validator. Conditions
+are ANDed and reference earlier fields; inactive fields cannot be answered.
+Defaults are not answers, hidden fields still validate, and external fields require
+true acknowledgement. Invalid answers leave forms pending.
+
+The v2.2.5 service stores forms in location-scoped memory. Pending forms appear in
+lists; answered/cancelled states remain retrievable for ten minutes. Caller IDs
+are not idempotency keys, including while terminal entries remain cached. Typed
+errors cover missing/wrong-session forms, settled forms, and invalid answers.
+Replies may unblock server work; transport failures can follow applied effects.
+Events share form data, but cancellation feedback requires fetching state.
+
+Disposable live validation exercises all field kinds, conditions/defaults/hidden
+semantics, ownership/location isolation, null IDs, duplicate IDs, errors, terminal
+states, and creation/reply/cancellation events without model calls. Ten-minute
+expiry, restart/teardown lifetime, concurrent settlement, and actual tool resumption
+are source-reviewed or future validation work, not live guarantees.
+
 ### Generated models and hand-written behavior
 
 Use a hybrid approach: generate wire models from a pinned schema and hand-write

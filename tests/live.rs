@@ -481,6 +481,18 @@ async fn pinned_server_discovery_and_session_pagination() {
         other,
     )
     .await;
+    verify_forms(
+        &client,
+        &fallback,
+        [
+            &ids[1].parse().unwrap(),
+            &ids[2].parse().unwrap(),
+            &elsewhere.id,
+        ],
+        workspace,
+        other,
+    )
+    .await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())
@@ -499,6 +511,277 @@ async fn pinned_server_discovery_and_session_pagination() {
             .data
             .is_empty()
     );
+}
+
+async fn verify_forms(
+    client: &Client,
+    fallback: &Client,
+    ids: [&opencoders::models::SessionId; 3],
+    workspace: &str,
+    other: &str,
+) {
+    use opencoders::{EventOptions, SessionFormCancelOptions, models::*};
+    fn check(error: Error, status: u16, kind: &str) {
+        assert_eq!(error.status().unwrap(), status);
+        let Error::Http(error) = error else {
+            panic!("HTTP error")
+        };
+        let matches = match kind {
+            "missing" => matches!(error.api_error(), Some(ApiError::FormNotFound { .. })),
+            "settled" => matches!(error.api_error(), Some(ApiError::FormAlreadySettled { .. })),
+            "answer" => matches!(error.api_error(), Some(ApiError::FormInvalidAnswer { .. })),
+            "conflict" => matches!(error.api_error(), Some(ApiError::Conflict { .. })),
+            "invalid" => matches!(error.api_error(), Some(ApiError::InvalidRequest { .. })),
+            "session" => matches!(error.api_error(), Some(ApiError::SessionNotFound { .. })),
+            "location" => matches!(error.api_error(), Some(ApiError::LocationNotFound { .. })),
+            _ => false,
+        };
+        assert!(matches, "expected {kind}, got {:?}", error.api_error());
+    }
+    let forms = client.sessions().forms(ids[0]);
+    let sibling = client.sessions().forms(ids[1]);
+    let remote = client.sessions().forms(ids[2]);
+    let mut events = client
+        .events()
+        .subscribe(&EventOptions::default().types([
+            "form.created",
+            "form.replied",
+            "form.cancelled",
+        ]))
+        .await
+        .unwrap();
+    let mut request:SessionFormCreateRequest=serde_json::from_value(json!({"id":"frm_live_first","title":"Manual fixture","metadata":{"fixture":true},"fields":[
+        {"key":"enabled","type":"boolean","required":true},
+        {"key":"text","type":"string","required":true,"default":"not-an-answer","minLength":1,"when":[{"key":"enabled","op":"eq","value":true}]},
+        {"key":"number","type":"number","minimum":0,"maximum":3},
+        {"key":"integer","type":"integer","minimum":1},
+        {"key":"many","type":"multiselect","options":[{"value":"a","label":"A"}],"required":true,"minItems":1},
+        {"key":"external","type":"external","url":"https://example.invalid/no-fetch"}
+    ]})).unwrap();
+    let first = forms.create(&request).await.unwrap().data;
+    assert_eq!(first.metadata.as_ref().unwrap()["fixture"], true);
+    assert_eq!(first.fields.as_slice().len(), 6);
+    assert!(matches!(
+        forms.get(&first.id).await.unwrap().data.state,
+        FormState::Pending(_)
+    ));
+    check(forms.create(&request).await.unwrap_err(), 409, "conflict");
+    let mut simple = SessionFormCreateRequest::new(
+        "Cancel fixture",
+        FormFieldsInput::new(FormBooleanFieldInput::new("ok")),
+    );
+    simple.id = RequestField::Null;
+    let second = forms.create(&simple).await.unwrap().data;
+    simple.id = RequestField::Omitted;
+    let third = sibling.create(&simple).await.unwrap().data;
+    let outside = remote.create(&simple).await.unwrap().data;
+    let listed = client.forms().list().await.unwrap();
+    assert_eq!(listed.location.directory.as_str(), workspace);
+    assert_eq!(
+        listed
+            .data
+            .iter()
+            .map(|f| f.id.clone())
+            .collect::<BTreeSet<_>>(),
+        [first.id.clone(), second.id.clone(), third.id.clone()].into()
+    );
+    assert_eq!(forms.list().await.unwrap().data.len(), 2);
+    assert_eq!(
+        client
+            .forms()
+            .list_at(Location::directory(other))
+            .await
+            .unwrap()
+            .data[0]
+            .id,
+        outside.id
+    );
+    assert_eq!(fallback.forms().list().await.unwrap().data.len(), 3);
+    assert_eq!(
+        fallback
+            .forms()
+            .list_at(Location::directory(other))
+            .await
+            .unwrap()
+            .data[0]
+            .id,
+        outside.id
+    );
+    let answer = json!({"enabled":true,"text":"answer","number":1.5,"integer":2,"many":["a","a"],"external":true});
+    let reply = SessionFormReplyRequest::new(serde_json::from_value(answer.clone()).unwrap());
+    for id in [&first.id, &"frm_missing".parse().unwrap()] {
+        check(sibling.get(id).await.unwrap_err(), 404, "missing");
+        check(sibling.reply(id, &reply).await.unwrap_err(), 404, "missing");
+        check(
+            sibling
+                .cancel(id, &SessionFormCancelOptions::default())
+                .await
+                .unwrap_err(),
+            404,
+            "missing",
+        );
+    }
+    for (key, value) in [
+        ("number", json!("Infinity")),
+        ("integer", json!(1.5)),
+        ("many", json!(["unknown"])),
+        ("external", json!(false)),
+        ("enabled", json!(false)),
+        ("unknown", json!(true)),
+    ] {
+        let mut bad = answer.clone();
+        bad[key] = value;
+        check(
+            forms
+                .reply(
+                    &first.id,
+                    &SessionFormReplyRequest::new(serde_json::from_value(bad).unwrap()),
+                )
+                .await
+                .unwrap_err(),
+            400,
+            "answer",
+        );
+    }
+    let mut bad = answer.clone();
+    bad.as_object_mut().unwrap().remove("text");
+    check(
+        forms
+            .reply(
+                &first.id,
+                &SessionFormReplyRequest::new(serde_json::from_value(bad).unwrap()),
+            )
+            .await
+            .unwrap_err(),
+        400,
+        "answer",
+    );
+    assert!(matches!(
+        forms.get(&first.id).await.unwrap().data.state,
+        FormState::Pending(_)
+    ));
+    forms.reply(&first.id, &reply).await.unwrap();
+    let FormState::Answered(state) = forms.get(&first.id).await.unwrap().data.state else {
+        panic!("answered state")
+    };
+    assert_eq!(serde_json::to_value(&state.answer).unwrap(), answer);
+    assert_eq!(forms.list().await.unwrap().data.len(), 1);
+    check(
+        forms.reply(&first.id, &reply).await.unwrap_err(),
+        409,
+        "settled",
+    );
+    check(
+        forms
+            .cancel(&first.id, &SessionFormCancelOptions::default())
+            .await
+            .unwrap_err(),
+        409,
+        "settled",
+    );
+    check(forms.create(&request).await.unwrap_err(), 409, "conflict");
+    for (resource, id, message) in [
+        (forms, &second.id, Some("cancel + 雪 /?&")),
+        (sibling, &third.id, Some("")),
+        (remote, &outside.id, None),
+    ] {
+        let mut options = SessionFormCancelOptions::default();
+        options.message = message.map(str::to_owned);
+        resource.cancel(id, &options).await.unwrap();
+        let FormState::Cancelled(state) = resource.get(id).await.unwrap().data.state else {
+            panic!("cancelled state")
+        };
+        assert_eq!(state.message.as_deref(), message);
+        check(
+            resource.cancel(id, &options).await.unwrap_err(),
+            409,
+            "settled",
+        );
+        check(
+            resource.reply(id, &reply).await.unwrap_err(),
+            409,
+            "settled",
+        );
+    }
+    // Semantic field-definition failures remain server-owned.
+    for fields in [
+        json!([{"type":"boolean","key":"x"},{"type":"boolean","key":"x"}]),
+        json!([{"type":"boolean","key":"x","when":[{"key":"later","op":"eq","value":true}]}]),
+    ] {
+        request.id = RequestField::Omitted;
+        request.fields = serde_json::from_value(fields).unwrap();
+        check(forms.create(&request).await.unwrap_err(), 400, "invalid");
+    }
+    // `hidden` is presentation metadata, not a validation bypass. No model wakes.
+    request.fields=serde_json::from_value(json!([{"type":"boolean","key":"hidden","hidden":true,"required":true,"default":true},{"type":"string","key":"inactive","required":true,"when":[{"key":"hidden","op":"eq","value":true}]}])).unwrap();
+    let conditional = forms.create(&request).await.unwrap().data;
+    check(
+        forms
+            .reply(
+                &conditional.id,
+                &SessionFormReplyRequest::new(std::collections::HashMap::new().into()),
+            )
+            .await
+            .unwrap_err(),
+        400,
+        "answer",
+    );
+    forms
+        .reply(
+            &conditional.id,
+            &SessionFormReplyRequest::new(serde_json::from_value(json!({"hidden":false})).unwrap()),
+        )
+        .await
+        .unwrap();
+    for resource in [forms, sibling, remote] {
+        assert!(resource.list().await.unwrap().data.is_empty());
+    }
+    let missing = "ses_forms_missing".parse().unwrap();
+    let resource = client.sessions().forms(&missing);
+    for error in [
+        resource.list().await.unwrap_err(),
+        resource.get(&first.id).await.unwrap_err(),
+        resource.create(&simple).await.unwrap_err(),
+        resource.reply(&first.id, &reply).await.unwrap_err(),
+        resource
+            .cancel(&first.id, &SessionFormCancelOptions::default())
+            .await
+            .unwrap_err(),
+    ] {
+        check(error, 404, "session");
+    }
+    check(
+        client
+            .forms()
+            .list_at(Location::directory("/opencoders-missing-form-location"))
+            .await
+            .unwrap_err(),
+        404,
+        "location",
+    );
+    let (mut created, mut replied, mut cancelled) = (false, false, false);
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while !created || !replied || !cancelled {
+            match events.next().await.unwrap().unwrap().event {
+                Event::FormCreated(e) if e.data.form.id == first.id => {
+                    assert_eq!(e.data.form.fields.as_slice().len(), 6);
+                    created = true;
+                }
+                Event::FormReplied(e) if e.data.id == first.id => {
+                    assert_eq!(serde_json::to_value(&e.data.answer).unwrap(), answer);
+                    replied = true;
+                }
+                Event::FormCancelled(e) if e.data.id == second.id => {
+                    assert!(!e.data.extra.contains_key("message"));
+                    cancelled = true;
+                }
+                _ => {}
+            }
+        }
+    })
+    .await
+    .unwrap();
+    events.close();
 }
 
 async fn verify_permissions(
