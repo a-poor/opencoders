@@ -2,7 +2,7 @@
 
 **[0.1.0 was published on crates.io](https://crates.io/crates/opencoders/0.1.0)
 on 2026-11-03.** Milestone 2's first conversation-library release is complete.
-PTY support follows in milestone 3. No UI is being built.
+Workspace reads and ordinary PTYs are now implemented for the next release. No UI is being built.
 
 ## Published artifact
 
@@ -37,12 +37,14 @@ does not update the pinned contract or gate ordinary CI.
 
 [API_COVERAGE.md](API_COVERAGE.md) classifies all **170** pinned operation IDs
 after the [2026-11-09 schema review](openapi/README.md#2026-11-09-drift-review).
-The published 0.1.0 artifact used the earlier 169-operation pin.
+The published 0.1.0 artifact used the earlier 169-operation pin and supported 35
+operations. The 16 new workspace/PTY methods are unreleased; their live evidence
+is local macOS arm64 on 2026-11-09, not the earlier hosted run.
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
-| Supported | 35 | Public Rust methods with protocol tests; live scope varies. |
-| Planned, milestone 3 | 34 | Terminal, filesystem, worktree and VCS APIs. |
+| Supported | 51 | Public Rust methods with protocol tests; live scope varies. |
+| Planned, milestone 3 | 18 | Terminal, filesystem, worktree and VCS APIs. |
 | Planned, milestone 4 | 96 | Broader session, configuration, integration and other APIs. |
 | Deferred | 5 | Three debug routes, deprecated text-generation alias and V1 migration status. |
 

@@ -43,11 +43,14 @@ tar -xzf target/package/opencoders-0.1.0.crate -C "$package_review_dir"
 cd "$package_review_dir/opencoders-0.1.0"
 cargo test --locked --offline
 cargo test --locked --offline --no-default-features
+cargo test --locked --offline --all-features
+cargo test --locked --offline --no-default-features --features websocket
 cargo check --examples --locked --offline
 cargo check --examples --locked --offline --no-default-features
 cargo +1.88.0 check --lib --examples --locked --offline
 cargo +1.88.0 check --lib --examples --locked --offline --no-default-features
-RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --locked --offline
+cargo +1.88.0 check --lib --examples --locked --offline --all-features
+RUSTDOCFLAGS='-D warnings' cargo doc --all-features --no-deps --locked --offline
 ```
 
 Do not pass `--ignored`; package validation must not start OpenCode or submit work.
@@ -77,7 +80,7 @@ Confirm hosted CI on the intended revision. Recorded live compatibility evidence
 can be reused when the SDK, fixtures, workflows and server baseline are unchanged;
 otherwise dispatch **Pinned server compatibility** with `active_execution` enabled
 to run smoke and active jobs on Linux. Hosted checks are Linux-only; run relevant
-macOS checks locally using `tools/live/run.py` and `tools/live/active.py`.
+macOS checks locally using `tools/live/run.py --websocket` and `tools/live/active.py`.
 The separate **Upstream schema drift** workflow is a maintenance signal; review
 differences without treating every upstream change as a release blocker.
 Update the changelog date, confirm the README dependency matches the release

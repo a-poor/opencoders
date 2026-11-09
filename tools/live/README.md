@@ -15,8 +15,11 @@ x86-64 (glibc). From the repository root:
 ```sh
 cargo test --locked --test live --no-run
 python3 tools/live/run.py
+# Include optional ordinary PTY WebSocket I/O:
+python3 tools/live/run.py --websocket
 ```
 
+The smoke fixture also creates a local Git repository and requires `git` on PATH.
 `--download-only` fetches and verifies the archive without starting a server.
 Downloads are cached under `target/live/`; every run verifies the archive before
 extracting a fresh executable. Updating a baseline requires reviewing the release,
@@ -480,3 +483,49 @@ Validate workflow edits with `actionlint`; runner checks use:
 ```sh
 python3 -m unittest discover -s tools/live -p 'test_*.py'
 ```
+
+## Workspace reads and ordinary PTYs (2026-11-09)
+
+`python3 tools/live/run.py --websocket` passes locally on macOS arm64 against the
+same v2.2.5 archive. The new fixture is in `tests/support/workspace.rs`; the
+existing parent verifies the server PID, paths and empty disposable state before
+calling it. It creates binary fixtures and a separate Git repository with isolated
+Git configuration/hooks, and starts only `/bin/cat` and `/usr/bin/false`. It does
+not submit prompts, call providers or launch a user shell. The manual Linux smoke
+job now includes `--websocket`; that new Linux execution has not yet been run.
+Earlier hosted results remain evidence for their original scope.
+
+Observed assertions cover filesystem list/find, special-character filenames,
+binary bytes, range 206, ETag and Last-Modified 304, empty 416 and missing files;
+Git branch/status/branches/base envelope/working and committed diffs and worktree
+listing; PTY create/list/get, accepted rename/resize, location isolation, ticket
+lifetime/reuse rejection, UTF-8 I/O, replay cursor, detach with process retained,
+explicit cursor reconnect, removal and retained exit code/4404 close.
+
+The first VCS read returned empty branch information before asynchronous provider
+activation. The fixture polls a bounded five seconds for its known Git branch;
+the SDK does not add implicit polling. Worktree listing reads saved project
+inventory rather than running discovery. Actual resized viewport dimensions,
+nonempty inferred bases, branch-mode diff, multi-worktree inventories and remote
+providers/workspaces remain unverified live.
+
+Protocol/source review uses the pinned
+[filesystem handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/fs.ts),
+[filesystem service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/filesystem.ts),
+[VCS service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/vcs.ts),
+[PTY handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/pty.ts),
+[PTY service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/pty.ts),
+[PTY protocol](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/pty/protocol.ts)
+and [ticket service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/pty/ticket.ts).
+The server requires `x-opencode-ticket: 1`; tickets last 60 seconds and are
+single-use/location-scoped. Socket success is HTTP 101, despite the schema's
+boolean/200 description. Text is output, NUL-prefixed binary JSON carries the
+cursor after replay, and cursor offsets count UTF-16 code units. The replay buffer
+is bounded and supplies no explicit gap marker. Disconnect does not terminate the
+process. These guarantees apply only to ordinary PTYs, not persistent PTYs.
+
+Deterministic tests cover invalid upgrade headers/control frames, bounded HTTP
+errors and message/byte limits, authentication/prefix/query preservation, ping,
+peer close metadata, independent handshake/idle deadlines, read cancellation and
+no mutation retries. TLS/proxy deployments, ticket expiry timing, buffer eviction,
+slow consumers, server restarts and real network failure remain unverified live.

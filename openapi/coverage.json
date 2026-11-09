@@ -304,6 +304,68 @@
         "examples/session_lifecycle.rs",
         "examples/automation.rs"
       ]
+    },
+    "workspace": {
+      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5: list/find, special-character file names, binary bytes, 206 ranges, ETag/Last-Modified 304, 416, missing files, Git branch/status/working and committed diff, base envelope and worktree listing. Existing hosted evidence predates these methods; the manual Linux smoke job now includes this fixture.",
+      "live_tests": [
+        {
+          "file": "tests/support/workspace.rs",
+          "anchor": "pub async fn verify(",
+          "label": "workspace/PTY live fixture"
+        }
+      ],
+      "source_reviewed": [
+        "Pinned fs handler confinement and single-range/conditional handling; VCS provider initialization and server branch limits. The first VCS snapshot can precede asynchronous provider activation."
+      ],
+      "unverified": [
+        "Linux execution of the new fixture, remote workspaces/providers, symlink escape responses, malformed/multiple ranges, changing files during streaming, nonempty inferred review bases, branch-mode/remote-branch diffs and multi-worktree inventories."
+      ],
+      "examples": [
+        "examples/workspace.rs"
+      ]
+    },
+    "ptys": {
+      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5: create/list/get, location isolation, accepted rename/resize, ticket lifetime, explicit removal, missing PTY errors and retained exit code. No provider calls or user shells are used.",
+      "live_tests": [
+        {
+          "file": "tests/support/workspace.rs",
+          "anchor": "pub async fn verify(",
+          "label": "workspace/PTY live fixture"
+        }
+      ],
+      "source_reviewed": [
+        "PTY default shell/login argument behavior, server environment inheritance, resize only for running PTYs, bounded exited retention and ticket header/origin/location checks."
+      ],
+      "unverified": [
+        "Linux execution of the new fixture, actual viewport dimensions after resize, user-shell behavior, ticket expiry timing, cross-workspace ticket isolation and server restart/process recovery."
+      ],
+      "examples": [
+        "examples/pty.rs"
+      ]
+    },
+    "pty-socket": {
+      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5 and the websocket feature: ticket connection/reuse rejection, initial cursor, UTF-8 input/output, explicit detach with process retained, cursor reconnect and exited-PTY close code 4404.",
+      "live_tests": [
+        {
+          "file": "tests/support/workspace.rs",
+          "anchor": "async fn verify_socket(",
+          "label": "live PTY exchange"
+        },
+        {
+          "file": "tests/support/workspace.rs",
+          "anchor": "pub async fn verify(",
+          "label": "workspace/PTY live fixture"
+        }
+      ],
+      "source_reviewed": [
+        "Pinned ordinary PTY protocol: HTTP 101, single-use 60-second tickets, text output, NUL-prefixed binary JSON cursor after replay, UTF-16 cursor units, bounded retained output with no replay-gap marker and disconnect without process removal."
+      ],
+      "unverified": [
+        "Linux execution of the new fixture, TLS/proxy deployment, restart/reconnect across servers, replay-buffer eviction, slow consumers and ticket expiry timing. Invalid handshakes/control frames, bounded errors, message limits and read cancellation/deadlines are deterministic protocol tests."
+      ],
+      "examples": [
+        "examples/pty.rs"
+      ]
     }
   },
   "operations": {
@@ -874,23 +936,56 @@
     "fs.find": {
       "method": "GET",
       "path": "/api/fs/find",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn find(&self, options: &FileFindOptions)",
+        "label": "Files::find"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn filesystem_discovery_preserves_paths_location_overrides_and_server_order(",
+          "label": "filesystem discovery"
+        }
+      ],
+      "evidence": "workspace"
     },
     "fs.list": {
       "method": "GET",
       "path": "/api/fs/list",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn list(&self, options: &FileListOptions)",
+        "label": "Files::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn filesystem_discovery_preserves_paths_location_overrides_and_server_order(",
+          "label": "filesystem discovery"
+        }
+      ],
+      "evidence": "workspace"
     },
     "fs.read": {
       "method": "GET",
       "path": "/api/fs/read/*",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace filesystem APIs; review streamed bodies, headers, ranges and watch lifecycle."
+      "status": "supported",
+      "rust": {
+        "file": "src/file_stream.rs",
+        "anchor": "pub async fn read(&self, path: &str",
+        "label": "Files::read"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/file_reads.rs",
+          "anchor": "fn reads_preserve_encoded_paths_binary_bytes_partial_status_and_headers(",
+          "label": "binary range/metadata"
+        }
+      ],
+      "evidence": "workspace"
     },
     "integration.command.cancel": {
       "method": "DELETE",
@@ -1142,51 +1237,128 @@
     "pty.connect": {
       "method": "GET",
       "path": "/api/pty/{ptyID}/connect",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/pty_socket.rs",
+        "anchor": "pub async fn connect(",
+        "label": "Ptys::connect (websocket)"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/pty_socket.rs",
+          "anchor": "fn pty_socket_preserves_transport_headers_cursor_frames_and_utf8_input(",
+          "label": "PTY socket framing and input"
+        }
+      ],
+      "evidence": "pty-socket"
     },
     "pty.connect.token": {
       "method": "POST",
       "path": "/api/pty/{ptyID}/connect-token",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/ptys.rs",
+        "anchor": "pub async fn connect_token(",
+        "label": "Ptys::connect_token"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/ptys.rs",
+          "anchor": "fn ticket_requests_set_required_header_and_encode_ids_without_leaking_secrets(",
+          "label": "ticket headers and encoding"
+        }
+      ],
+      "evidence": "ptys"
     },
     "pty.create": {
       "method": "POST",
       "path": "/api/pty",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/ptys.rs",
+        "anchor": "pub async fn create(",
+        "label": "Ptys::create"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/ptys.rs",
+          "anchor": "fn pty_lifecycle_preserves_location_envelopes_and_strict_request_bodies(",
+          "label": "PTY lifecycle"
+        }
+      ],
+      "evidence": "ptys"
     },
     "pty.get": {
       "method": "GET",
       "path": "/api/pty/{ptyID}",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/ptys.rs",
+        "anchor": "pub async fn get(",
+        "label": "Ptys::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/ptys.rs",
+          "anchor": "fn pty_lifecycle_preserves_location_envelopes_and_strict_request_bodies(",
+          "label": "PTY lifecycle"
+        }
+      ],
+      "evidence": "ptys"
     },
     "pty.list": {
       "method": "GET",
       "path": "/api/pty",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/ptys.rs",
+        "anchor": "pub async fn list(",
+        "label": "Ptys::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/ptys.rs",
+          "anchor": "fn pty_lifecycle_preserves_location_envelopes_and_strict_request_bodies(",
+          "label": "PTY lifecycle"
+        }
+      ],
+      "evidence": "ptys"
     },
     "pty.remove": {
       "method": "DELETE",
       "path": "/api/pty/{ptyID}",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/ptys.rs",
+        "anchor": "pub async fn remove(",
+        "label": "Ptys::remove"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/ptys.rs",
+          "anchor": "fn pty_lifecycle_preserves_location_envelopes_and_strict_request_bodies(",
+          "label": "PTY lifecycle"
+        }
+      ],
+      "evidence": "ptys"
     },
     "pty.update": {
       "method": "PUT",
       "path": "/api/pty/{ptyID}",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "PTY lifecycle and optional WebSocket transport; verify tickets, framing and cursor/closure behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/ptys.rs",
+        "anchor": "pub async fn update(",
+        "label": "Ptys::update"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/ptys.rs",
+          "anchor": "fn pty_lifecycle_preserves_location_envelopes_and_strict_request_bodies(",
+          "label": "PTY lifecycle"
+        }
+      ],
+      "evidence": "ptys"
     },
     "reference.list": {
       "method": "GET",
@@ -1826,30 +1998,74 @@
     "vcs.base": {
       "method": "GET",
       "path": "/api/vcs/base",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn base(",
+        "label": "Vcs::base"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn vcs_queries_preserve_empty_base_zero_context_and_required_mode(",
+          "label": "VCS query semantics"
+        }
+      ],
+      "evidence": "workspace"
     },
     "vcs.branch.list": {
       "method": "GET",
       "path": "/api/vcs/branch",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn branches(",
+        "label": "Vcs::branches"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn vcs_queries_preserve_empty_base_zero_context_and_required_mode(",
+          "label": "VCS query semantics"
+        }
+      ],
+      "evidence": "workspace"
     },
     "vcs.diff": {
       "method": "GET",
       "path": "/api/vcs/diff",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn diff(",
+        "label": "Vcs::diff"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn vcs_queries_preserve_empty_base_zero_context_and_required_mode(",
+          "label": "VCS query semantics"
+        }
+      ],
+      "evidence": "workspace"
     },
     "vcs.get": {
       "method": "GET",
       "path": "/api/vcs",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn get(",
+        "label": "Vcs::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn vcs_queries_preserve_empty_base_zero_context_and_required_mode(",
+          "label": "VCS query semantics"
+        }
+      ],
+      "evidence": "workspace"
     },
     "vcs.init": {
       "method": "POST",
@@ -1861,9 +2077,20 @@
     "vcs.status": {
       "method": "GET",
       "path": "/api/vcs/status",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn status(",
+        "label": "Vcs::status"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn vcs_queries_preserve_empty_base_zero_context_and_required_mode(",
+          "label": "VCS query semantics"
+        }
+      ],
+      "evidence": "workspace"
     },
     "websearch.providers": {
       "method": "GET",
@@ -1889,9 +2116,20 @@
     "worktree.list": {
       "method": "GET",
       "path": "/api/worktree",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn list(&self, project_id: &ProjectId)",
+        "label": "Worktrees::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace.rs",
+          "anchor": "fn worktree_inventory_uses_project_id_and_ignores_default_location(",
+          "label": "project worktree list"
+        }
+      ],
+      "evidence": "workspace"
     },
     "worktree.refresh": {
       "method": "POST",

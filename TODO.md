@@ -38,7 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-No active goal.
+None.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -55,9 +55,11 @@ No active goal.
 
 - [ ] Choose timeout behavior for future long-running operations. Experimental
   session waits have per-call total deadlines, independent of ordinary requests;
-  live subscriptions have separate handshake and idle deadlines.
-- [ ] Extend response handling to endpoints with multiple success statuses.
-  Empty HTTP 204 responses are supported. Add typed API errors as resources need them.
+  live subscriptions, file reads and PTY sockets have separate handshake and idle
+  deadlines.
+- [ ] Extend remaining non-JSON endpoints using the streamed-response foundation.
+  Empty HTTP 204 and file 200/206/304/416 responses are supported. Add typed API
+  errors as resources need them.
 - [ ] Apply the established request/ID and omitted/null/value conventions to
   additional mutations; session creation and updates are implemented.
 
@@ -83,18 +85,15 @@ Version 0.1.0 was published and tagged on 2026-11-03; see the
 
 ## Soon: terminal and workspace APIs (milestone 3)
 
-- [ ] Implement PTY lifecycle and resize operations.
-- [ ] Verify PTY connection tickets, WebSocket framing, input/output, closure,
-  and cursor behavior against the server or official client.
-- [ ] Add WebSocket transport behind an optional Cargo feature.
-- [ ] Implement persistent PTY operations and connections, recording any deferred
-  operations in the coverage inventory.
-- [ ] Implement filesystem listing/search and streamed reads, including headers,
-  range requests, and conditional responses.
-- [ ] Implement filesystem write/watch/unwatch operations.
-- [ ] Implement worktree and VCS APIs used by interactive consumers.
-- [ ] Add protocol tests and small library examples for PTY and workspace APIs;
-  verify builds with and without WebSocket support.
+Workspace reads and ordinary PTYs are complete; see the goal record under
+**Completed**. Remaining candidates require separate goals:
+
+- [ ] Review worktree create/refresh/remove and VCS initialization as a separate
+  mutation-focused goal with disposable fixtures and explicit effect boundaries.
+- [ ] Leave experimental filesystem write/watch/unwatch out for now; reconsider
+  behind an opt-in feature after reviewing mutation scope and watch lifecycle.
+- [ ] Leave experimental persistent PTYs out for now; reconsider behind an opt-in
+  feature after reviewing ownership, handoff, persistence and replay separately.
 
 ## Later: broader API coverage and release hardening (milestone 4)
 
@@ -220,10 +219,34 @@ when a decision is made.
   Captured log watermarks are not atomic REST snapshot boundaries or retention
   guarantees; sequences can have gaps and a future `after` can exceed the marker.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
-- [ ] Determine the earliest useful PTY/WebSocket subset and document any protocol
-  details missing from OpenAPI.
 
 ## Completed
+
+- [x] Complete workspace reads and ordinary PTYs: filesystem list/find/streamed
+  read; read-only VCS info/base/status/branches/diff and worktree listing; PTY
+  lifecycle/resize, connection tickets, and optional WebSocket I/O. Keep runtime,
+  rendering and terminal state caller-owned. Supporting VCS/worktree discovery
+  makes workspace reads useful without expanding into repository mutations.
+  - [x] Review pinned schemas/server behavior and record transport/API decisions.
+  - [x] Add reviewed generated models and test-first typed resource methods.
+  - [x] Preserve binary response status/headers, range/conditional semantics,
+    bounded errors, cancellation/deadlines, and the default no-retry policy.
+  - [x] Add optional WebSocket PTY transport with tested framing, tickets,
+    input/output, resize, closure, and explicit reconnection boundaries.
+  - [x] Verify disposable pinned-server workflows; add examples and usage/
+    compatibility notes; update explicit operation coverage and generation CI.
+  - [x] Pass workspace/feature/MSRV/lint/docs/generation and relevant live checks.
+  Experimental filesystem writes/watch and persistent PTYs are deferred from
+  this goal. Deprecated generation and V1 migration remain out of scope; future
+  unstable API families may be exposed behind opt-in features after review.
+  Validation (2026-11-09, local macOS arm64): 296 workspace tests/doctests with
+  all features (2 opt-in live tests ignored); default/HTTP-only/HTTP-WebSocket
+  suites pass; all four feature combinations and examples compile on Rust 1.88;
+  fmt, all-feature clippy/docs, all 11 generation checks, 33 Python checks and
+  coverage validation pass. The disposable v2.2.5 smoke run with WebSockets
+  passes separately. New Linux live coverage is configured but not yet executed.
+  Adds 16 operations (51/170 supported). Usage: `docs/workspace.md` and
+  `docs/terminals.md`. This implementation follows the schema refresh in `cf8237f`.
 
 - [x] Review and adopt the 2026-11-09 upstream schema drift from
   [the scheduled check](https://github.com/a-poor/opencoders/actions/runs/42687061589).

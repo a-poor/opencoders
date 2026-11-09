@@ -13,6 +13,8 @@ use std::{collections::BTreeSet, env, path::PathBuf, time::Duration};
 
 #[path = "support/forks.rs"]
 mod forks;
+#[path = "support/workspace.rs"]
+mod workspace_reads;
 
 fn required(name: &str) -> String {
     env::var(name).unwrap_or_else(|_| panic!("{name} missing; use python3 tools/live/run.py"))
@@ -497,6 +499,7 @@ async fn pinned_server_discovery_and_session_pagination() {
         other,
     )
     .await;
+    workspace_reads::verify(&client, &root, workspace, other).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())

@@ -158,7 +158,7 @@ def interrupted(*_):
     raise KeyboardInterrupt
 
 
-def run(manifest, archive):
+def run(manifest, archive, websocket=False):
     # Canonicalize macOS /var -> /private/var before comparing server paths.
     with tempfile.TemporaryDirectory(prefix="opencoders-live-") as temp:
         root = Path(temp).resolve()
@@ -188,8 +188,11 @@ def run(manifest, archive):
                     "OPENCODERS_LIVE_PID": str(process.pid),
                     "OPENCODERS_LIVE_VERSION": manifest["version"],
                 })
+                command = ["cargo", "test", "--locked", "--test", "live"]
+                if websocket:
+                    command += ["--features", "websocket"]
                 result = subprocess.run(
-                    ["cargo", "test", "--locked", "--test", "live", "--", "--ignored", "--test-threads=1"],
+                    command + ["--", "--ignored", "--test-threads=1"],
                     cwd=REPO, env=test_env, timeout=180,
                 )
                 return result.returncode
@@ -200,12 +203,13 @@ def run(manifest, archive):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--download-only", action="store_true")
+    parser.add_argument("--websocket", action="store_true", help="also verify ordinary PTY WebSocket I/O")
     args = parser.parse_args()
     # Ensure normal termination (including CI cancellation) enters cleanup.
     signal.signal(signal.SIGTERM, interrupted)
     manifest = json.loads(MANIFEST.read_text())
     archive = download(manifest)
-    return 0 if args.download_only else run(manifest, archive)
+    return 0 if args.download_only else run(manifest, archive, args.websocket)
 
 
 if __name__ == "__main__":

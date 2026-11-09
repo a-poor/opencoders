@@ -20,11 +20,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup toolchain install stable --profile minimal
       - name: Compile before starting the disposable server
-        run: cargo +stable test --locked --test live --no-run
+        run: cargo +stable test --locked --features websocket --test live --no-run
       - name: Download, verify, test, and stop the pinned server
         env:
           RUSTUP_TOOLCHAIN: stable
-        run: python3 tools/live/run.py
+        run: python3 tools/live/run.py --websocket
 
   active:
     if: inputs.active_execution

@@ -31,6 +31,48 @@ struct Inner {
 }
 
 impl Client {
+    /// Manage ordinary pseudo-terminals at a server location.
+    pub fn ptys(&self) -> crate::Ptys<'_> {
+        crate::Ptys { client: self }
+    }
+    pub(crate) async fn stream_http_error(
+        &self,
+        mut response: reqwest::Response,
+        operation: &'static str,
+    ) -> Error {
+        let status = response.status();
+        let limit = self.inner.max_error_body_bytes;
+        let mut body = Vec::new();
+        let mut truncated = false;
+        loop {
+            let chunk = match response.chunk().await {
+                Ok(Some(chunk)) => chunk,
+                Ok(None) => break,
+                Err(error) => {
+                    return Error::Transport(TransportError::new(operation, Some(status), error));
+                }
+            };
+            let remaining = limit - body.len();
+            body.extend_from_slice(&chunk[..remaining.min(chunk.len())]);
+            if chunk.len() > remaining {
+                truncated = true;
+                break;
+            }
+        }
+        Error::Http(Box::new(HttpError::new(operation, status, body, truncated)))
+    }
+    /// List, find, and read files at a server working location.
+    pub fn files(&self) -> crate::Files<'_> {
+        crate::Files { client: self }
+    }
+    /// Read version-control information at a working location.
+    pub fn vcs(&self) -> crate::Vcs<'_> {
+        crate::Vcs { client: self }
+    }
+    /// Read the saved worktree inventory for a project.
+    pub fn worktrees(&self) -> crate::Worktrees<'_> {
+        crate::Worktrees { client: self }
+    }
     /// Subscribe to global, live-only server events.
     pub fn events(&self) -> crate::Events<'_> {
         crate::Events { client: self }
@@ -235,7 +277,7 @@ impl Client {
         self.segments_url(path, &[segment])
     }
 
-    fn segments_url(&self, path: &str, segments: &[&str]) -> Url {
+    pub(crate) fn segments_url(&self, path: &str, segments: &[&str]) -> Url {
         let mut url = self
             .inner
             .base_url
@@ -388,7 +430,7 @@ impl Client {
             .await
     }
 
-    fn json_request<B: serde::Serialize + ?Sized>(
+    pub(crate) fn json_request<B: serde::Serialize + ?Sized>(
         &self,
         method: Method,
         url: Url,
@@ -402,14 +444,14 @@ impl Client {
         Ok(self.request(method, url).headers(headers).body(body))
     }
 
-    fn request(&self, method: Method, url: Url) -> reqwest::RequestBuilder {
+    pub(crate) fn request(&self, method: Method, url: Url) -> reqwest::RequestBuilder {
         self.inner
             .http
             .request(method, url)
             .headers(self.inner.headers.clone())
     }
 
-    async fn send_json<T: DeserializeOwned>(
+    pub(crate) async fn send_json<T: DeserializeOwned>(
         &self,
         request: reqwest::RequestBuilder,
         operation: &'static str,
@@ -427,7 +469,7 @@ impl Client {
         })
     }
 
-    async fn send_empty(
+    pub(crate) async fn send_empty(
         &self,
         request: reqwest::RequestBuilder,
         operation: &'static str,

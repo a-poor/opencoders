@@ -2,7 +2,9 @@
 //!
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, projected message history, prompt admission,
-//! pending inbox management, interruption/waiting, permissions, forms, live event subscriptions, and experimental session logs. Run
+//! pending inbox management, interruption/waiting, permissions, forms, live event subscriptions,
+//! experimental session logs, workspace reads/VCS/worktrees, and ordinary PTYs.
+//! Enable `websocket` for caller-driven PTY connections. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
 //! ```no_run
@@ -220,6 +222,21 @@
 //! ```
 
 mod agents;
+#[cfg(feature = "websocket")]
+mod pty_socket;
+#[cfg(feature = "websocket")]
+pub use pty_socket::{
+    PtyConnectOptions, PtyConnection, PtyOutput, PtyReader, PtySocketError, PtySocketErrorKind,
+    PtyWriter,
+};
+mod ptys;
+pub use ptys::Ptys;
+mod file_stream;
+pub use file_stream::{FileReadOptions, FileResponse, FileStream};
+mod workspace;
+pub use workspace::{
+    FileFindOptions, FileListOptions, Files, Vcs, VcsBranchOptions, VcsDiffOptions, Worktrees,
+};
 mod catalog;
 mod client;
 mod error;

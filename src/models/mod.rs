@@ -9,6 +9,25 @@
 //! Unknown closed enum values are decoding errors. Model types and reasoning-field
 //! names are open strings, as specified by the schema.
 
+#[rustfmt::skip]
+mod workspace;
+pub use workspace::{
+    FileListResponse, FileSystemEntry, FileSystemEntryType, VcsBase, VcsBaseResponse,
+    VcsBaseSource, VcsBranch, VcsBranchList, VcsBranchesResponse, VcsDiffResponse, VcsFileStatus,
+    VcsFileStatusStatus, VcsInfo, VcsMode, VcsResponse, VcsStatusResponse, VcsUntracked,
+    WorktreeDirectory, WorktreeList,
+};
+#[rustfmt::skip]
+mod ptys;
+pub use ptys::{
+    Pty as PtyInfo, PtyConnectTokenResponse, PtyCreateRequest, PtyId, PtyListResponse, PtyResponse,
+    PtyStatus, PtyTicketConnectToken, PtyUpdateRequest, PtyUpdateRequestSize as PtySize,
+};
+mod workspace_adapters;
+use workspace_adapters::{
+    deserialize_optional_safe_integer, deserialize_positive_integer, deserialize_required_nullable,
+};
+
 /// Generated live-event envelopes and their payloads.
 #[rustfmt::skip]
 pub mod events;

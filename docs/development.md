@@ -11,9 +11,11 @@ documented in [RELEASING.md](https://github.com/a-poor/opencoders/blob/main/RELE
 
 ```sh
 cargo test --workspace --locked
+cargo test --locked --all-features
+cargo test --locked --no-default-features --features websocket
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
-cargo doc --workspace --no-deps --locked
+cargo doc --workspace --all-features --no-deps --locked
 python3 tools/coverage/report.py --check
 python3 -m unittest discover -s tools/coverage -p 'test_*.py'
 python3 -m unittest discover -s tools/schema -p 'test_*.py'
@@ -31,8 +33,11 @@ justifies their cost and queue time.
 ## Compatibility
 
 The pinned schema and provenance live in [`openapi/`](https://github.com/a-poor/opencoders/tree/main/openapi). The implemented
-operations also pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
-arm64 and Linux x86-64**, using disposable data and no model calls. Run `python3 tools/live/run.py`;
+conversation operations pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
+arm64 and Linux x86-64**, using disposable data and no model calls. The 16 new
+workspace/PTY operations pass locally on macOS arm64 on 2026-11-09; their Linux
+verification is wired into the manual workflow but has not yet run.
+Run `python3 tools/live/run.py --websocket`;
 see [compatibility details and CI](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md) for prerequisites, release
 checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded
 fixtures because the stock CLI disables retention. Run `python3 tools/live/active.py`
@@ -48,7 +53,7 @@ unverified.
 ## Coverage and generation
 
 The [API coverage inventory](https://github.com/a-poor/opencoders/blob/main/API_COVERAGE.md) classifies all 170 pinned operations:
-35 supported, 130 planned and 5 deferred. Each supported route links to its Rust
+51 supported, 114 planned and 5 deferred. Each supported route links to its Rust
 method, representative protocol tests and verification limits. See the
 [milestone 2 readiness audit](https://github.com/a-poor/opencoders/blob/main/RELEASE_READINESS.md) for remaining integration,
 execution/recovery and release work. The inventory checks are offline and do not

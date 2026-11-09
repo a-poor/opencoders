@@ -1,9 +1,11 @@
 # opencoders design and implementation plan
 
-Status: 35 pinned operations have public methods and protocol tests, covering
+Status: 51 pinned operations have public methods and protocol tests, covering
 server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
-live events and experimental session logs. Background observation and automation
+live events, experimental session logs, workspace reads/VCS/worktree discovery,
+and ordinary PTYs with optional WebSocket I/O. The new workspace/PTY fixture
+passes locally on macOS arm64; Linux verification is wired into manual CI. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
 hosted smoke and active checks pass on macOS arm64 and Linux x86-64.
@@ -550,8 +552,8 @@ adjacent-tag input decoding. Responses retain added fields and numeric precision
 conversation models. Event dispatch preserves unknown kinds while rejecting
 malformed known payloads; permission and form inputs retain their reviewed
 validation and omission/null rules. See the [generation guide](tools/model-spike/README.md)
-for each slice's adapters and schema guards. CI checks all nine targets: the raw
-probe and eight production slices. Normal builds never run generation.
+for each slice's adapters and schema guards. CI checks all eleven targets: the raw
+probe and ten production slices, including `--workspace` and `--ptys`. Normal builds never run generation.
 
 Production request models use three-state fields where the reviewed schema allows
 omission, null and a value; non-nullable inputs retain their stricter contracts.
@@ -719,19 +721,33 @@ primitives.
 
 ## Terminal and binary support
 
-PTY management and optional WebSocket support should follow the core conversation
-workflow early, given the intended GUI/TUI audience. Verify connection-ticket
-handling, input/output framing, resize behavior, closure, and any cursor semantics
-against the server or official client. The OpenAPI success response alone is
-insufficient to implement the socket protocol.
+Ordinary PTY list/create/get/update/remove/ticket operations are implemented as
+location-scoped JSON resources. `websocket` adds a caller-driven `Stream` and
+`Sink<String>` using tokio-tungstenite over reqwest's HTTP/1.1 upgrade, preserving
+the configured HTTP authentication, proxy and TLS policies. JSON/SSE builds do
+not pull WebSocket dependencies. No background tasks, reconnect, ticket minting
+or input retransmission occur implicitly. Applications own ANSI parsing,
+rendering, runtime, input delivery decisions and process cleanup.
 
-Keep WebSocket dependencies behind a Cargo feature. Ordinary JSON and SSE usage
-should not require them. Persistent PTYs and client-hosted MCP WebSockets can use
-the transport foundation as their protocols are covered.
+The protocol is reviewed against v2.2.5, not inferred from its boolean/200 OpenAPI
+response. A valid 101 handshake, single-use scoped tickets, text output, binary
+cursor controls, UTF-16 cursor units and peer close metadata are explicit. Reads
+are cancellation-safe; cancelled writes can have ambiguous delivery. Separate
+handshake/idle deadlines and message/frame limits bound transport behavior.
+Dropping/detaching a socket leaves the process alive; remove terminates it.
+Persistent PTYs and client-hosted MCP sockets require separate protocol reviews.
+See [PTY usage](docs/terminals.md) and [live evidence](tools/live/README.md).
 
-Filesystem and media APIs should expose streamed bytes and relevant headers and
-status rather than requiring every response to be buffered. Range and conditional
-file responses need explicit handling and tests.
+Filesystem list/find return typed location envelopes. Read streams bytes with
+unmodified headers and explicit 200/206/304/416 handling, separate handshake/idle
+options and an optional total byte bound. Closing/dropping releases the stream;
+no automatic range resumption is attempted. Read paths are encoded once and
+ambiguous dot segments rejected. The server remains responsible for filesystem
+confinement. VCS info/base/status/branches/diff and project worktree listing add
+read-only context; initial VCS info may precede asynchronous provider activation.
+No cross-call atomic snapshot is promised. [Workspace usage](docs/workspace.md)
+records range, caching and query semantics. Experimental filesystem writes/watch
+and persistent PTYs are outside this goal; future opt-in exposure needs review.
 
 ## Implementation milestones
 
@@ -772,7 +788,7 @@ Use a local mock server for deterministic protocol tests covering:
   cancellation, and disconnects.
 - Log replay boundaries and markers, without asserting that transient events are
   replayable.
-- WebSocket and binary-response behavior when those features are implemented.
+- WebSocket and binary-response behavior, including feature-disabled builds.
 
 Use opt-in integration tests against a pinned OpenCode server. Keep tests that
 require model credentials, spend money, or mutate a workspace separate from the
@@ -834,7 +850,7 @@ CI tests the checker offline. See [schema maintenance](openapi/README.md#weekly-
   retaining location metadata, pagination, and nullable update semantics?
 - What snapshot/event reconciliation behavior is actually guaranteed upstream,
   and which recovery steps must remain application-specific?
-- Which terminal operations belong in the earliest WebSocket feature release?
+- Whether to expose persistent PTYs or experimental workspace mutations behind a future opt-in feature.
 
 Resolve these through representative models, protocol tests, and library usage
 examples before treating the public API as stable.

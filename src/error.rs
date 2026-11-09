@@ -28,6 +28,10 @@ pub enum BuildError {
 #[derive(thiserror::Error)]
 #[non_exhaustive]
 pub enum Error {
+    /// A PTY WebSocket handshake, transport or framing operation failed.
+    #[cfg(feature = "websocket")]
+    #[error(transparent)]
+    PtySocket(crate::PtySocketError),
     /// A request could not be encoded; no HTTP request was sent.
     #[error(transparent)]
     Encode(EncodeError),
@@ -51,6 +55,11 @@ pub enum Error {
 impl Error {
     /// Whether the underlying request or response-body read timed out.
     pub fn is_timeout(&self) -> bool {
+        #[cfg(feature = "websocket")]
+        if matches!(self,Self::PtySocket(error) if error.kind()==crate::PtySocketErrorKind::IdleTimeout)
+        {
+            return true;
+        }
         matches!(self, Self::Transport(error) if error.is_timeout())
             || matches!(self, Self::Stream(error) if matches!(error.kind(), crate::StreamErrorKind::HandshakeTimeout | crate::StreamErrorKind::IdleTimeout))
     }
@@ -58,6 +67,8 @@ impl Error {
     /// HTTP status, when response headers were received.
     pub fn status(&self) -> Option<StatusCode> {
         match self {
+            #[cfg(feature = "websocket")]
+            Self::PtySocket(_) => Some(StatusCode::SWITCHING_PROTOCOLS),
             Self::Encode(_) => None,
             Self::Stream(error) => error.status(),
             Self::Transport(error) => error.status(),
@@ -70,6 +81,8 @@ impl Error {
     /// Upstream operation ID, for example `server.info`.
     pub fn operation(&self) -> &'static str {
         match self {
+            #[cfg(feature = "websocket")]
+            Self::PtySocket(_) => "pty.connect",
             Self::Stream(error) => error.operation(),
             Self::Encode(error) => error.operation(),
             Self::Transport(error) => error.operation(),
@@ -83,6 +96,8 @@ impl Error {
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            #[cfg(feature = "websocket")]
+            Self::PtySocket(error) => error.fmt(f),
             Self::Stream(error) => fmt::Debug::fmt(error, f),
             Self::Encode(error) => error.fmt(f),
             Self::Transport(error) => error.fmt(f),
@@ -233,6 +248,32 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// The requested file or directory was not found.
+    FileNotFound {
+        /// Server-side path reported by the server.
+        path: String,
+        /// Server explanation.
+        message: String,
+    },
+    /// The requested project was not found.
+    ProjectNotFound {
+        /// Project identifier reported by the server.
+        project_id: String,
+        /// Server explanation.
+        message: String,
+    },
+    /// The requested ordinary PTY was not found at this location.
+    PtyNotFound {
+        /// PTY identifier reported by the server.
+        pty_id: String,
+        /// Server explanation.
+        message: String,
+    },
+    /// The request was forbidden, for example when minting a connection ticket.
+    Forbidden {
+        /// Server explanation.
+        message: String,
+    },
     /// A form is missing, expired, or belongs to another session.
     FormNotFound {
         /// Raw form ID; error schemas do not impose an ID prefix.
@@ -334,6 +375,23 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            FileNotFoundError {
+                path: String,
+                message: String,
+            },
+            ProjectNotFoundError {
+                #[serde(rename = "projectID")]
+                project_id: String,
+                message: String,
+            },
+            PtyNotFoundError {
+                #[serde(rename = "ptyID")]
+                pty_id: String,
+                message: String,
+            },
+            ForbiddenError {
+                message: String,
+            },
             FormNotFoundError {
                 id: String,
                 message: String,
@@ -393,6 +451,18 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::FileNotFoundError { path, message }) => Self::FileNotFound { path, message },
+            Ok(Known::ProjectNotFoundError {
+                project_id,
+                message,
+            }) => Self::ProjectNotFound {
+                project_id,
+                message,
+            },
+            Ok(Known::PtyNotFoundError { pty_id, message }) => {
+                Self::PtyNotFound { pty_id, message }
+            }
+            Ok(Known::ForbiddenError { message }) => Self::Forbidden { message },
             Ok(Known::FormNotFoundError { id, message }) => Self::FormNotFound { id, message },
             Ok(Known::FormAlreadySettledError { id, message }) => {
                 Self::FormAlreadySettled { id, message }
@@ -452,6 +522,10 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::FileNotFound { .. } => "FileNotFound { .. }",
+            Self::ProjectNotFound { .. } => "ProjectNotFound { .. }",
+            Self::PtyNotFound { .. } => "PtyNotFound { .. }",
+            Self::Forbidden { .. } => "Forbidden { .. }",
             Self::PermissionNotFound { .. } => "PermissionNotFound { .. }",
             Self::FormNotFound { .. } => "FormNotFound { .. }",
             Self::FormAlreadySettled { .. } => "FormAlreadySettled { .. }",

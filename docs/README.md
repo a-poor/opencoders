@@ -1,7 +1,7 @@
 # Documentation
 
 Start with the [installation and quick start](../README.md). These guides cover
-the library's implemented conversation APIs for GUI/TUI and automated clients.
+the library's implemented APIs for GUI/TUI and automated clients.
 Applications own their Tokio runtime, rendering, state and approval decisions.
 
 | Guide | Topics |
@@ -12,6 +12,8 @@ Applications own their Tokio runtime, rendering, state and approval decisions.
 | [Input and execution](execution.md) | Prompt admission, inbox management, interruption, waiting and bounded automation. |
 | [Permissions and forms](requests.md) | Pending requests, replies, cancellation and server validation. |
 | [Events and recovery](events.md) | Live SSE, background observation, snapshot refresh and experimental logs. |
+| [Workspace reads](workspace.md) | Filesystem list/find, streamed binary reads, VCS snapshots and worktree discovery. |
+| [Ordinary PTYs](terminals.md) | Lifecycle, resize, tickets and optional WebSocket I/O. |
 | [Development and compatibility](development.md) | Repository checks, pinned server evidence, coverage and generation. |
 
 ## Running examples

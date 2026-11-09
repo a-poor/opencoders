@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add filesystem listing/search and streamed binary reads with range/conditional
+  response metadata, independent deadlines and optional byte bounds.
+- Add read-only VCS info/base/status/branches/diffs and project worktree listing.
+- Add ordinary PTY lifecycle, resize and single-use connection tickets. Optional
+  `websocket` exposes caller-driven UTF-8 I/O, replay cursors and close metadata
+  through the configured HTTP transport, without automatic retries/reconnection.
+  New models, protocol tests, examples and pinned macOS live checks cover these
+  16 operations; persistent PTYs and experimental filesystem mutations remain out
+  of scope. See [workspace reads](docs/workspace.md) and [PTYs](docs/terminals.md).
+
 - Refresh the reviewed OpenAPI pin after the 2026-11-09 upstream drift report.
   The contract now has 170 operations and 497 component schemas; background-job
   discovery is planned for milestone 4. Generated Rust models and the separately

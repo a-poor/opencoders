@@ -54,7 +54,7 @@ to receive the assistant's output.
 ## Pinned API contract
 
 Models use the [pinned OpenAPI 3.1.0 snapshot](https://github.com/a-poor/opencoders/blob/main/openapi/opencode-v2.json)
-retrieved on 2026-11-02. Its schema version is `0.0.1`; the producing server release
+reviewed on 2026-11-09. Its schema version is `0.0.1`; the producing server release
 is unspecified. The tested server baseline is **OpenCode v2.2.5**. See
 [provenance](https://github.com/a-poor/opencoders/blob/main/openapi/provenance.json)
 and [compatibility details](https://github.com/a-poor/opencoders/blob/main/docs/development.md).

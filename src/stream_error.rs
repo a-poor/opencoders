@@ -1,7 +1,7 @@
 use crate::StatusCode;
 use std::fmt;
 
-/// A terminal failure specific to SSE streams.
+/// A terminal failure specific to streaming responses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum StreamErrorKind {

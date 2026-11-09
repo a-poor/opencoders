@@ -29,10 +29,13 @@ No credentials are discovered from local OpenCode files.
   error. `without_request_timeout` removes only the SDK deadline.
 - The default `rustls` feature enables HTTPS. `--no-default-features` supports
   HTTP or a TLS backend enabled through the supplied reqwest dependency.
+- Optional `websocket` enables PTY connections through the same HTTP client.
+  PTY JSON management and file streaming require no WebSocket dependency.
 - Success responses are limited to 8 MiB by default. HTTP/decode diagnostic
   prefixes are limited to 8 KiB; both limits are configurable. Error accessors
   indicate truncation. The limit applies to the accumulated body; the HTTP stack
-  may deliver a larger individual chunk.
+  may deliver a larger individual chunk. File bodies and PTY sockets have separate
+  per-call limits/deadlines; see [workspace reads](workspace.md) and [PTYs](terminals.md).
 - Server-info models preserve unknown fields in `extra` maps, including nested
   paths and capabilities. Deserialization enforces the schema's nonnegative
   safe-integer range for `pid`. Optional null and absent response values become
@@ -48,10 +51,11 @@ No credentials are discovered from local OpenCode files.
 ## Errors
 
 `BuildError` covers invalid configuration. API calls return `Error::Encode`, `Error::Transport`,
-`Error::Http`, `Error::Decode`, `Error::ResponseTooLarge`, or `Error::Stream`. Use `operation()`,
+`Error::Http`, `Error::Decode`, `Error::ResponseTooLarge`, or `Error::Stream`;
+the `websocket` feature adds `Error::PtySocket`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
 methods expect exactly HTTP 200; session update/remove/switch/wait, permission reply,
-form reply/cancel, and inbox update/cancel methods expect HTTP 204 with no
+form reply/cancel, PTY remove, and inbox update/cancel methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
 too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.
@@ -61,7 +65,8 @@ HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `InvalidCursorError`, `SessionNotFoundError` (including missing parents), and
 `MessageNotFoundError` (also used when a message belongs to another session), and
 `AgentNotFoundError`, `PermissionNotFoundError`, `FormNotFoundError`,
-`FormAlreadySettledError`, `FormInvalidAnswerError`, and `ConflictError`
+`FormAlreadySettledError`, `FormInvalidAnswerError`, `FileNotFoundError`,
+`ProjectNotFoundError`, `PtyNotFoundError`, `ForbiddenError`, and `ConflictError`
 (with an optional resource identifier).
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain
