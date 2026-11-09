@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "schema_sha256": "2fdcda59d6c37f5dac904ab7b7aff05fb98465e23eb0fe8d3b9767151ad391de",
+  "schema_sha256": "e54ea93eac5278b072769616478e94638c3ea3974b36ce5998b834aff0e3265f",
   "baseline": {
     "version": "2.2.5",
     "commit": "9bbb8ce18c80f099e0e448775f59d965ead40a21",
@@ -560,6 +560,13 @@
       "status": "planned",
       "milestone": 4,
       "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+    },
+    "experimental.job.list": {
+      "method": "GET",
+      "path": "/api/experimental/job",
+      "status": "planned",
+      "milestone": 4,
+      "reason": "Background job discovery for shell, subagent and image work; review session/descendant filters, status and unconsumed-job semantics."
     },
     "experimental.mcp.add": {
       "method": "PUT",

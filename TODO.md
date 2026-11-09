@@ -110,6 +110,9 @@ Version 0.1.0 was published and tagged on 2026-11-03; see the
 - [ ] Implement generation, voice, web search, and usage APIs.
 - [ ] Implement shell, schedule, artifact, and media APIs, preserving streamed
   binary responses where applicable.
+- [ ] Implement experimental background-job discovery for shell, subagent and
+  image work, including session/descendant, kind and status filters. Review
+  unconsumed-job semantics against a pinned server before exposing the route.
 - [ ] Extend the explicit planned routes in `API_COVERAGE.md` as consumer needs
   justify them. Debug, deprecated generation and V1 migration routes are deferred.
 - [ ] Document schema-update and release procedures, including compatibility
@@ -221,6 +224,16 @@ when a decision is made.
   details missing from OpenAPI.
 
 ## Completed
+
+- [x] Review and adopt the 2026-11-09 upstream schema drift from
+  [the scheduled check](https://github.com/a-poor/opencoders/actions/runs/42687061589).
+  Confirm the candidate matches its reported hash, update provenance and explicit
+  coverage to 170 operations / 497 schemas, and record the full
+  [contract review](openapi/README.md#2026-11-09-drift-review). Classify background-job
+  discovery as milestone 4; preserve the separately tested v2.2.5 baseline.
+  All nine pinned-toolchain generation checks reproduce unchanged Rust models;
+  the full 497-component generation/compilation probe, workspace tests/doctests,
+  nine schema tests, eight coverage tests and coverage report check pass.
 
 - [x] Publish [opencoders 0.1.0](https://crates.io/crates/opencoders/0.1.0) from
   clean commit `d587570` on 2026-11-03 and push the annotated `v0.1.0` tag at that

@@ -35,13 +35,15 @@ macOS testing continues locally. Earlier macOS runs below remain valid historica
 evidence. The separate weekly schema check reports upstream drift for review and
 does not update the pinned contract or gate ordinary CI.
 
-[API_COVERAGE.md](API_COVERAGE.md) classifies all **169** pinned operation IDs:
+[API_COVERAGE.md](API_COVERAGE.md) classifies all **170** pinned operation IDs
+after the [2026-11-09 schema review](openapi/README.md#2026-11-09-drift-review).
+The published 0.1.0 artifact used the earlier 169-operation pin.
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | Supported | 35 | Public Rust methods with protocol tests; live scope varies. |
 | Planned, milestone 3 | 34 | Terminal, filesystem, worktree and VCS APIs. |
-| Planned, milestone 4 | 95 | Broader session, configuration, integration and other APIs. |
+| Planned, milestone 4 | 96 | Broader session, configuration, integration and other APIs. |
 | Deferred | 5 | Three debug routes, deprecated text-generation alias and V1 migration status. |
 
 These counts measure route implementation, not behavioral coverage. The report

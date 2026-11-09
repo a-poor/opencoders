@@ -1,11 +1,11 @@
 {
   "source_url": "https://opencode.ai/v2/openapi.json",
-  "retrieved_on": "2026-11-02",
-  "sha256": "2fdcda59d6c37f5dac904ab7b7aff05fb98465e23eb0fe8d3b9767151ad391de",
+  "retrieved_on": "2026-11-09",
+  "sha256": "e54ea93eac5278b072769616478e94638c3ea3974b36ce5998b834aff0e3265f",
   "openapi_version": "3.1.0",
   "schema_info_version": "0.0.1",
   "server_version": null,
   "server_version_note": "The published schema does not identify its producing server release. OpenCode v2.2.5 is a separately tested compatibility baseline; see tools/live/server.json and tools/live/README.md.",
-  "operations": 169,
-  "component_schemas": 490
+  "operations": 170,
+  "component_schemas": 497
 }

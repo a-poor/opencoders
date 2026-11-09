@@ -1,6 +1,6 @@
 # Pinned OpenCode contract
 
-`opencode-v2.json` is the unmodified schema reviewed during the initial design.
+`opencode-v2.json` is the unmodified published schema reviewed on 2026-11-09.
 `provenance.json` records its source, retrieval date, SHA-256, and inventory counts.
 
 The schema's `info.version` is **not** a server compatibility baseline. The
@@ -20,6 +20,41 @@ and records method/test references and verification limits. The generated
 [coverage report](../API_COVERAGE.md) is checked offline in CI. Schema and
 server-baseline updates require reviewing this inventory too; see
 [maintenance instructions](../tools/coverage/README.md).
+
+## 2026-11-09 drift review
+
+The [scheduled check](https://github.com/a-poor/opencoders/actions/runs/42687061589)
+correctly reported content drift. A fresh download matched the job's upstream
+SHA-256, `e54ea93eac5278b072769616478e94638c3ea3974b36ce5998b834aff0e3265f`.
+It replaces the 2026-11-02 pin,
+`2fdcda59d6c37f5dac904ab7b7aff05fb98465e23eb0fe8d3b9767151ad391de`.
+The inventory grows from 169 to 170 operations, 138 to 139 paths, and 490 to 497
+component schemas; no operations or component schemas were removed.
+
+The complete content review found:
+
+- New `GET /api/experimental/job` (`experimental.job.list`) and seven `Job.*`
+  schemas for shell, subagent and image jobs. The route is explicitly planned
+  for milestone 4; this update adds no public client method.
+- Optional configuration flags `all_flags`, `codemode_vm`, and `part_rows`, plus
+  `websearch.use` in both policy action enums; optional `pool` on local/remote
+  MCP configurations and optional `criteria` on predicate questions.
+- Optional true-only `paste` on integration attempts and OAuth completion prose
+  describing redirect-URL paste handling.
+- Required `tokens` and `cost` in `SessionGenerateResponse.data`, and a narrower
+  `credential.updated.data` object requiring `integrationID` and `credentialID`.
+  These are contract changes, not merely additive optional fields. Generation
+  endpoints are unimplemented; credential events remain raw, unselected events.
+- Removal of the documented 503 response from `agent.list`. Its request and
+  success response are unchanged. The shared typed `ServiceUnavailable` error
+  handling remains useful for older servers and other operations.
+
+All nine generation checks reproduce the checked-in Rust models unchanged; the
+full-component experiment also generates and compiles all 497 schemas.
+Supported non-streaming request/success contracts and selected typed event
+payloads are unchanged.
+The separately tested server baseline remains v2.2.5 with its existing evidence;
+this schema review does not establish compatibility with a newer server release.
 
 ## Weekly upstream check
 

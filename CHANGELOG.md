@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Refresh the reviewed OpenAPI pin after the 2026-11-09 upstream drift report.
+  The contract now has 170 operations and 497 component schemas; background-job
+  discovery is planned for milestone 4. Generated Rust models and the separately
+  tested OpenCode v2.2.5 baseline are unchanged. See the
+  [contract review](openapi/README.md#2026-11-09-drift-review) for compatibility details.
+
 ## 0.1.0 — 2026-11-03
 
 Initial async Rust library for applications using the OpenCode v2 HTTP API,

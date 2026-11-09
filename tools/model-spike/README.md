@@ -312,7 +312,7 @@ generation or compilation does not prove complete JSON Schema validation.
 
 | Probe | Result and consequence |
 | --- | --- |
-| All 490 component schemas | Generate and compile with the non-null override. This establishes mechanical feasibility, not endpoint or behavioral coverage. |
+| All 497 component schemas | Generate and compile with the non-null override (verified after the 2026-11-09 schema update). This establishes mechanical feasibility, not endpoint or behavioral coverage. |
 | `not: {type: "null"}` | Unmodified Typify panics. An exact conversion to `NonNullValue` preserves all non-null JSON kinds and rejects null. |
 | Messages and structured errors | Reduced unions decode correctly. Typify emits untagged unions with constrained tag fields for these probes; use explicit dispatch for public event/error handling. |
 | Optional nullable update fields | Raw generation collapses omission and null. The tested `Field<T>` adapter preserves omission, null, and a value; the `SessionTitlePatch` probe covers only the actual title field. Production models use `RequestField<T>`; separate v2.2.5 live checks verify all four null update fields are no-ops. |

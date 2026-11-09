@@ -61,9 +61,11 @@ without constructing a UI model or subscribing to unrelated events.
 
 ## Upstream contract
 
-The documentation and OpenAPI schema reviewed on 2026-11-02 describe an
-experimental HTTP API with 169 operations and 490 component schemas, using
+The OpenAPI schema reviewed on 2026-11-09 describes an
+experimental HTTP API with 170 operations and 497 component schemas, using
 OpenAPI 3.1.0. These counts describe that snapshot, not a permanent API size.
+The [drift review](openapi/README.md#2026-11-09-drift-review) records changes from
+the initial 2026-11-02 contract; the supported Rust models are unchanged.
 
 References:
 
@@ -74,7 +76,7 @@ References:
 - [Server and connection documentation](https://opencode.ai/v2/docs/cli/web/)
 
 The reviewed schema has SHA-256
-`2fdcda59d6c37f5dac904ab7b7aff05fb98465e23eb0fe8d3b9767151ad391de`.
+`e54ea93eac5278b072769616478e94638c3ea3974b36ce5998b834aff0e3265f`.
 Its `info.version` is `0.0.1`; that value should not be treated as the OpenCode
 server release version.
 
@@ -478,7 +480,7 @@ without feedback remain source-reviewed or future validation work.
 Use a hybrid approach: generate wire models from a pinned schema and hand-write
 the ergonomic client methods, transport behavior, and stream handling. The
 [initial generation experiment](tools/model-spike/README.md) selects Typify 0.8.0
-with an explicit non-null JSON override: all 490 component schemas generate and
+with an explicit non-null JSON override: all 497 component schemas generate and
 compile, and a smaller checked-in set has behavioral tests. The raw experimental
 models remain private to that tool.
 

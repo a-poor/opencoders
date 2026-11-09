@@ -47,8 +47,8 @@ unverified.
 
 ## Coverage and generation
 
-The [API coverage inventory](https://github.com/a-poor/opencoders/blob/main/API_COVERAGE.md) classifies all 169 pinned operations:
-35 supported, 129 planned and 5 deferred. Each supported route links to its Rust
+The [API coverage inventory](https://github.com/a-poor/opencoders/blob/main/API_COVERAGE.md) classifies all 170 pinned operations:
+35 supported, 130 planned and 5 deferred. Each supported route links to its Rust
 method, representative protocol tests and verification limits. See the
 [milestone 2 readiness audit](https://github.com/a-poor/opencoders/blob/main/RELEASE_READINESS.md) for remaining integration,
 execution/recovery and release work. The inventory checks are offline and do not
