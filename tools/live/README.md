@@ -615,8 +615,8 @@ notes describe the evidence at the time of initial implementation.
 ## Saved-permission lifecycle evidence (2026-11-09)
 
 The smoke harness calls [`saved_permissions.rs`](../../tests/support/saved_permissions.rs)
-after ownership verification and creation of its disposable Git project. Local
-macOS v2.2.5 checks pass for two-project isolation, explicit/empty project filters,
+after ownership verification and creation of its disposable Git project.
+macOS arm64 and Linux x86-64 v2.2.5 checks pass for two-project isolation, explicit/empty project filters,
 server/header fallback, unchanged omission/null patches and explicit empty values,
 duplicate conflicts, missing updates and repeated removal. Edits affect future
 evaluations immediately; existing pending requests stay pending, and configured
@@ -628,5 +628,9 @@ The pinned [handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/
 and [evaluation service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/permission.ts)
 explain the project fallback, global ID mutations, nullish update behavior,
 uniqueness conflicts, missing-delete success and fresh saved-rule reads.
-Linux validation of this new fixture is pending. Custom hooks, concurrent writes,
+[Pinned compatibility 42715208158](https://github.com/a-poor/opencoders/actions/runs/42715208158)
+passed smoke and active jobs at `ea1df6fe55a10c767da307603f4715908247d1b1`.
+All seven jobs in [CI 42715169271](https://github.com/a-poor/opencoders/actions/runs/42715169271)
+also passed on that revision.
+Custom hooks, concurrent writes,
 remote stores, restart durability and cancellation of active tools are unverified.

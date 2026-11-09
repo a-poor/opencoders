@@ -37,8 +37,8 @@ conversation operations pass an opt-in smoke test against **OpenCode v2.2.5 on m
 arm64 and Linux x86-64**, using disposable data and no model calls. The 16 workspace/PTY operations pass locally on macOS arm64 and in Linux run
 42707625108 at `88224a1` on 2026-11-09. The four newer worktree-lifecycle/VCS-init
 operations and nine session-workflow operations also pass on macOS arm64 and
-Linux at `3ff1edb` in run 42713795590. Saved-permission management has local macOS
-evidence; its new Linux verification is pending.
+Linux at `3ff1edb` in run 42713795590. Saved-permission management also passes
+on macOS arm64 and Linux at `ea1df6f` in run 42715208158.
 Run `python3 tools/live/run.py --websocket`;
 see [compatibility details and CI](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md) for prerequisites, release
 checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded

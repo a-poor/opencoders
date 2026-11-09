@@ -327,11 +327,11 @@ Verified locally on macOS arm64 and in Linux x86-64 hosted run 42707625108 at 88
 
 ### Evidence: saved-permissions
 
-Locally verified on macOS arm64 with v2.2.5 (2026-11-09): two-project isolation, omitted/header fallback and explicit/empty project filters, nullable/no-op/empty patches, duplicate conflicts, future allow/ask evaluations, pending requests retained across edits, deny precedence, missing updates and repeated removal. Rules are seeded through explicit Always replies in disposable projects; no model or tool is invoked. Linux validation of this new fixture is pending.
+Verified on macOS arm64 and Linux x86-64 with v2.2.5 (2026-11-09): two-project isolation, omitted/header fallback and explicit/empty project filters, nullable/no-op/empty patches, duplicate conflicts, future allow/ask evaluations, pending requests retained across edits, deny precedence, missing updates and repeated removal. Rules are seeded through explicit Always replies in disposable projects; no model or tool is invoked. Linux smoke/active run 42715208158 passed at ea1df6f.
 
 - **Live assertions:** [disposable saved-rule lifecycle](tests/support/saved_permissions.rs#L44).
 - **Source-reviewed only:** The list handler defaults omitted projectID to the server location project; the core service treats an empty string as no database filter. Update/remove address global IDs. Optional patch fields use nullish fallback, unique project/action/resource triples conflict, missing removal succeeds, and future evaluations read saved rules without a reload. Mutations do not settle pending requests or cancel active work.
-- **Still unverified live:** Linux execution of the new saved-rule fixture; remote stores, concurrent edits/evaluations, custom permission hooks, active-tool cancellation and restart durability.
+- **Still unverified live:** remote stores, concurrent edits/evaluations, custom permission hooks, active-tool cancellation and restart durability.
 - **Examples:** [saved_permissions](examples/saved_permissions.rs).
 
 ### Evidence: selection

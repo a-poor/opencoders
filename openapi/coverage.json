@@ -406,7 +406,7 @@
       ]
     },
     "saved-permissions": {
-      "live_scope": "Locally verified on macOS arm64 with v2.2.5 (2026-11-09): two-project isolation, omitted/header fallback and explicit/empty project filters, nullable/no-op/empty patches, duplicate conflicts, future allow/ask evaluations, pending requests retained across edits, deny precedence, missing updates and repeated removal. Rules are seeded through explicit Always replies in disposable projects; no model or tool is invoked. Linux validation of this new fixture is pending.",
+      "live_scope": "Verified on macOS arm64 and Linux x86-64 with v2.2.5 (2026-11-09): two-project isolation, omitted/header fallback and explicit/empty project filters, nullable/no-op/empty patches, duplicate conflicts, future allow/ask evaluations, pending requests retained across edits, deny precedence, missing updates and repeated removal. Rules are seeded through explicit Always replies in disposable projects; no model or tool is invoked. Linux smoke/active run 42715208158 passed at ea1df6f.",
       "live_tests": [
         {
           "file": "tests/support/saved_permissions.rs",
@@ -418,7 +418,7 @@
         "The list handler defaults omitted projectID to the server location project; the core service treats an empty string as no database filter. Update/remove address global IDs. Optional patch fields use nullish fallback, unique project/action/resource triples conflict, missing removal succeeds, and future evaluations read saved rules without a reload. Mutations do not settle pending requests or cancel active work."
       ],
       "unverified": [
-        "Linux execution of the new saved-rule fixture; remote stores, concurrent edits/evaluations, custom permission hooks, active-tool cancellation and restart durability."
+        "remote stores, concurrent edits/evaluations, custom permission hooks, active-tool cancellation and restart durability."
       ],
       "examples": [
         "examples/saved_permissions.rs"

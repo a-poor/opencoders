@@ -41,8 +41,8 @@ The published 0.1.0 artifact used the earlier 169-operation pin and supported 35
 operations. The 20 new workspace, nine session-workflow and three saved-permission methods remain unreleased. The initial 16
 workspace/PTY methods pass on macOS arm64 and Linux at `88224a1` (2026-11-09); the
 four lifecycle and nine session-workflow methods also passed on Linux at
-`3ff1edb` in run 42713795590. Saved-permission methods have local macOS evidence;
-Linux verification is pending.
+`3ff1edb` in run 42713795590. Saved-permission methods also pass on macOS arm64
+and Linux at `ea1df6f` in run 42715208158.
 
 | Status | Count | Meaning |
 | --- | ---: | --- |

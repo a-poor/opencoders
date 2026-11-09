@@ -38,19 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-- [ ] Finish saved-permission management validation and hosted checks.
-  - [x] Commit/push `3ff1edb`; Linux CI 42713702937 and pinned smoke/active
-    compatibility 42713795590 pass.
-  - [x] Implement stable list/update/remove with strict generation and shared
-    types; coverage is 67 operations. Protocol and disposable lifecycle checks
-    cover project scoping, null/empty patches, conflicts, future evaluations,
-    unchanged pending requests and no mutation retries. Docs/example are ready.
-  - [x] Pass 317 workspace tests/doctests (2 opt-in ignored), all four Rust 1.88
-    feature builds and examples, fmt/clippy/docs, 12 generation and 34 Python
-    checks, coverage, and local pinned smoke with the saved-rule lifecycle.
-  - [ ] Commit/push and verify Linux CI and pinned smoke/active checks for this
-    new slice.
-  Experimental, deprecated and migration-only APIs remain out.
+None.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -114,8 +102,6 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
   stay out until a separate opt-in review.
 - [ ] Implement remaining configuration, project, skill and reference APIs.
   Command/skill list discovery is complete.
-- [x] Implement saved-permission listing/update/removal; final validation and
-  hosted checks are tracked in the active goal.
 - [ ] Implement provider, integration, and credential management APIs.
 - [ ] Implement MCP management/resources and client-hosted MCP WebSockets.
 - [ ] Implement plugin management and generic plugin RPC calls/events with typed
@@ -235,6 +221,22 @@ when a decision is made.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 
 ## Completed
+
+- [x] Commit the workspace/session workflows, validate Linux, and complete stable
+  saved-permission list/update/remove (64 → 67 supported operations).
+  `3ff1edb` passed [CI 42713702937](https://github.com/a-poor/opencoders/actions/runs/42713702937)
+  and [pinned compatibility 42713795590](https://github.com/a-poor/opencoders/actions/runs/42713795590).
+  Saved-permission implementation `ea1df6f` passed all seven jobs in
+  [CI 42715169271](https://github.com/a-poor/opencoders/actions/runs/42715169271)
+  and both jobs in [pinned compatibility 42715208158](https://github.com/a-poor/opencoders/actions/runs/42715208158).
+  Local macOS validation: 317 workspace tests/doctests pass (2 opt-in ignored),
+  four Rust 1.88 feature builds and examples, fmt/clippy/docs, all 12 generation
+  targets, 34 Python checks and disposable pinned smoke pass. Strict nullable
+  updates reuse project IDs and preserve numeric metadata; tests cover project
+  isolation/fallback, empty/null inputs, conflicts, unchanged pending requests,
+  future evaluations, deny precedence, missing updates and repeated deletion.
+  All changes are committed/pushed; experimental, deprecated and migration-only
+  APIs remain out. See the read-only example and permission usage guide.
 
 - [x] Complete stable session workflows: command/skill discovery, command execution,
   context and turn diffs, durable compaction, and staged/cleared/committed reverts.
