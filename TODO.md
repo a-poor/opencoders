@@ -38,17 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-- [ ] Complete stable session activity/input: `session.active`, `session.view`
-  and `session.synthetic` (67 → 70 supported operations). Review process scope,
-  stale idle acknowledgements, synthetic admission/reconciliation and execution.
-  Add strict generation/shared types, test-first protocol and disposable live
-  checks, docs/example and coverage records. Pass workspace/feature/MSRV,
-  formatting/lint/docs/generation; commit/push and verify Linux CI plus pinned
-  smoke/active suites. Experimental/deprecated/migration APIs remain excluded.
-  Implementation and local validation are complete: 322 workspace tests/doctests
-  pass (2 opt-in ignored), four Rust 1.88 feature builds plus examples,
-  fmt/clippy/docs, all 12 generation checks, 35 Python checks and both disposable
-  v2.2.5 suites. Commit/push and Linux CI/compatibility remain.
+None.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -231,6 +221,20 @@ when a decision is made.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 
 ## Completed
+
+- [x] Complete stable session activity, viewed acknowledgements and synthetic input
+  (67 → 70 supported operations), committed in `5cb5fcf`.
+  Typed process-local activity maps validate session keys; view requests preserve
+  exact observed idle numbers and stale acknowledgements leave later turns unread.
+  Synthetic inputs preserve omission/null/empty values, share inbox models,
+  reconcile the first payload and retain staged reverts without automatic retries.
+  Local macOS validation: 322 workspace tests/doctests pass (2 opt-in ignored),
+  four Rust 1.88 feature builds plus examples, fmt/clippy/docs, all 12 generation
+  checks, 35 Python checks and disposable v2.2.5 smoke/active suites.
+  All seven jobs in [CI 42722059887](https://github.com/a-poor/opencoders/actions/runs/42722059887)
+  and both jobs in [pinned compatibility 42722320149](https://github.com/a-poor/opencoders/actions/runs/42722320149)
+  pass on the implementation revision. Docs, example and API coverage are updated;
+  experimental, deprecated and migration-only APIs remain excluded.
 
 - [x] Commit the workspace/session workflows, validate Linux, and complete stable
   saved-permission list/update/remove (64 → 67 supported operations).

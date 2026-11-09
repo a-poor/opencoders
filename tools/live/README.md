@@ -638,6 +638,10 @@ remote stores, restart durability and cancellation of active tools are unverifie
 ## Session activity and synthetic input (2026-11-09)
 
 Both disposable suites pass locally on macOS arm64 with OpenCode v2.2.5.
+At implementation revision `5cb5fcf5f03798285c9645724a0f75db327fa9a4`,
+[Linux pinned compatibility 42722320149](https://github.com/a-poor/opencoders/actions/runs/42722320149)
+passes both smoke and active jobs, and all seven jobs in
+[CI 42722059887](https://github.com/a-poor/opencoders/actions/runs/42722059887) pass.
 
 The smoke fixture [`activity.rs`](../../tests/support/activity.rs) checks inactive
 snapshots, no-idle view acknowledgements, parked empty synthetic input, repeated
