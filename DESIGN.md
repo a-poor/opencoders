@@ -1,6 +1,6 @@
 # opencoders design and implementation plan
 
-Status: 67 pinned operations have public methods and protocol tests, covering
+Status: 70 pinned operations have public methods and protocol tests, covering
 server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events, experimental session logs, workspace reads/VCS/worktree discovery,
@@ -765,6 +765,15 @@ records range, caching and query semantics. Experimental filesystem writes/watch
 and persistent PTYs are outside this goal; future opt-in exposure needs review.
 
 ### Stable session workflows
+
+Activity reads return a typed map keyed by validated `SessionId`, scoped to
+foreground drains owned by the current process. Viewed acknowledgement accepts
+the exact JSON number from the caller's observed idle state; the SDK owns no
+unread/UI state and substitutes no clock. Synthetic admission reuses the inbox
+record and shared message IDs, with strict optional/null fields. It retains staged
+reverts, separates admission from execution, and leaves reconciliation decisions
+to the caller. Inputs never retry. The workflow generator guards the active-map
+key contract before adapting it and preserves additive response metadata.
 
 Command and skill catalogs retain location envelopes. Session-bound command,
 compaction, context/diff and revert methods use session ownership and share the

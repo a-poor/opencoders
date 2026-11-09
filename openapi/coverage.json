@@ -423,6 +423,30 @@
       "examples": [
         "examples/saved_permissions.rs"
       ]
+    },
+    "session-activity": {
+      "live_scope": "Smoke checks process inactivity, no-idle view, empty parked synthetic input, first-admission reconciliation, cross-session/type conflicts, missing sessions and cancellation. The scripted active fixture checks gated running/idle snapshots, synthetic promotion and consumed reconciliation, two idle watermarks with future/stale/duplicate acknowledgements, viewed events and unchanged time.updated, and staged-revert suppression without committing history.",
+      "live_tests": [
+        {
+          "file": "tests/support/activity.rs",
+          "anchor": "fn verify(",
+          "label": "parked activity smoke"
+        },
+        {
+          "file": "tests/support/live_activity.rs",
+          "anchor": "fn verify(",
+          "label": "gated activity and viewed transitions"
+        }
+      ],
+      "source_reviewed": [
+        "Pinned v2.2.5 session/session.ts, inbox.ts, run-coordinator.ts and projector.ts: activity is process ownership through settlement; viewed time is a monotone observed-idle watermark; first matching synthetic admission wins, consumed delivery is reconstructed from the repeated request, cancellation removes pending state, and resume(false) does not pause an existing drain."
+      ],
+      "unverified": [
+        "Cross-process ownership, restart recovery, concurrent admissions/viewers and synthetic steering while a drain is already running. Explicit-null defaults and numeric precision are protocol-tested; remote providers and synthetic tool execution are outside the live fixture."
+      ],
+      "examples": [
+        "examples/session_workflows.rs"
+      ]
     }
   },
   "operations": {
@@ -1520,9 +1544,25 @@
     "session.active": {
       "method": "GET",
       "path": "/api/session/active",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn active(",
+        "label": "Sessions::active"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn activity_uses_exact_paths_bodies_statuses_and_shared_inbox_records(",
+          "label": "activity_uses_exact_paths_bodies_statuses_and_shared_inbox_records"
+        },
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn active_validates_session_keys_and_states_but_preserves_additive_fields(",
+          "label": "active_validates_session_keys_and_states_but_preserves_additive_fields"
+        }
+      ],
+      "evidence": "session-activity"
     },
     "session.background": {
       "method": "POST",
@@ -2137,9 +2177,35 @@
     "session.synthetic": {
       "method": "POST",
       "path": "/api/session/{sessionID}/synthetic",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn synthetic(",
+        "label": "Sessions::synthetic"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn activity_uses_exact_paths_bodies_statuses_and_shared_inbox_records(",
+          "label": "activity_uses_exact_paths_bodies_statuses_and_shared_inbox_records"
+        },
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn synthetic_inputs_preserve_omission_null_false_and_empty_values(",
+          "label": "synthetic_inputs_preserve_omission_null_false_and_empty_values"
+        },
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn activity_rejects_other_success_statuses_and_preserves_errors_without_retry(",
+          "label": "activity_rejects_other_success_statuses_and_preserves_errors_without_retry"
+        },
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts(",
+          "label": "uncertain mutations are not retried"
+        }
+      ],
+      "evidence": "session-activity"
     },
     "session.update": {
       "method": "PATCH",
@@ -2162,9 +2228,35 @@
     "session.view": {
       "method": "POST",
       "path": "/api/session/{sessionID}/view",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn view(",
+        "label": "Sessions::view"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn activity_uses_exact_paths_bodies_statuses_and_shared_inbox_records(",
+          "label": "activity_uses_exact_paths_bodies_statuses_and_shared_inbox_records"
+        },
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn view_keeps_exact_numbers_and_requires_a_strict_body(",
+          "label": "view_keeps_exact_numbers_and_requires_a_strict_body"
+        },
+        {
+          "file": "tests/activity.rs",
+          "anchor": "fn activity_rejects_other_success_statuses_and_preserves_errors_without_retry(",
+          "label": "activity_rejects_other_success_statuses_and_preserves_errors_without_retry"
+        },
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts(",
+          "label": "uncertain mutations are not retried"
+        }
+      ],
+      "evidence": "session-activity"
     },
     "shell.create": {
       "method": "POST",

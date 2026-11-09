@@ -307,7 +307,15 @@ async fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts() {
         io::{AsyncReadExt, AsyncWriteExt},
         net::TcpListener,
     };
-    for operation in ["command", "compact", "stage", "commit", "clear"] {
+    for operation in [
+        "command",
+        "compact",
+        "stage",
+        "commit",
+        "clear",
+        "view",
+        "synthetic",
+    ] {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         let server = tokio::spawn(async move {
@@ -345,6 +353,17 @@ async fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts() {
         let client = Client::new(format!("http://{addr}")).unwrap();
         let id = "ses_a".parse().unwrap();
         let result = match operation {
+            "view" => {
+                client
+                    .sessions()
+                    .view(&id, &SessionViewRequest::new(1.into()))
+                    .await
+            }
+            "synthetic" => client
+                .sessions()
+                .synthetic(&id, &SessionSyntheticRequest::new("private-command"))
+                .await
+                .map(|_| ()),
             "command" => {
                 client
                     .sessions()

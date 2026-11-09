@@ -7,6 +7,64 @@ stored location and ignore the client's default location. Applications own
 selection, confirmation, execution observation, and recovery after uncertain
 mutation results. No operation below retries automatically.
 
+## Activity and viewed state
+
+`client.sessions().active().await?` returns a map from validated `SessionId` keys
+to `SessionActive` entries (`type_: SessionActiveType::Running`). It snapshots
+foreground drains owned by **this server process**, including their cleanup and
+terminal settlement. Parked inbox work is not active. Absence does not establish
+inactivity on another process or cover background jobs. This read ignores the
+default location. Additive envelope/state fields are retained in `extra`; unknown
+state variants and invalid session keys fail decoding instead of implying idle.
+
+After the application displays an idle transition, acknowledge the timestamp it
+actually observed:
+
+```rust
+use opencoders::{Client, models::{SessionId, SessionViewRequest}};
+
+async fn acknowledge_displayed_idle(
+    client: &Client, id: &SessionId, observed_idle: serde_json::Number,
+) -> opencoders::Result<()> {
+    client.sessions().view(id, &SessionViewRequest::new(observed_idle)).await
+}
+```
+
+Take `observed_idle` from the displayed `SessionInfo.time.idle`, not the current
+clock or a later refresh. JSON numbers preserve integer precision. HTTP 204 can
+mean a no-op: on v2.2.5 there must be an idle timestamp, the supplied value cannot
+exceed it, and the viewed watermark must advance. A stale acknowledgement never
+marks a later idle transition viewed or regresses an existing watermark.
+The server does not verify that the supplied value names a historical event;
+the application must pass its actual observation. `time.updated` is unchanged.
+
+## Synthetic input admission
+
+`client.sessions().synthetic(id, &SessionSyntheticRequest::new(text)).await?`
+returns HTTP 200 with the shared `SessionInboxSynthetic` record. This is durable
+admission; observe execution events and projected message history for completion.
+Synthetic messages are application-supplied context, not user prompts. They can
+wake provider execution and incur its normal costs.
+
+The request requires text (empty is valid). `id`, `description`, `delivery` and
+`resume` retain omitted/null/value distinctions through `RequestField`. Metadata
+is an optional map: omitted and `{}` differ on the wire; null is invalid.
+Descriptions can be explicitly empty. On v2.2.5 delivery defaults to `steer` and
+omitted/null resume wakes execution. `.resume(false)` suppresses this wake; it
+does not pause a running drain or prevent that drain from consuming eligible work.
+**A staged revert suppresses waking and is retained** by synthetic admission.
+Clearing the revert can subsequently wake queued work.
+
+An explicit `.id(message_id)` enables caller-controlled reconciliation. The first
+admission for that ID/session/type wins even if a repeated request changes text,
+description or metadata. While pending, its stored delivery is retained. After
+promotion, the server reconstructs the record from history and uses the repeated
+request's delivery; it is not a promise to recover the original delivery mode.
+Another session/type using the ID conflicts (409). Cancellation removes pending
+state, so IDs are not permanent deduplication keys. A repeated request can still
+wake execution even when its input reconciles. The SDK never retries; after a
+lost response, inspect inbox/history before choosing how to recover.
+
 ## Discovery and command execution
 
 ```rust

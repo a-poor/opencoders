@@ -38,7 +38,17 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-None.
+- [ ] Complete stable session activity/input: `session.active`, `session.view`
+  and `session.synthetic` (67 → 70 supported operations). Review process scope,
+  stale idle acknowledgements, synthetic admission/reconciliation and execution.
+  Add strict generation/shared types, test-first protocol and disposable live
+  checks, docs/example and coverage records. Pass workspace/feature/MSRV,
+  formatting/lint/docs/generation; commit/push and verify Linux CI plus pinned
+  smoke/active suites. Experimental/deprecated/migration APIs remain excluded.
+  Implementation and local validation are complete: 322 workspace tests/doctests
+  pass (2 opt-in ignored), four Rust 1.88 feature builds plus examples,
+  fmt/clippy/docs, all 12 generation checks, 35 Python checks and both disposable
+  v2.2.5 suites. Commit/push and Linux CI/compatibility remain.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -95,9 +105,9 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
 
 ## Later: broader API coverage and release hardening (milestone 4)
 
-- [ ] Implement remaining stable session operations such as
-  synthetic messages and instructions. Commands, compaction,
-  revert and context/diff are complete; see the stable workflow goal. Explicit
+- [ ] Implement remaining stable session operations such as instructions.
+  Activity, viewed acknowledgements, synthetic input, commands, compaction,
+  revert and context/diff are implemented; see the goal records. Explicit
   skill invocation and import/export are experimental in the current pin and
   stay out until a separate opt-in review.
 - [ ] Implement remaining configuration, project, skill and reference APIs.

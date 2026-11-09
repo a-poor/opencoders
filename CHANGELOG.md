@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add process-scoped session activity, exact observed-idle acknowledgements and
+  synthetic input admission. Preserve typed session-map keys, nullable/omitted
+  inputs and inbox records; document stale-view, reconciliation and staged-revert
+  behavior. All 70 supported routes have protocol tests; mutations never retry.
+
 - Add saved-permission list/update/remove with explicit project filtering,
   nullable strict patches, typed missing-rule errors, preserved metadata and no
   mutation retries. Document future-evaluation and already-pending boundaries.

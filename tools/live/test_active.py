@@ -104,6 +104,15 @@ class ActiveFixtureTests(unittest.TestCase):
         data = json.loads(chunk[6:])
         self.assertEqual(data["choices"][0]["delta"]["tool_calls"][0]["function"]["arguments"], "雪")
 
+    def test_synthetic_turns_require_payload_and_are_separately_gated(self):
+        for scenario in ["synthetic", "synthetic_second"]:
+            request = self.request(scenario, [{"role": "user", "content": "synthetic fixture"}])
+            self.assertTrue(active.plan(request, 1)["hold"])
+            with self.assertRaises(ValueError):
+                active.plan(request, 2)
+            with self.assertRaises(ValueError):
+                active.plan(self.request(scenario), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -22,6 +22,20 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
     let command = request(spec, "command");
     let compact = request(spec, "compact");
     let stage = request(spec, "revert/stage");
+    let view = request(spec, "view");
+    let synthetic = request(spec, "synthetic");
+    let mut active = response(spec, "/api/session/active", "get");
+    if active["properties"]["data"]
+        != json!({"type":"object","patternProperties":{"^ses":reference("SessionActive")},"additionalProperties":false})
+        || active["required"] != json!(["data"])
+        || spec["components"]["schemas"]["Session.ID"] != json!({"type":"string","pattern":"^ses"})
+    {
+        return Err("session.active map changed; review typed session keys and states".into());
+    }
+    // Typify's patternProperties map does not validate its keys. Generate the
+    // value type normally, then use the existing validated SessionId for keys.
+    active["properties"]["data"] =
+        json!({"type":"object","additionalProperties":reference("SessionActive")});
     if command
         != json!({"type":"object","properties":{
         "name":{"type":"string"},"text":{"type":"string"},
@@ -36,6 +50,14 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
             != json!({"type":"object","properties":{
             "messageID":reference("Session.Message.ID"),"files":nullable(json!({"type":"boolean"}))
         },"required":["messageID"],"additionalProperties":false})
+        || view
+            != json!({"type":"object","properties":{"idle":{"type":"number"}},"required":["idle"],"additionalProperties":false})
+        || synthetic
+            != json!({"type":"object","properties":{
+            "text":{"type":"string"},"id":nullable(reference("Session.Message.ID")),
+            "description":nullable(json!({"type":"string"})),"metadata":{"type":"object"},
+            "delivery":nullable(reference("Session.Inbox.Delivery")),"resume":nullable(json!({"type":"boolean"}))
+        },"required":["text"],"additionalProperties":false})
     {
         return Err(
             "session workflow input contract changed; review strict fields and omission/null"
@@ -43,7 +65,16 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
         );
     }
     let mut spec = spec.clone();
+    spec["components"]["schemas"]["SessionActiveResponse"] = active;
     let roots = [
+        (
+            "SessionSyntheticResponse",
+            "/api/session/{sessionID}/synthetic",
+            "post",
+            "Session.Inbox.Synthetic",
+            false,
+            false,
+        ),
         (
             "CommandListResponse",
             "/api/command",
@@ -117,6 +148,11 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
     // definitions as external leaves, so this target cannot emit duplicate wire types.
     let shared = [
         (
+            "Session.Inbox.Synthetic",
+            "SessionInboxSynthetic",
+            "SessionInboxSynthetic",
+        ),
+        (
             "Location.PublicRef",
             "LocationPublicRef",
             "LocationPublicRef",
@@ -159,6 +195,11 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
         ),
     ];
     let mut settings = typify::TypeSpaceSettings::default();
+    settings.with_conversion(
+        serde_json::from_value(json!({"type":"number"}))?,
+        "::serde_json::Number",
+        std::iter::empty(),
+    );
     for (wire, name, rust) in shared {
         if spec["components"]["schemas"].get(wire).is_none() {
             return Err(format!("missing shared schema {wire}").into());
@@ -166,13 +207,16 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
         spec["components"]["schemas"][wire] = json!({});
         settings.with_replacement(name, format!("super::{rust}"), std::iter::empty());
     }
-    let names: Vec<_> = roots.iter().map(|(name, ..)| *name).collect();
+    let mut names: Vec<_> = roots.iter().map(|(name, ..)| *name).collect();
+    names.push("SessionActiveResponse");
     let mut schema = select_schemas(&spec, &names)?;
     allow_additive_fields(&mut schema);
     for (name, value) in [
         ("SessionCommandRequest", command),
         ("SessionCompactRequest", compact),
         ("SessionRevertStageRequest", stage),
+        ("SessionViewRequest", view),
+        ("SessionSyntheticRequest", synthetic),
     ] {
         spec["components"]["schemas"][name] = value;
     }
@@ -182,6 +226,8 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
             "SessionCommandRequest",
             "SessionCompactRequest",
             "SessionRevertStageRequest",
+            "SessionViewRequest",
+            "SessionSyntheticRequest",
         ],
     )?;
     schema["definitions"]
@@ -190,7 +236,11 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
         .extend(inputs["definitions"].as_object().unwrap().clone());
     let mut syntax = syn::parse_file(&generate_with_settings(schema, &settings)?)?;
     let mut adapted = 0;
+    let mut active_maps = 0;
     for item in &mut syntax.items {
+        if let Item::Enum(item) = item {
+            item.attrs.push(parse_quote!(#[non_exhaustive]));
+        }
         if let Item::Struct(item) = item {
             if !matches!(item.fields, syn::Fields::Named(_)) {
                 continue;
@@ -199,14 +249,23 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
             let name = item.ident.to_string();
             for field in &mut item.fields {
                 let key = field.ident.as_ref().unwrap().to_string();
+                if name == "SessionActiveResponse" && key == "data" {
+                    field.ty =
+                        parse_quote!(::std::collections::BTreeMap<super::SessionId, SessionActive>);
+                    active_maps += 1;
+                }
                 let nullable = match name.as_str() {
                     "SessionCommandRequest" => key == "delivery",
                     "SessionCompactRequest" => true,
                     "SessionRevertStageRequest" => key == "files",
+                    "SessionSyntheticRequest" => {
+                        matches!(key.as_str(), "id" | "description" | "delivery" | "resume")
+                    }
                     _ => false,
                 };
-                let optional = name == "SessionCommandRequest"
-                    && matches!(key.as_str(), "files" | "agents" | "skills");
+                let optional = (name == "SessionCommandRequest"
+                    && matches!(key.as_str(), "files" | "agents" | "skills"))
+                    || (name == "SessionSyntheticRequest" && key == "metadata");
                 if !nullable && !optional {
                     continue;
                 }
@@ -224,7 +283,7 @@ pub fn generate_workflows(spec: &Value) -> GenerationResult {
             }
         }
     }
-    if adapted != 7 {
+    if adapted != 12 || active_maps != 1 {
         return Err("workflow optional fields changed".into());
     }
     Ok(format!(

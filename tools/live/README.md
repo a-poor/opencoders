@@ -634,3 +634,28 @@ All seven jobs in [CI 42715169271](https://github.com/a-poor/opencoders/actions/
 also passed on that revision.
 Custom hooks, concurrent writes,
 remote stores, restart durability and cancellation of active tools are unverified.
+
+## Session activity and synthetic input (2026-11-09)
+
+Both disposable suites pass locally on macOS arm64 with OpenCode v2.2.5.
+
+The smoke fixture [`activity.rs`](../../tests/support/activity.rs) checks inactive
+snapshots, no-idle view acknowledgements, parked empty synthetic input, repeated
+ID reconciliation, cross-session/type conflicts, missing sessions and cancellation.
+The active fixture [`live_activity.rs`](../../tests/support/live_activity.rs)
+uses two separately gated localhost provider turns to check running/idle snapshots,
+synthetic promotion and history reconciliation, future/duplicate/stale view
+acknowledgements, viewed events, and unchanged `time.updated`. It also verifies
+that synthetic admission preserves a staged revert and stays parked until cancelled.
+
+The pinned [session service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/session.ts),
+[inbox](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/inbox.ts),
+[coordinator](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/run-coordinator.ts)
+and [projector](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/projector.ts)
+establish process ownership through cleanup, monotone viewed watermarks, first
+admission winning and consumed-record reconstruction. Cancellation removes the
+pending deduplication record. `resume(false)` suppresses waking an idle drain;
+it does not pause an existing one. Explicit null defaults and numeric precision
+are protocol-tested. Cross-process ownership, restarts, concurrent admission/viewers,
+synthetic steering during execution, remote providers and synthetic tool execution
+remain outside this fixture. See [usage](../../docs/workflows.md).

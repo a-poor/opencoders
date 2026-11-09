@@ -16,6 +16,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Commands: {}", client.commands().list().await?.data.len());
     println!("Skills: {}", client.skills().list().await?.data.len());
     println!(
+        "Active in this server process: {}",
+        client.sessions().active().await?.data.contains_key(&id)
+    );
+    let session = client.sessions().get(&id).await?.data;
+    println!(
+        "Last idle: {:?}; last viewed: {:?}",
+        session.time.idle, session.time.viewed
+    );
+    println!(
         "Context messages: {}",
         client.sessions().context(&id).await?.data.len()
     );

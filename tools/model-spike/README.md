@@ -253,13 +253,18 @@ and WebSocket messages are hand-written transports, not generated JSON responses
 
 ## Reviewed session workflows
 
-`--workflows` generates command/skill catalogs, strict command/compaction/revert
-inputs and their response envelopes. Existing generated/adapted message, inbox,
+`--workflows` generates command/skill catalogs, process activity, strict
+command/compaction/revert/view/synthetic inputs and their response envelopes.
+Existing generated/adapted message, inbox,
 attachment, diff and revert types are external leaves rather than duplicates.
 The inbox guard owns attachment validation; the workflow guard verifies strict
 inputs, nullability and shared response references. Run all targets together to
-check the owners of reused types. Four nullable input fields use `RequestField`;
-three optional attachment arrays distinguish absence from empty and reject null.
+check the owners of reused types. Eight nullable input fields use `RequestField`;
+three optional attachment arrays and synthetic metadata distinguish absence from
+empty and reject null. View timestamps use `serde_json::Number`. The active map
+adapter guards the exact `^ses` pattern and shared Session ID definition, then
+uses validated `SessionId` keys with generated tolerant state values. Unknown
+state enum variants fail decoding; additive fields remain available in `extra`.
 
 ## Verify checked-in models
 

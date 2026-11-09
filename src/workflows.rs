@@ -68,6 +68,52 @@ impl SessionDiffOptions {
     }
 }
 impl<'a> Sessions<'a> {
+    /// Snapshot foreground drains owned by this server process (HTTP 200).
+    /// Absent sessions are inactive in this process, including parked inbox work.
+    /// This is not a cross-process activity or background-job inventory. Keys are
+    /// validated session IDs. Ignores the client's default location.
+    pub async fn active(&self) -> Result<SessionActiveResponse> {
+        self.client
+            .get_json("api/session/active", "session.active", StatusCode::OK)
+            .await
+    }
+    /// Acknowledge the exact idle timestamp observed by the UI (HTTP 204).
+    /// On v2.2.5, no idle transition, future timestamps and already-viewed values
+    /// are no-ops. An older acknowledgement cannot mark a newer idle transition
+    /// viewed or regress the watermark. Pass `SessionInfo.time.idle`, not now.
+    /// Ignores the default location; ordinary deadline/errors apply; never retries.
+    pub async fn view(&self, id: &SessionId, request: &SessionViewRequest) -> Result<()> {
+        self.client
+            .post_json_empty(
+                "api/session",
+                &[id.as_str(), "view"],
+                "session.view",
+                request,
+            )
+            .await
+    }
+    /// Admit synthetic input and return its durable inbox record (HTTP 200).
+    /// On v2.2.5 delivery defaults to steer. Execution wakes unless `resume` is
+    /// false or a revert is staged; this operation does not commit that revert.
+    /// `resume(false)` does not pause an existing drain. Admission is not completion.
+    /// Reusing an ID for the same session/type returns the first payload, even if
+    /// new content differs; consumed IDs reconcile from history. Other session/type
+    /// collisions conflict. The server may already have admitted a lost response.
+    /// Session ownership determines location; the SDK never retries.
+    pub async fn synthetic(
+        &self,
+        id: &SessionId,
+        request: &SessionSyntheticRequest,
+    ) -> Result<SessionSyntheticResponse> {
+        self.client
+            .post_json_segments(
+                "api/session",
+                &[id.as_str(), "synthetic"],
+                "session.synthetic",
+                request,
+            )
+            .await
+    }
     /// Execute a registered slash-command callback immediately (`session.command`).
     /// HTTP 204 means the callback returned, not that any work it starts completed.
     /// Callbacks can mutate state, files, or enqueue execution. Uses the ordinary

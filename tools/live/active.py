@@ -16,7 +16,7 @@ import time
 
 import run as smoke
 
-SCENARIOS = ("output", "interrupt", "failure", "permission", "question", "cancel", "recovery", "recovery_question", "command", "compact", "clear")
+SCENARIOS = ("output", "interrupt", "failure", "permission", "question", "cancel", "recovery", "recovery_question", "command", "compact", "clear", "synthetic", "synthetic_second")
 FILE_TEXT = "fixture-file-content"
 
 
@@ -92,6 +92,10 @@ def plan(body, count):
         if "## Objective" not in json.dumps(messages):
             raise ValueError("missing compaction instruction")
         return {"last": "## Objective\nVerify workflow fixtures.\n\n## Work State\n### Completed\nCommand and snapshot checks passed.\n\n## Next Move\n(none)"}
+    if scenario in {"synthetic", "synthetic_second"}:
+        if "synthetic fixture" not in json.dumps(messages):
+            raise ValueError("missing synthetic input")
+        return {"first": "synthetic ", "last": "complete", "hold": True}
     if scenario in {"output", "interrupt", "command"}:
         return {"first": "first ", "last": "second", "hold": True}
     name = "read" if scenario == "permission" else "question"
@@ -124,7 +128,7 @@ class Fixture(ThreadingHTTPServer):
         self.aborted = []
         self.errors = []
         self.gates = {name: threading.Event() for name in [
-            "output", "interrupt", "command", "recovery/missed", "recovery/after", "recovery/end",
+            "output", "interrupt", "command", "synthetic", "synthetic_second", "recovery/missed", "recovery/after", "recovery/end",
         ]}
 
     def snapshot(self):

@@ -11,6 +11,8 @@ use opencoders::{
 use serde_json::json;
 use std::{collections::BTreeSet, env, path::PathBuf, time::Duration};
 
+#[path = "support/activity.rs"]
+mod activity;
 #[path = "support/forks.rs"]
 mod forks;
 #[path = "support/saved_permissions.rs"]
@@ -506,6 +508,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     workspace_reads::verify(&client, &root, workspace, other).await;
     workspace_lifecycle::verify(&client, &root).await;
     saved_permissions::verify(&client, &root).await;
+    activity::verify(&client, &root).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())

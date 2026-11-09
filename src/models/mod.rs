@@ -281,8 +281,9 @@ fn deserialize_pid<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<
 #[allow(dead_code)] // Typify conversion helper is unused for these external-leaf models.
 mod workflows;
 pub use workflows::{
-    CommandInfo, CommandListResponse, SessionCommandRequest, SessionCompactRequest,
-    SessionCompactResponse, SessionContextResponse, SessionDiffResponse, SessionRevertResponse,
-    SessionRevertStageRequest, SkillInfo, SkillListResponse,
+    CommandInfo, CommandListResponse, SessionActive, SessionActiveResponse, SessionActiveType,
+    SessionCommandRequest, SessionCompactRequest, SessionCompactResponse, SessionContextResponse,
+    SessionDiffResponse, SessionRevertResponse, SessionRevertStageRequest, SessionSyntheticRequest,
+    SessionSyntheticResponse, SessionViewRequest, SkillInfo, SkillListResponse,
 };
 mod workflow_inputs;

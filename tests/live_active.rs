@@ -8,6 +8,8 @@ use opencoders::{
 use serde_json::{Value, json};
 use std::{env, path::PathBuf, time::Duration};
 
+#[path = "support/live_activity.rs"]
+mod activity;
 #[path = "support/live_recovery.rs"]
 mod recovery;
 #[path = "support/live_workflows.rs"]
@@ -496,10 +498,11 @@ async fn pinned_server_active_execution_and_waiting_tools() {
     }
     recovery::verify(&client, &provider, workspace.to_str().unwrap()).await;
     workflows::verify(&client, &provider, &workspace).await;
+    activity::verify(&client, &provider, &workspace).await;
     assert_eq!(
         provider.state().await,
         json!({
-            "requests": {"output": 1, "interrupt": 1, "failure": 1, "permission": 2, "question": 2, "cancel": 2, "recovery": 1, "recovery_question": 2, "command": 1, "compact": 1, "clear": 1},
+            "requests": {"output": 1, "interrupt": 1, "failure": 1, "permission": 2, "question": 2, "cancel": 2, "recovery": 1, "recovery_question": 2, "command": 1, "compact": 1, "clear": 1, "synthetic": 1, "synthetic_second": 1},
             "aborted": ["interrupt"], "errors": [],
         })
     );

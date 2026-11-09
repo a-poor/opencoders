@@ -19,6 +19,75 @@ pub struct CommandListResponse {
     #[serde(flatten)]
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
+///`SessionActive`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionActive {
+    #[serde(rename = "type")]
+    pub type_: SessionActiveType,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`SessionActiveResponse`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionActiveResponse {
+    pub data: ::std::collections::BTreeMap<super::SessionId, SessionActive>,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`SessionActiveType`
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd
+)]
+#[non_exhaustive]
+pub enum SessionActiveType {
+    #[serde(rename = "running")]
+    Running,
+}
+impl ::std::fmt::Display for SessionActiveType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Running => f.write_str("running"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionActiveType {
+    type Err = self::error::ConversionError;
+    fn from_str(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "running" => Ok(Self::Running),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionActiveType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &str,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionActiveType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 ///`SessionCommandRequest`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
@@ -98,6 +167,42 @@ pub struct SessionRevertStageRequest {
     pub files: super::RequestField<bool>,
     #[serde(rename = "messageID")]
     pub message_id: super::SessionMessageId,
+}
+///`SessionSyntheticRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionSyntheticRequest {
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub delivery: super::RequestField<super::SessionInboxDelivery>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub description: super::RequestField<::std::string::String>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub id: super::RequestField<super::SessionMessageId>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::deserialize_optional_value"
+    )]
+    pub metadata: Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "super::RequestField::is_omitted")]
+    pub resume: super::RequestField<bool>,
+    pub text: ::std::string::String,
+}
+///`SessionSyntheticResponse`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct SessionSyntheticResponse {
+    pub data: super::SessionInboxSynthetic,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`SessionViewRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct SessionViewRequest {
+    pub idle: ::serde_json::Number,
 }
 ///`SkillInfo`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
