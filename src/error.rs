@@ -248,6 +248,13 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// A durable saved permission ID was not found.
+    PermissionSavedNotFound {
+        /// Raw saved rule identifier.
+        id: String,
+        /// Server explanation.
+        message: String,
+    },
     /// No registered slash command has this name.
     CommandNotFound {
         /// Raw command name supplied by the server.
@@ -428,6 +435,10 @@ impl ApiError {
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            PermissionSavedNotFoundError {
+                id: String,
+                message: String,
+            },
             CommandNotFoundError {
                 command: String,
                 message: String,
@@ -532,6 +543,9 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::PermissionSavedNotFoundError { id, message }) => {
+                Self::PermissionSavedNotFound { id, message }
+            }
             Ok(Known::CommandNotFoundError { command, message }) => {
                 Self::CommandNotFound { command, message }
             }
@@ -628,6 +642,7 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::PermissionSavedNotFound { .. } => "PermissionSavedNotFound { .. }",
             Self::CommandNotFound { .. } => "CommandNotFound { .. }",
             Self::CommandExecution { .. } => "CommandExecution { .. }",
             Self::SessionBusy { .. } => "SessionBusy { .. }",

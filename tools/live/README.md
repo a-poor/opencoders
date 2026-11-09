@@ -600,3 +600,33 @@ predate them. Linux, arbitrary command/plugin side effects, native compaction,
 remote providers, cross-location ranges, snapshot failures, concurrent writers
 and large histories remain unverified. The SDK adds no mutation retries or UI
 state. See [workflow usage](../../docs/workflows.md).
+
+
+## Hosted lifecycle/workflow verification (2026-11-09)
+
+Commit `3ff1edb75d3f80d071baab288745270a3747445f` passed all seven jobs in
+[CI 42713702937](https://github.com/a-poor/opencoders/actions/runs/42713702937)
+and both jobs in [pinned compatibility 42713795590](https://github.com/a-poor/opencoders/actions/runs/42713795590).
+This extends Linux evidence to the four workspace lifecycle/VCS-init methods and
+nine stable session workflow methods described above, including snapshot restore,
+parked-input wakeup, compaction and inclusive revert commit. Earlier local-only
+notes describe the evidence at the time of initial implementation.
+
+## Saved-permission lifecycle evidence (2026-11-09)
+
+The smoke harness calls [`saved_permissions.rs`](../../tests/support/saved_permissions.rs)
+after ownership verification and creation of its disposable Git project. Local
+macOS v2.2.5 checks pass for two-project isolation, explicit/empty project filters,
+server/header fallback, unchanged omission/null patches and explicit empty values,
+duplicate conflicts, missing updates and repeated removal. Edits affect future
+evaluations immediately; existing pending requests stay pending, and configured
+denies retain precedence. Rules are created through `Always` replies to manual
+fixture requests, then removed. No model or tool executes.
+
+The pinned [handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/permission.ts),
+[saved store](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/permission/saved.ts)
+and [evaluation service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/permission.ts)
+explain the project fallback, global ID mutations, nullish update behavior,
+uniqueness conflicts, missing-delete success and fresh saved-rule reads.
+Linux validation of this new fixture is pending. Custom hooks, concurrent writes,
+remote stores, restart durability and cancellation of active tools are unverified.

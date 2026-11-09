@@ -59,10 +59,11 @@ pub use form_inputs::{FormFieldsInput, FormInputError};
 #[allow(dead_code)] // Typify emits a conversion-error helper unused by these models.
 mod permissions;
 pub use permissions::{
-    PermissionRequest, PermissionRequestListResponse, PermissionSourceInput,
-    SessionPermissionCreateRequest, SessionPermissionCreateResponse,
-    SessionPermissionCreateResponseData, SessionPermissionListResponse,
-    SessionPermissionReplyRequest, SessionPermissionResponse,
+    PermissionRequest, PermissionRequestListResponse, PermissionSavedId, PermissionSavedInfo,
+    PermissionSavedInfoTime, PermissionSavedListResponse, PermissionSavedResponse,
+    PermissionSavedUpdateRequest, PermissionSourceInput, SessionPermissionCreateRequest,
+    SessionPermissionCreateResponse, SessionPermissionCreateResponseData,
+    SessionPermissionListResponse, SessionPermissionReplyRequest, SessionPermissionResponse,
 };
 mod permission_inputs;
 mod session_log_adapters;

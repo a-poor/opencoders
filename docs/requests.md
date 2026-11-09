@@ -45,7 +45,8 @@ Replies accept HTTP 204. On the tested v2.2.5 server:
 
 Configured denies still take precedence over saved allows. A successful reply
 can unblock server work; it does not report that work's outcome. Saved-rule
-management and UI approval policy remain outside these methods.
+management is available through `client.permissions().saved()` below; UI approval
+policy remains caller-owned.
 
 Create `id`/`agent` and reply `message` use `RequestField<T>` to preserve omission,
 null, and a value; the pinned server treats null like omission. Optional non-null
@@ -68,6 +69,65 @@ removes that session. It submits no prompt or tool call and saves no allow rules
 Live tests also cover saved rules and cross-session effects in disposable data.
 The active fixture verifies `once` resuming a waiting read; other waiting-tool
 reply modes, plugins, races and restart behavior remain unverified.
+
+## Saved project allow rules
+
+```rust
+use opencoders::{Client, SavedPermissionListOptions, RequestField,
+    models::{PermissionSavedId, PermissionSavedUpdateRequest}};
+
+async fn inspect(client: &Client) -> opencoders::Result<()> {
+    let project = client.location().get().await?.project.id;
+    let rules = client.permissions().saved()
+        .list(&SavedPermissionListOptions::default().project(project)).await?;
+    Ok(())
+}
+
+// The application supplies an explicitly selected rule and authorized pattern.
+async fn change(client: &Client, id: &PermissionSavedId, pattern: &str)
+    -> opencoders::Result<()>
+{
+    let mut patch = PermissionSavedUpdateRequest::default().resource(pattern);
+    patch.action = RequestField::Null; // Leaves the action unchanged on v2.2.5.
+    let updated = client.permissions().saved().update(id, &patch).await?;
+    // Removing a chosen grant is a separate application decision:
+    // client.permissions().saved().remove(id).await?;
+    Ok(())
+}
+```
+
+Saved permissions are durable **project allow rules** created by an `Always`
+reply with save patterns. These APIs cannot create a rule, change its project,
+or turn it into a deny. Lists and update results preserve `data` and additional
+fields; timestamps retain JSON number precision. Update requires HTTP 200;
+remove requires HTTP 204. Ordinary deadlines and bounded errors apply.
+
+The list route exposes only `projectID` in the pinned schema. These methods
+ignore the SDK's default location. Use a concrete discovered project ID for an
+explicit scope. On v2.2.5, an omitted project selects the server-resolved location's
+project (including caller location headers); it does **not** list every project.
+An explicitly empty project string is sent unchanged, and the pinned server
+returns an unfiltered database list. The library adds no all-project convenience.
+Update/remove address a saved rule globally by its ID, with no project guard.
+Empty IDs and URL dot segments fail locally rather than addressing a different
+route; other strings are encoded as a single segment.
+
+`PermissionSavedUpdateRequest::default()` sends `{}`. Both `action` and `resource`
+allow omission, explicit null and strings; on v2.2.5 omission/null leave existing
+values intact, while `""` is an actual replacement. Changing patterns can broaden
+or narrow future grants. A duplicate project/action/resource combination returns
+`ApiError::Conflict` (409); updating a missing ID returns
+`ApiError::PermissionSavedNotFound` (404). Removing a missing ID succeeds on the
+pinned server. No mutation retries, rolls back, or follows up automatically.
+
+The server reads saved rules during future permission evaluations. Editing or
+removing one does not settle already-pending requests, stop active execution, or
+undo completed work. Configured denies still win. After a lost response, refresh
+saved rules and reconcile before deciding whether to repeat a mutation.
+
+Run `cargo run --example saved_permissions` with `OPENCODE_BASE_URL`, optional
+`OPENCODE_DIRECTORY` and `OPENCODE_PASSWORD`. It discovers the location's concrete
+project and lists its rules without saving, editing or deleting them.
 
 ## Forms
 

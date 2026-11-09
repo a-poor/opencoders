@@ -388,3 +388,9 @@ Before broader production models are exposed:
 
 These follow-ups belong to the foundation milestone in `TODO.md`; this experiment
 does not commit the crate to Typify's generated public interface.
+
+The `--permissions` target also generates saved-rule ID/info/time envelopes and
+strict action/resource patches. Both nullable patch fields use `RequestField`;
+timestamps use `serde_json::Number`, and project IDs reuse the shared model.
+Contract guards require review when IDs, input optionality or envelope references
+change. This remains part of the existing twelve-target generation check.

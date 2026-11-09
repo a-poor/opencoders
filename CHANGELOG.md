@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add saved-permission list/update/remove with explicit project filtering,
+  nullable strict patches, typed missing-rule errors, preserved metadata and no
+  mutation retries. Document future-evaluation and already-pending boundaries.
+
 - Add command/skill discovery, slash-command execution, context and turn diffs,
   durable compaction admission, and staged/cleared/committed session reverts.
   Reuse existing wire models, preserve nullable/omitted inputs, expose typed

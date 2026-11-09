@@ -248,6 +248,8 @@ mod events;
 mod execution;
 pub use execution::{SessionInterruptOptions, SessionWaitOptions};
 mod inbox;
+mod saved_permissions;
+pub use saved_permissions::{SavedPermissionListOptions, SavedPermissions};
 mod permissions;
 pub use permissions::{Permissions, SessionPermissions};
 mod forms;

@@ -118,7 +118,7 @@ impl SessionPermissions<'_> {
     /// Missing/resolved/wrong-session requests expose `PermissionNotFound`.
     /// Failures can follow partial or complete effects. No automatic retry;
     /// injected HTTP policies remain effective. Dropping a future does not undo
-    /// an accepted reply. Saved-rule management is not implemented here.
+    /// an accepted reply. Use [`Permissions::saved`] to manage saved rules.
     pub async fn reply(
         &self,
         id: &PermissionId,

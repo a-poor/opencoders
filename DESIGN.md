@@ -1,6 +1,6 @@
 # opencoders design and implementation plan
 
-Status: 64 pinned operations have public methods and protocol tests, covering
+Status: 67 pinned operations have public methods and protocol tests, covering
 server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events, experimental session logs, workspace reads/VCS/worktree discovery,
@@ -419,7 +419,12 @@ with nonempty feedback. Always with nonempty save patterns stores project allow
 rules and re-evaluates pending requests at that location, including other sessions.
 Without save patterns it saves nothing. Configured denies beat saved allows.
 Applications choose decisions and refresh pending state after these broader effects;
-the SDK imposes no policy and does not manage saved rules in this goal.
+the SDK imposes no policy. `Permissions::saved` manages durable project allow
+rules through explicit list/update/remove methods. Listing accepts only the
+pinned `projectID` filter and omits the SDK location default; updates/removals
+address global rule IDs. Strict nullable patch fields preserve omission/null/value,
+and edits affect future evaluation without automatically settling pending
+requests. Conflicts/missing updates are typed; mutations never retry.
 
 The eighth generation target (`--permissions`) extracts endpoint envelopes/inputs,
 reuses reviewed scalar/event types, preserves response extensions, and separates

@@ -36,8 +36,9 @@ The pinned schema and provenance live in [`openapi/`](https://github.com/a-poor/
 conversation operations pass an opt-in smoke test against **OpenCode v2.2.5 on macOS
 arm64 and Linux x86-64**, using disposable data and no model calls. The 16 workspace/PTY operations pass locally on macOS arm64 and in Linux run
 42707625108 at `88224a1` on 2026-11-09. The four newer worktree-lifecycle/VCS-init
-operations and nine newer session-workflow operations pass locally on macOS arm64;
-those new fixtures have not yet run on Linux.
+operations and nine session-workflow operations also pass on macOS arm64 and
+Linux at `3ff1edb` in run 42713795590. Saved-permission management has local macOS
+evidence; its new Linux verification is pending.
 Run `python3 tools/live/run.py --websocket`;
 see [compatibility details and CI](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md) for prerequisites, release
 checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded
@@ -54,7 +55,7 @@ unverified.
 ## Coverage and generation
 
 The [API coverage inventory](https://github.com/a-poor/opencoders/blob/main/API_COVERAGE.md) classifies all 170 pinned operations:
-64 supported, 101 planned and 5 deferred. Each supported route links to its Rust
+67 supported, 98 planned and 5 deferred. Each supported route links to its Rust
 method, representative protocol tests and verification limits. See the
 [milestone 2 readiness audit](https://github.com/a-poor/opencoders/blob/main/RELEASE_READINESS.md) for remaining integration,
 execution/recovery and release work. The inventory checks are offline and do not

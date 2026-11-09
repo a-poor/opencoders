@@ -38,7 +38,19 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-None.
+- [ ] Finish saved-permission management validation and hosted checks.
+  - [x] Commit/push `3ff1edb`; Linux CI 42713702937 and pinned smoke/active
+    compatibility 42713795590 pass.
+  - [x] Implement stable list/update/remove with strict generation and shared
+    types; coverage is 67 operations. Protocol and disposable lifecycle checks
+    cover project scoping, null/empty patches, conflicts, future evaluations,
+    unchanged pending requests and no mutation retries. Docs/example are ready.
+  - [x] Pass 317 workspace tests/doctests (2 opt-in ignored), all four Rust 1.88
+    feature builds and examples, fmt/clippy/docs, 12 generation and 34 Python
+    checks, coverage, and local pinned smoke with the saved-rule lifecycle.
+  - [ ] Commit/push and verify Linux CI and pinned smoke/active checks for this
+    new slice.
+  Experimental, deprecated and migration-only APIs remain out.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -95,13 +107,15 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
 
 ## Later: broader API coverage and release hardening (milestone 4)
 
-- [ ] Implement remaining session operations such as explicit skill invocation,
-  synthetic messages, import/export, and instructions. Commands, compaction,
-  revert and context/diff are complete; see the stable workflow goal.
+- [ ] Implement remaining stable session operations such as
+  synthetic messages and instructions. Commands, compaction,
+  revert and context/diff are complete; see the stable workflow goal. Explicit
+  skill invocation and import/export are experimental in the current pin and
+  stay out until a separate opt-in review.
 - [ ] Implement remaining configuration, project, skill and reference APIs.
   Command/skill list discovery is complete.
-- [ ] Implement saved-permission listing/update/removal. Request replies can save
-  project allow rules, but their management APIs are not yet exposed.
+- [x] Implement saved-permission listing/update/removal; final validation and
+  hosted checks are tracked in the active goal.
 - [ ] Implement provider, integration, and credential management APIs.
 - [ ] Implement MCP management/resources and client-hosted MCP WebSockets.
 - [ ] Implement plugin management and generic plugin RPC calls/events with typed
@@ -235,8 +249,8 @@ when a decision is made.
   (including WebSocket PTYs and worktree lifecycle) also passes. Active checks exercise
   commands/skills, real Git snapshots/diffs and restoration, busy errors, clearing
   a revert waking parked work, completed compaction/context, automatic boundary
-  commit and permanent inclusive deletion. Linux validation is pending; hosted
-  `88224a1` evidence predates these additions.
+  commit and permanent inclusive deletion. Linux validation passed at `3ff1edb` in CI 42713702937 and pinned compatibility
+  42713795590 (2026-11-09).
 
 - [x] Verify pushed schema/workspace/PTY commits on Linux, then complete stable
   workspace lifecycle: worktree create/refresh/remove and VCS initialization.

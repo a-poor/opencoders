@@ -11,6 +11,9 @@ const REPLY: &str = "/paths/~1api~1session~1{sessionID}~1permission~1{requestID}
 pub fn generate_permissions(spec: &Value) -> Result<String, Box<dyn std::error::Error>> {
     let mut spec = spec.clone();
     for (name,path) in [
+        ("PermissionSavedListResponse","/paths/~1api~1permission~1saved/get/responses/200/content/application~1json/schema".into()),
+        ("PermissionSavedResponse","/paths/~1api~1permission~1saved~1{id}/patch/responses/200/content/application~1json/schema".into()),
+        ("PermissionSavedUpdateRequest","/paths/~1api~1permission~1saved~1{id}/patch/requestBody/content/application~1json/schema".into()),
         ("PermissionRequestListResponse","/paths/~1api~1permission~1request/get/responses/200/content/application~1json/schema".into()),
         ("SessionPermissionListResponse",format!("{SESSION}/get/responses/200/content/application~1json/schema")),
         ("SessionPermissionResponse","/paths/~1api~1session~1{sessionID}~1permission~1{requestID}/get/responses/200/content/application~1json/schema".into()),
@@ -22,6 +25,8 @@ pub fn generate_permissions(spec: &Value) -> Result<String, Box<dyn std::error::
     let mut schema = select_schemas(
         &spec,
         &[
+            "PermissionSavedListResponse",
+            "PermissionSavedResponse",
             "PermissionRequestListResponse",
             "SessionPermissionListResponse",
             "SessionPermissionResponse",
@@ -40,6 +45,7 @@ pub fn generate_permissions(spec: &Value) -> Result<String, Box<dyn std::error::
         &[
             "SessionPermissionCreateRequest",
             "SessionPermissionReplyRequest",
+            "PermissionSavedUpdateRequest",
         ],
     )?;
     schema["definitions"]
@@ -48,6 +54,7 @@ pub fn generate_permissions(spec: &Value) -> Result<String, Box<dyn std::error::
         .extend(inputs["definitions"].as_object().unwrap().clone());
     let mut settings = typify::TypeSpaceSettings::default();
     for name in [
+        "ProjectId",
         "AgentId",
         "SessionId",
         "PermissionId",
@@ -59,6 +66,11 @@ pub fn generate_permissions(spec: &Value) -> Result<String, Box<dyn std::error::
     ] {
         settings.with_replacement(name, format!("super::{name}"), std::iter::empty());
     }
+    settings.with_conversion(
+        serde_json::from_value(json!({"type":"number"}))?,
+        "::serde_json::Number",
+        std::iter::empty(),
+    );
     let mut syntax = syn::parse_file(&generate_with_settings(schema, &settings)?)?;
     let mut nullable = 0;
     let mut optional = 0;
@@ -69,13 +81,16 @@ pub fn generate_permissions(spec: &Value) -> Result<String, Box<dyn std::error::
                 let name = item.ident.to_string();
                 if !matches!(
                     name.as_str(),
-                    "SessionPermissionCreateRequest" | "SessionPermissionReplyRequest"
+                    "SessionPermissionCreateRequest"
+                        | "SessionPermissionReplyRequest"
+                        | "PermissionSavedUpdateRequest"
                 ) {
                     continue;
                 }
                 for field in &mut item.fields {
                     let key = field.ident.as_ref().unwrap().to_string();
-                    let is_nullable = matches!(key.as_str(), "id" | "agent" | "message");
+                    let is_nullable = name == "PermissionSavedUpdateRequest"
+                        || matches!(key.as_str(), "id" | "agent" | "message");
                     if !is_nullable && !matches!(key.as_str(), "save" | "metadata" | "source") {
                         continue;
                     }
@@ -106,7 +121,7 @@ pub fn generate_permissions(spec: &Value) -> Result<String, Box<dyn std::error::
             _ => {}
         }
     }
-    if nullable != 3 || optional != 3 {
+    if nullable != 5 || optional != 3 {
         return Err("permission input fields changed; review optionality adapters".into());
     }
     Ok(format!(
@@ -132,6 +147,23 @@ fn option_inner(ty: &syn::Type) -> Option<syn::Type> {
 }
 fn guard(spec: &Value) -> Result<(), Box<dyn std::error::Error>> {
     let schemas = &spec["components"]["schemas"];
+    let string = json!({"type":"string"});
+    let optional_string = json!({"anyOf":[string,{"type":"null"}]});
+    if schemas["PermissionSavedUpdateRequest"]
+        != json!({"type":"object","properties":{"action":optional_string,"resource":optional_string},"additionalProperties":false})
+        || schemas["PermissionSaved.ID"] != string
+        || schemas["PermissionSavedListResponse"]["properties"]["data"]
+            != json!({"type":"array","items":{"$ref":"#/components/schemas/PermissionSaved.Info"}})
+        || schemas["PermissionSavedResponse"]["properties"]["data"]
+            != json!({"$ref":"#/components/schemas/PermissionSaved.Info"})
+        || schemas["PermissionSavedListResponse"]["required"] != json!(["data"])
+        || schemas["PermissionSavedResponse"]["required"] != json!(["data"])
+    {
+        return Err(
+            "saved permission contracts changed; review nullable fields, ID segments and envelopes"
+                .into(),
+        );
+    }
     let source = json!({"anyOf":[{"type":"object","properties":{"type":{"type":"string","enum":["tool"]},"messageID":{"type":"string"},"id":{"type":"string"}},"required":["type","messageID","id"],"additionalProperties":false}]});
     if schemas["Permission.Source"] != source {
         return Err("Permission.Source changed; review strict input adapter".into());

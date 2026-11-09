@@ -368,7 +368,7 @@
       ]
     },
     "workspace-lifecycle": {
-      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5: Git init, unknown-provider rejection and existing-repository conflict; detached worktree create, authoritative/suffixed paths, clean removal, dirty removal refused with forceRequired before explicit forced fixture cleanup, external-worktree discovery and stale-row removal via refresh, root-checkout rejection and missing-project errors. This new lifecycle fixture has not yet run on Linux.",
+      "live_scope": "Verified on macOS arm64 and Linux x86-64, 2026-11-09, with v2.2.5: Git init, unknown-provider rejection and existing-repository conflict; detached worktree create, authoritative/suffixed paths, clean removal, dirty removal refused with forceRequired before explicit forced fixture cleanup, external-worktree discovery and stale-row removal via refresh, root-checkout rejection and missing-project errors. Linux smoke/active run 42713795590 passed at 3ff1edb.",
       "live_tests": [
         {
           "file": "tests/support/workspace_lifecycle.rs",
@@ -380,14 +380,14 @@
         "Canonical project configuration/plugin activation, selected worktree strategy, optional source/parent/name/revision, setup scripts after checkout persistence, partial effects on failure, refresh tolerating strategy discovery errors, and explicit force behavior."
       ],
       "unverified": [
-        "Linux execution of the new lifecycle fixture, custom strategies/providers and Mercurial, setup-script failure/side effects, permission failures, concurrent operations, remote/network filesystems, nested repositories and arbitrary force policies."
+        "custom strategies/providers and Mercurial, setup-script failure/side effects, permission failures, concurrent operations, remote/network filesystems, nested repositories and arbitrary force policies."
       ],
       "examples": [
         "examples/worktree.rs"
       ]
     },
     "session-workflows": {
-      "live_scope": "Locally verified on macOS arm64 with pinned v2.2.5 on 2026-11-09: configured command/skill catalogs, missing/failing callbacks, successful command admission and scripted local execution, real Git snapshot diffs, history-only/file reverts and restoration, busy rejection, clearing a revert waking parked work, compaction auto-commit/admission/completion/context and permanent inclusive history deletion. The fixture has not yet run on Linux.",
+      "live_scope": "Verified on macOS arm64 and Linux x86-64 with pinned v2.2.5 on 2026-11-09: configured command/skill catalogs, missing/failing callbacks, successful command admission and scripted local execution, real Git snapshot diffs, history-only/file reverts and restoration, busy rejection, clearing a revert waking parked work, compaction auto-commit/admission/completion/context and permanent inclusive history deletion. Linux smoke/active run 42713795590 passed at 3ff1edb.",
       "live_tests": [
         {
           "file": "tests/support/live_workflows.rs",
@@ -399,10 +399,29 @@
         "Command callbacks await plugin activation and can mutate/submit work; 204 is callback completion. Compaction commits staged history before admission and wakes execution. Clearing a revert wakes queued execution; moving/clearing file stages can overwrite later file edits. Commit deletes inclusive projected history and matching inbox/media references. Diff turn and cross-location rules follow the pinned service."
       ],
       "unverified": [
-        "Linux execution of this new fixture; arbitrary plugins/commands, real providers, native compaction, cross-location ranges, concurrent writers, snapshot capture/restore failures and large histories. File diffs use a controlled harness write during a gated provider step, not a model-selected edit tool."
+        "arbitrary plugins/commands, real providers, native compaction, cross-location ranges, concurrent writers, snapshot capture/restore failures and large histories. File diffs use a controlled harness write during a gated provider step, not a model-selected edit tool."
       ],
       "examples": [
         "examples/session_workflows.rs"
+      ]
+    },
+    "saved-permissions": {
+      "live_scope": "Locally verified on macOS arm64 with v2.2.5 (2026-11-09): two-project isolation, omitted/header fallback and explicit/empty project filters, nullable/no-op/empty patches, duplicate conflicts, future allow/ask evaluations, pending requests retained across edits, deny precedence, missing updates and repeated removal. Rules are seeded through explicit Always replies in disposable projects; no model or tool is invoked. Linux validation of this new fixture is pending.",
+      "live_tests": [
+        {
+          "file": "tests/support/saved_permissions.rs",
+          "anchor": "pub async fn verify(",
+          "label": "disposable saved-rule lifecycle"
+        }
+      ],
+      "source_reviewed": [
+        "The list handler defaults omitted projectID to the server location project; the core service treats an empty string as no database filter. Update/remove address global IDs. Optional patch fields use nullish fallback, unique project/action/resource triples conflict, missing removal succeeds, and future evaluations read saved rules without a reload. Mutations do not settle pending requests or cancel active work."
+      ],
+      "unverified": [
+        "Linux execution of the new saved-rule fixture; remote stores, concurrent edits/evaluations, custom permission hooks, active-tool cancellation and restart durability."
+      ],
+      "examples": [
+        "examples/saved_permissions.rs"
       ]
     }
   },
@@ -1209,23 +1228,66 @@
     "permission.saved.list": {
       "method": "GET",
       "path": "/api/permission/saved",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Direct saved-rule administration; current replies already exercise server-side save effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/saved_permissions.rs",
+        "anchor": "pub async fn list(",
+        "label": "SavedPermissions::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/saved_permissions.rs",
+          "anchor": "fn saved_rule_lists_use_only_explicit_project_filters_and_retain_envelopes(",
+          "label": "saved_rule_lists_use_only_explicit_project_filters_and_retain_envelopes"
+        }
+      ],
+      "evidence": "saved-permissions"
     },
     "permission.saved.remove": {
       "method": "DELETE",
       "path": "/api/permission/saved/{id}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Direct saved-rule administration; current replies already exercise server-side save effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/saved_permissions.rs",
+        "anchor": "pub async fn remove(",
+        "label": "SavedPermissions::remove"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/saved_permissions.rs",
+          "anchor": "fn saved_rule_mutations_encode_ids_and_use_patch_json_or_empty_delete(",
+          "label": "saved_rule_mutations_encode_ids_and_use_patch_json_or_empty_delete"
+        },
+        {
+          "file": "tests/saved_permissions.rs",
+          "anchor": "fn lost_saved_rule_responses_do_not_retry_update_or_removal(",
+          "label": "ambiguous mutations are not retried"
+        }
+      ],
+      "evidence": "saved-permissions"
     },
     "permission.saved.update": {
       "method": "PATCH",
       "path": "/api/permission/saved/{id}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Direct saved-rule administration; current replies already exercise server-side save effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/saved_permissions.rs",
+        "anchor": "pub async fn update(",
+        "label": "SavedPermissions::update"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/saved_permissions.rs",
+          "anchor": "fn saved_rule_mutations_encode_ids_and_use_patch_json_or_empty_delete(",
+          "label": "saved_rule_mutations_encode_ids_and_use_patch_json_or_empty_delete"
+        },
+        {
+          "file": "tests/saved_permissions.rs",
+          "anchor": "fn lost_saved_rule_responses_do_not_retry_update_or_removal(",
+          "label": "ambiguous mutations are not retried"
+        }
+      ],
+      "evidence": "saved-permissions"
     },
     "plugin.check": {
       "method": "POST",

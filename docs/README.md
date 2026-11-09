@@ -11,7 +11,7 @@ Applications own their Tokio runtime, rendering, state and approval decisions.
 | [Sessions and history](sessions.md) | Pagination, creation, forks, updates, deletion and messages. |
 | [Session workflows](workflows.md) | Commands/skills, context/diffs, compaction and revert lifecycle. |
 | [Input and execution](execution.md) | Prompt admission, inbox management, interruption, waiting and bounded automation. |
-| [Permissions and forms](requests.md) | Pending requests, replies, cancellation and server validation. |
+| [Permissions and forms](requests.md) | Pending requests, saved project allow rules, forms and server validation. |
 | [Events and recovery](events.md) | Live SSE, background observation, snapshot refresh and experimental logs. |
 | [Workspace APIs](workspace.md) | Filesystem reads, VCS snapshots/initialization and project worktree lifecycle. |
 | [Ordinary PTYs](terminals.md) | Lifecycle, resize, tickets and optional WebSocket I/O. |

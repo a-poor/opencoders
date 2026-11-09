@@ -45,3 +45,26 @@ fn strict_permission_sources_require_review_when_union_changes() {
             .contains("Permission.Source")
     );
 }
+
+#[test]
+fn saved_permission_adapters_require_review_of_inputs_ids_and_envelopes() {
+    for (pointer, value) in [
+        (
+            "/components/schemas/PermissionSaved.ID/type",
+            json!("number"),
+        ),
+        (
+            "/paths/~1api~1permission~1saved~1{id}/patch/requestBody/content/application~1json/schema/properties/action",
+            json!({"type":"string"}),
+        ),
+        (
+            "/paths/~1api~1permission~1saved/get/responses/200/content/application~1json/schema/required",
+            json!([]),
+        ),
+    ] {
+        let mut spec: Value =
+            serde_json::from_str(include_str!("../../../openapi/opencode-v2.json")).unwrap();
+        *spec.pointer_mut(pointer).unwrap() = value;
+        assert!(generate_permissions(&spec).is_err(), "{pointer}");
+    }
+}

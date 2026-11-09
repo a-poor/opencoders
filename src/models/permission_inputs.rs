@@ -68,3 +68,17 @@ impl SessionPermissionReplyRequest {
         self
     }
 }
+
+impl PermissionSavedUpdateRequest {
+    /// Set the action pattern. Empty strings remain explicit; omission/null leave
+    /// the current value unchanged on v2.2.5.
+    pub fn action(mut self, action: impl Into<String>) -> Self {
+        self.action = RequestField::Value(action.into());
+        self
+    }
+    /// Set the resource pattern. This can broaden or narrow the saved allow rule.
+    pub fn resource(mut self, resource: impl Into<String>) -> Self {
+        self.resource = RequestField::Value(resource.into());
+        self
+    }
+}
