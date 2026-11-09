@@ -306,7 +306,7 @@
       ]
     },
     "workspace": {
-      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5: list/find, special-character file names, binary bytes, 206 ranges, ETag/Last-Modified 304, 416, missing files, Git branch/status/working and committed diff, base envelope and worktree listing. Existing hosted evidence predates these methods; the manual Linux smoke job now includes this fixture.",
+      "live_scope": "Verified locally on macOS arm64 and in Linux x86-64 hosted run 42707625108 at 88224a1, 2026-11-09, with v2.2.5: list/find, special-character file names, binary bytes, 206 ranges, ETag/Last-Modified 304, 416, missing files, Git branch/status/working and committed diff, base envelope and worktree listing.",
       "live_tests": [
         {
           "file": "tests/support/workspace.rs",
@@ -318,14 +318,14 @@
         "Pinned fs handler confinement and single-range/conditional handling; VCS provider initialization and server branch limits. The first VCS snapshot can precede asynchronous provider activation."
       ],
       "unverified": [
-        "Linux execution of the new fixture, remote workspaces/providers, symlink escape responses, malformed/multiple ranges, changing files during streaming, nonempty inferred review bases, branch-mode/remote-branch diffs and multi-worktree inventories."
+        "remote workspaces/providers, symlink escape responses, malformed/multiple ranges, changing files during streaming, nonempty inferred review bases, branch-mode/remote-branch diffs and multi-worktree inventories."
       ],
       "examples": [
         "examples/workspace.rs"
       ]
     },
     "ptys": {
-      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5: create/list/get, location isolation, accepted rename/resize, ticket lifetime, explicit removal, missing PTY errors and retained exit code. No provider calls or user shells are used.",
+      "live_scope": "Verified locally on macOS arm64 and in Linux x86-64 hosted run 42707625108 at 88224a1, 2026-11-09, with v2.2.5: create/list/get, location isolation, accepted rename/resize, ticket lifetime, explicit removal, missing PTY errors and retained exit code. No provider calls or user shells are used.",
       "live_tests": [
         {
           "file": "tests/support/workspace.rs",
@@ -337,14 +337,14 @@
         "PTY default shell/login argument behavior, server environment inheritance, resize only for running PTYs, bounded exited retention and ticket header/origin/location checks."
       ],
       "unverified": [
-        "Linux execution of the new fixture, actual viewport dimensions after resize, user-shell behavior, ticket expiry timing, cross-workspace ticket isolation and server restart/process recovery."
+        "actual viewport dimensions after resize, user-shell behavior, ticket expiry timing, cross-workspace ticket isolation and server restart/process recovery."
       ],
       "examples": [
         "examples/pty.rs"
       ]
     },
     "pty-socket": {
-      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5 and the websocket feature: ticket connection/reuse rejection, initial cursor, UTF-8 input/output, explicit detach with process retained, cursor reconnect and exited-PTY close code 4404.",
+      "live_scope": "Verified locally on macOS arm64 and in Linux x86-64 hosted run 42707625108 at 88224a1, 2026-11-09, with v2.2.5 and the websocket feature: ticket connection/reuse rejection, initial cursor, UTF-8 input/output, explicit detach with process retained, cursor reconnect and exited-PTY close code 4404.",
       "live_tests": [
         {
           "file": "tests/support/workspace.rs",
@@ -361,10 +361,48 @@
         "Pinned ordinary PTY protocol: HTTP 101, single-use 60-second tickets, text output, NUL-prefixed binary JSON cursor after replay, UTF-16 cursor units, bounded retained output with no replay-gap marker and disconnect without process removal."
       ],
       "unverified": [
-        "Linux execution of the new fixture, TLS/proxy deployment, restart/reconnect across servers, replay-buffer eviction, slow consumers and ticket expiry timing. Invalid handshakes/control frames, bounded errors, message limits and read cancellation/deadlines are deterministic protocol tests."
+        "TLS/proxy deployment, restart/reconnect across servers, replay-buffer eviction, slow consumers and ticket expiry timing. Invalid handshakes/control frames, bounded errors, message limits and read cancellation/deadlines are deterministic protocol tests."
       ],
       "examples": [
         "examples/pty.rs"
+      ]
+    },
+    "workspace-lifecycle": {
+      "live_scope": "Locally verified on macOS arm64, 2026-11-09, with v2.2.5: Git init, unknown-provider rejection and existing-repository conflict; detached worktree create, authoritative/suffixed paths, clean removal, dirty removal refused with forceRequired before explicit forced fixture cleanup, external-worktree discovery and stale-row removal via refresh, root-checkout rejection and missing-project errors. This new lifecycle fixture has not yet run on Linux.",
+      "live_tests": [
+        {
+          "file": "tests/support/workspace_lifecycle.rs",
+          "anchor": "pub async fn verify(",
+          "label": "disposable workspace lifecycle"
+        }
+      ],
+      "source_reviewed": [
+        "Canonical project configuration/plugin activation, selected worktree strategy, optional source/parent/name/revision, setup scripts after checkout persistence, partial effects on failure, refresh tolerating strategy discovery errors, and explicit force behavior."
+      ],
+      "unverified": [
+        "Linux execution of the new lifecycle fixture, custom strategies/providers and Mercurial, setup-script failure/side effects, permission failures, concurrent operations, remote/network filesystems, nested repositories and arbitrary force policies."
+      ],
+      "examples": [
+        "examples/worktree.rs"
+      ]
+    },
+    "session-workflows": {
+      "live_scope": "Locally verified on macOS arm64 with pinned v2.2.5 on 2026-11-09: configured command/skill catalogs, missing/failing callbacks, successful command admission and scripted local execution, real Git snapshot diffs, history-only/file reverts and restoration, busy rejection, clearing a revert waking parked work, compaction auto-commit/admission/completion/context and permanent inclusive history deletion. The fixture has not yet run on Linux.",
+      "live_tests": [
+        {
+          "file": "tests/support/live_workflows.rs",
+          "anchor": "async fn verify(",
+          "label": "isolated session workflows and snapshots"
+        }
+      ],
+      "source_reviewed": [
+        "Command callbacks await plugin activation and can mutate/submit work; 204 is callback completion. Compaction commits staged history before admission and wakes execution. Clearing a revert wakes queued execution; moving/clearing file stages can overwrite later file edits. Commit deletes inclusive projected history and matching inbox/media references. Diff turn and cross-location rules follow the pinned service."
+      ],
+      "unverified": [
+        "Linux execution of this new fixture; arbitrary plugins/commands, real providers, native compaction, cross-location ranges, concurrent writers, snapshot capture/restore failures and large histories. File diffs use a controlled harness write during a gated provider step, not a model-selected edit tool."
+      ],
+      "examples": [
+        "examples/session_workflows.rs"
       ]
     }
   },
@@ -408,9 +446,20 @@
     "command.list": {
       "method": "GET",
       "path": "/api/command",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn list_at(&self, location: Location) -> Result<CommandListResponse>",
+        "label": "Commands::list_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_reads_use_catalog_locations_and_session_diff_filters(",
+          "label": "workflow_reads_use_catalog_locations_and_session_diff_filters"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "config.get": {
       "method": "GET",
@@ -1423,23 +1472,66 @@
     "session.command": {
       "method": "POST",
       "path": "/api/session/{sessionID}/command",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn command(",
+        "label": "Sessions::command"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes(",
+          "label": "workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes"
+        },
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts(",
+          "label": "uncertain mutations are not retried"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "session.compact": {
       "method": "POST",
       "path": "/api/session/{sessionID}/compact",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn compact(",
+        "label": "Sessions::compact"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes(",
+          "label": "workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes"
+        },
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts(",
+          "label": "uncertain mutations are not retried"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "session.context": {
       "method": "GET",
       "path": "/api/session/{sessionID}/context",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn context(",
+        "label": "Sessions::context"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_reads_use_catalog_locations_and_session_diff_filters(",
+          "label": "workflow_reads_use_catalog_locations_and_session_diff_filters"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "session.create": {
       "method": "POST",
@@ -1462,9 +1554,20 @@
     "session.diff": {
       "method": "GET",
       "path": "/api/session/{sessionID}/diff",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn diff(",
+        "label": "Sessions::diff"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_reads_use_catalog_locations_and_session_diff_filters(",
+          "label": "workflow_reads_use_catalog_locations_and_session_diff_filters"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "session.environment": {
       "method": "PUT",
@@ -1860,23 +1963,71 @@
     "session.revert.clear": {
       "method": "DELETE",
       "path": "/api/session/{sessionID}/revert",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn clear(",
+        "label": "SessionReverts::clear"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes(",
+          "label": "workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes"
+        },
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts(",
+          "label": "uncertain mutations are not retried"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "session.revert.commit": {
       "method": "POST",
       "path": "/api/session/{sessionID}/revert/commit",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn commit(",
+        "label": "SessionReverts::commit"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes(",
+          "label": "workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes"
+        },
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts(",
+          "label": "uncertain mutations are not retried"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "session.revert.stage": {
       "method": "POST",
       "path": "/api/session/{sessionID}/revert/stage",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn stage(",
+        "label": "SessionReverts::stage"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes(",
+          "label": "workflow_mutations_use_session_paths_exact_statuses_and_preserve_envelopes"
+        },
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn lost_workflow_mutation_responses_do_not_retry_callbacks_or_reverts(",
+          "label": "uncertain mutations are not retried"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "session.shell": {
       "method": "POST",
@@ -1991,9 +2142,20 @@
     "skill.list": {
       "method": "GET",
       "path": "/api/skill",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+      "status": "supported",
+      "rust": {
+        "file": "src/workflows.rs",
+        "anchor": "pub async fn list_at(&self, location: Location) -> Result<SkillListResponse>",
+        "label": "Skills::list_at"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workflows.rs",
+          "anchor": "fn workflow_reads_use_catalog_locations_and_session_diff_filters(",
+          "label": "workflow_reads_use_catalog_locations_and_session_diff_filters"
+        }
+      ],
+      "evidence": "session-workflows"
     },
     "vcs.base": {
       "method": "GET",
@@ -2070,9 +2232,25 @@
     "vcs.init": {
       "method": "POST",
       "path": "/api/vcs/init",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn init(",
+        "label": "Vcs::init"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn vcs_initialization_is_bodyless_and_preserves_default_override_and_empty_provider(",
+          "label": "vcs_initialization_is_bodyless_and_preserves_default_override_and_empty_provider"
+        },
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn lost_mutation_responses_do_not_retry_initialization_or_worktree_operations(",
+          "label": "ambiguous mutations are not retried"
+        }
+      ],
+      "evidence": "workspace-lifecycle"
     },
     "vcs.status": {
       "method": "GET",
@@ -2109,9 +2287,25 @@
     "worktree.create": {
       "method": "POST",
       "path": "/api/worktree",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn create(",
+        "label": "Worktrees::create"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn worktree_lifecycle_uses_project_bodies_without_location_and_preserves_created_metadata(",
+          "label": "worktree_lifecycle_uses_project_bodies_without_location_and_preserves_created_metadata"
+        },
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn lost_mutation_responses_do_not_retry_initialization_or_worktree_operations(",
+          "label": "ambiguous mutations are not retried"
+        }
+      ],
+      "evidence": "workspace-lifecycle"
     },
     "worktree.list": {
       "method": "GET",
@@ -2134,16 +2328,48 @@
     "worktree.refresh": {
       "method": "POST",
       "path": "/api/worktree/refresh",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn refresh(",
+        "label": "Worktrees::refresh"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn worktree_lifecycle_uses_project_bodies_without_location_and_preserves_created_metadata(",
+          "label": "worktree_lifecycle_uses_project_bodies_without_location_and_preserves_created_metadata"
+        },
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn lost_mutation_responses_do_not_retry_initialization_or_worktree_operations(",
+          "label": "ambiguous mutations are not retried"
+        }
+      ],
+      "evidence": "workspace-lifecycle"
     },
     "worktree.remove": {
       "method": "DELETE",
       "path": "/api/worktree",
-      "status": "planned",
-      "milestone": 3,
-      "reason": "Workspace and VCS operations with explicit mutation scope and disposable fixtures."
+      "status": "supported",
+      "rust": {
+        "file": "src/workspace.rs",
+        "anchor": "pub async fn remove(",
+        "label": "Worktrees::remove"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn worktree_lifecycle_uses_project_bodies_without_location_and_preserves_created_metadata(",
+          "label": "worktree_lifecycle_uses_project_bodies_without_location_and_preserves_created_metadata"
+        },
+        {
+          "file": "tests/workspace_lifecycle.rs",
+          "anchor": "fn lost_mutation_responses_do_not_retry_initialization_or_worktree_operations(",
+          "label": "ambiguous mutations are not retried"
+        }
+      ],
+      "evidence": "workspace-lifecycle"
     }
   }
 }

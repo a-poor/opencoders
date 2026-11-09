@@ -38,14 +38,15 @@ does not update the pinned contract or gate ordinary CI.
 [API_COVERAGE.md](API_COVERAGE.md) classifies all **170** pinned operation IDs
 after the [2026-11-09 schema review](openapi/README.md#2026-11-09-drift-review).
 The published 0.1.0 artifact used the earlier 169-operation pin and supported 35
-operations. The 16 new workspace/PTY methods are unreleased; their live evidence
-is local macOS arm64 on 2026-11-09, not the earlier hosted run.
+operations. The 20 new workspace and nine new session-workflow methods remain unreleased. The initial 16
+workspace/PTY methods pass on macOS arm64 and Linux at `88224a1` (2026-11-09); the
+four newer lifecycle and nine session-workflow methods have local macOS evidence only.
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
-| Supported | 51 | Public Rust methods with protocol tests; live scope varies. |
-| Planned, milestone 3 | 18 | Terminal, filesystem, worktree and VCS APIs. |
-| Planned, milestone 4 | 96 | Broader session, configuration, integration and other APIs. |
+| Supported | 64 | Public Rust methods with protocol tests; live scope varies. |
+| Planned, milestone 3 | 14 | Experimental persistent PTYs and filesystem write/watch APIs; deferred from current goals. |
+| Planned, milestone 4 | 87 | Broader session, configuration, integration and other APIs. |
 | Deferred | 5 | Three debug routes, deprecated text-generation alias and V1 migration status. |
 
 These counts measure route implementation, not behavioral coverage. The report

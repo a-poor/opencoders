@@ -1,12 +1,13 @@
-# Workspace reads
+# Workspace reads and lifecycle
 
 These APIs are unreleased additions after 0.1.0; use the repository checkout
 containing them until the next crate release.
 
 `Client::files()` lists and finds paths and streams file bytes. `Client::vcs()`
 reads branch information, review bases, status and diffs. `Client::worktrees()`
-lists the directories registered to a project. Filesystem writes/watch, worktree
-mutations and VCS initialization are outside this slice.
+lists and manages the directories registered to a project. `vcs().init()` explicitly
+initializes version control. Experimental filesystem writes/watch remain outside
+this slice.
 
 All location-scoped methods have `_at` overrides. Resolve a location once with
 `client.location().get()` and pass its directory when related calls must address
@@ -89,3 +90,63 @@ Run `cargo run --example workspace` with `OPENCODE_BASE_URL`, optional
 `OPENCODE_PASSWORD` and `OPENCODE_DIRECTORY`. Set `OPENCODE_FILE` to a relative
 path to count up to 1 MiB of streamed bytes without printing file contents.
 The example performs no repository or filesystem mutations through the API.
+
+## Explicit lifecycle mutations
+
+`Vcs::init(&VcsInitOptions)` sends a bodyless POST and accepts only HTTP 204.
+Its `_at` override selects a per-call location. Omitted `provider` defaults to
+`git` on v2.2.5; registered providers can have different effects. Initialization
+uses the location's **project directory**, refreshes its location services and
+creates no commit. Existing version control returns a conflict; unknown providers
+return 400, unsupported initialization is a typed `VcsInitNotSupported` (501), and
+provider failure can return 503. An error or cancelled request need not mean that
+no files changed. The SDK does not retry initialization.
+
+Worktree mutations take a `ProjectId` and ignore the client's default location:
+
+```rust,no_run
+# async fn example(client: &opencoders::Client, project: opencoders::models::ProjectId) -> opencoders::Result<()> {
+use opencoders::models::{WorktreeCreateRequest, WorktreeRemoveRequest};
+let created = client.worktrees().create(&WorktreeCreateRequest::new(project.clone())
+    .directory("/server/checkouts".to_owned().into()).name("review").branch("HEAD")).await?;
+client.worktrees().refresh(&project).await?;
+client.worktrees().remove(&WorktreeRemoveRequest::new(project, created.directory, false)).await?;
+# Ok(()) }
+```
+
+- **Create** loads canonical project configuration, selects its worktree strategy,
+  creates a checkout and can execute the project's setup script. `from` selects a
+  saved source checkout; omission uses the canonical project root. `directory`
+  names the **parent directory**, not the final checkout. The server generates a
+  name when omitted and can append collision suffixes. Always use the returned
+  `WorktreeInfo.directory`. The built-in Git strategy checks out the requested
+  revision (default HEAD) detached; `branch` does not create a named Git branch.
+  Optional fields reject null and preserve explicit empty strings for server
+  validation. A setup failure can occur after the checkout is created and saved.
+- **Refresh** discovers through the configured strategies and reconciles saved
+  inventory, including externally created checkouts and missing directories.
+  It can load configuration/plugins and changes server state. It does not refresh
+  a checkout's files from a remote. The pinned server can tolerate discovery
+  errors, so HTTP 204 is not a guarantee that every strategy enumerated everything.
+- **Remove** sends a JSON body on DELETE, including a required boolean `force`.
+  The constructor requires that decision explicitly. The selected strategy can
+  delete checkout files; the pinned server rejects the canonical/root checkout
+  as an unmanaged directory. Dirty Git checkouts return `ApiError::Worktree` with
+  `force_required: Some(true)`. The SDK never escalates force automatically.
+  Optional/null force-error metadata maps to `None`; explicit false is preserved,
+  and the bounded raw error body retains the original wire form.
+
+Create expects HTTP 200; refresh/remove expect HTTP 204. Paths are server paths;
+the SDK neither checks the local filesystem nor imposes a local root. Mutations
+use the configured ordinary request deadline. Cancellation, transport loss or a
+setup failure can leave partial/completed effects: inspect saved inventory and
+server state before retrying. The SDK adds no retries, cleanup or rollback;
+explicit retry policies on an injected HTTP client remain caller-owned.
+
+`cargo run --example worktree -- --execute` requires `OPENCODE_BASE_URL` and
+`OPENCODE_DIRECTORY` pointing to an existing committed project. Optional
+`OPENCODE_PASSWORD` supplies auth and `OPENCODE_WORKTREE_PARENT` chooses a server
+parent directory. It creates, refreshes and removes one checkout, always using
+`force: false`; failures print the created path for inspection. Project setup
+scripts may run and may leave dirty files that prevent cleanup. An ambiguous
+create failure can require listing worktrees to find the result.

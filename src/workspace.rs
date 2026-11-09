@@ -1,4 +1,5 @@
 use crate::{Client, Location, Result, StatusCode, models::*};
+use reqwest::Method;
 
 /// Options for direct-child directory listing. Paths are server paths.
 #[derive(Clone, Debug, Default)]
@@ -161,12 +162,49 @@ impl VcsDiffOptions {
     }
 }
 
-/// Read-only version-control operations, obtained from [`Client::vcs`].
+/// Options for explicit repository initialization on the server.
+#[derive(Clone, Debug, Default)]
+#[non_exhaustive]
+pub struct VcsInitOptions {
+    /// Registered provider identifier. Omission uses `git` on the pinned server.
+    pub provider: Option<String>,
+}
+impl VcsInitOptions {
+    /// Select a provider. Explicit empty strings remain present for server validation.
+    pub fn provider(mut self, provider: impl Into<String>) -> Self {
+        self.provider = Some(provider.into());
+        self
+    }
+}
+
+/// Version-control reads and explicit initialization, obtained from [`Client::vcs`].
 #[derive(Clone, Copy, Debug)]
 pub struct Vcs<'a> {
     pub(crate) client: &'a Client,
 }
 impl Vcs<'_> {
+    /// Initialize version control in the location's project directory (`vcs.init`).
+    /// Mutates server files and refreshes location services; accepts only HTTP 204.
+    /// Existing version control is a conflict. No commit is created and no retry
+    /// is added by the SDK; a lost response can leave initialization completed.
+    pub async fn init(&self, options: &VcsInitOptions) -> Result<()> {
+        self.init_at(options, self.client.default_location().clone())
+            .await
+    }
+    /// Initialize at a per-call location. Provider plugins and server policy apply.
+    pub async fn init_at(&self, options: &VcsInitOptions, location: Location) -> Result<()> {
+        let mut url = self.client.segments_url("api/vcs/init", &[]);
+        let mut query = location.query();
+        if let Some(provider) = &options.provider {
+            query.push(("provider", provider.clone()));
+        }
+        if !query.is_empty() {
+            url.query_pairs_mut().extend_pairs(query);
+        }
+        self.client
+            .send_empty(self.client.request(Method::POST, url), "vcs.init")
+            .await
+    }
     /// Read current/default branch and provider information (`vcs.get`).
     pub async fn get(&self) -> Result<VcsResponse> {
         self.get_at(self.client.default_location().clone()).await
@@ -255,6 +293,42 @@ pub struct Worktrees<'a> {
     pub(crate) client: &'a Client,
 }
 impl Worktrees<'_> {
+    /// Create a managed worktree using the project's selected strategy (`worktree.create`).
+    /// Loads canonical project configuration and can run its setup script. A setup
+    /// failure or lost response can leave a created checkout; inspect inventory
+    /// before deciding what to do next. The SDK adds no retries or implicit cleanup.
+    /// `directory` is a parent directory; use the returned path as authoritative.
+    pub async fn create(&self, request: &WorktreeCreateRequest) -> Result<WorktreeInfo> {
+        self.client
+            .post_json("api/worktree", "worktree.create", StatusCode::OK, request)
+            .await
+    }
+    /// Discover worktrees and reconcile the project's saved inventory (`worktree.refresh`).
+    /// Loads canonical configuration and runs strategies; this mutates saved state.
+    /// Requires HTTP 204 and ignores the client's default location.
+    pub async fn refresh(&self, project_id: &ProjectId) -> Result<()> {
+        self.client
+            .post_json_empty(
+                "api/worktree/refresh",
+                &[],
+                "worktree.refresh",
+                &WorktreeRefreshRequest::new(project_id.clone()),
+            )
+            .await
+    }
+    /// Remove a saved managed worktree and its files (`worktree.remove`).
+    /// Requires an explicit force decision. A `Worktree` API error can carry
+    /// `force_required`; the SDK never changes that decision or retries removal.
+    /// The canonical/root checkout is not a removable managed worktree on v2.2.5.
+    pub async fn remove(&self, request: &WorktreeRemoveRequest) -> Result<()> {
+        let request = self.client.json_request(
+            Method::DELETE,
+            self.client.segments_url("api/worktree", &[]),
+            "worktree.remove",
+            request,
+        )?;
+        self.client.send_empty(request, "worktree.remove").await
+    }
     /// List the project's saved worktrees (`worktree.list`).
     /// Does not run discovery or activate a location. The default location is
     /// ignored; obtain a project ID from [`Client::location`].

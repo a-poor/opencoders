@@ -65,11 +65,11 @@ impl Client {
     pub fn files(&self) -> crate::Files<'_> {
         crate::Files { client: self }
     }
-    /// Read version-control information at a working location.
+    /// Read version-control information or explicitly initialize a repository.
     pub fn vcs(&self) -> crate::Vcs<'_> {
         crate::Vcs { client: self }
     }
-    /// Read the saved worktree inventory for a project.
+    /// Read and manage the saved worktrees for a project.
     pub fn worktrees(&self) -> crate::Worktrees<'_> {
         crate::Worktrees { client: self }
     }
@@ -209,6 +209,16 @@ impl Client {
     /// Configured default for location-aware routes. Server-wide routes ignore it.
     pub fn default_location(&self) -> &Location {
         &self.inner.default_location
+    }
+
+    /// Discover registered slash commands at a location.
+    pub fn commands(&self) -> crate::Commands<'_> {
+        crate::Commands { client: self }
+    }
+
+    /// Discover registered skills and their content at a location.
+    pub fn skills(&self) -> crate::Skills<'_> {
+        crate::Skills { client: self }
     }
 
     /// The validated base URL, normalized to end in `/`.

@@ -1,11 +1,12 @@
 # opencoders design and implementation plan
 
-Status: 51 pinned operations have public methods and protocol tests, covering
+Status: 64 pinned operations have public methods and protocol tests, covering
 server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events, experimental session logs, workspace reads/VCS/worktree discovery,
-and ordinary PTYs with optional WebSocket I/O. The new workspace/PTY fixture
-passes locally on macOS arm64; Linux verification is wired into manual CI. Background observation and automation
+ordinary PTYs with optional WebSocket I/O, worktree lifecycle/VCS initialization, and stable session workflows.
+The read/PTY fixture passes on macOS arm64 and Linux; new lifecycle checks pass
+locally on macOS arm64. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
 hosted smoke and active checks pass on macOS arm64 and Linux x86-64.
@@ -552,8 +553,8 @@ adjacent-tag input decoding. Responses retain added fields and numeric precision
 conversation models. Event dispatch preserves unknown kinds while rejecting
 malformed known payloads; permission and form inputs retain their reviewed
 validation and omission/null rules. See the [generation guide](tools/model-spike/README.md)
-for each slice's adapters and schema guards. CI checks all eleven targets: the raw
-probe and ten production slices, including `--workspace` and `--ptys`. Normal builds never run generation.
+for each slice's adapters and schema guards. CI checks all twelve targets: the raw
+probe and eleven production slices, including `--workspace`, `--ptys` and `--workflows`. Normal builds never run generation.
 
 Production request models use three-state fields where the reviewed schema allows
 omission, null and a value; non-nullable inputs retain their stricter contracts.
@@ -745,9 +746,31 @@ no automatic range resumption is attempted. Read paths are encoded once and
 ambiguous dot segments rejected. The server remains responsible for filesystem
 confinement. VCS info/base/status/branches/diff and project worktree listing add
 read-only context; initial VCS info may precede asynchronous provider activation.
-No cross-call atomic snapshot is promised. [Workspace usage](docs/workspace.md)
+No cross-call atomic snapshot is promised.
+
+Worktree create/refresh/remove are project-scoped mutations with strict generated
+inputs. Create returns the authoritative server path and can run setup scripts
+after persistence. Remove requires an explicit force boolean; typed worktree
+errors preserve optional `forceRequired` without retry/escalation. Refresh runs
+strategy discovery and mutates saved inventory. VCS initialization is an explicit
+location-scoped bodyless POST accepting 204; it can invalidate location services.
+Failures can follow partial effects, so no automatic cleanup/rollback is added.
+[Workspace usage](docs/workspace.md)
 records range, caching and query semantics. Experimental filesystem writes/watch
 and persistent PTYs are outside this goal; future opt-in exposure needs review.
+
+### Stable session workflows
+
+Command and skill catalogs retain location envelopes. Session-bound command,
+compaction, context/diff and revert methods use session ownership and share the
+existing strict attachment, message, inbox and diff models. The SDK owns no
+selection, UI confirmation or retry policy. Callbacks return 204 independently
+of execution; compaction returns its durable input, with completion observed
+through existing events/history. Revert staging retains history but may restore
+files; clear restores staged paths and wakes queued work; commit removes an
+inclusive boundary permanently. Prompt/compaction admission can commit a staged
+boundary upstream. See [session workflows](docs/workflows.md) for caller decisions
+and [live evidence](tools/live/README.md) for isolated snapshot/provider checks.
 
 ## Implementation milestones
 

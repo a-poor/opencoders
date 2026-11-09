@@ -16,7 +16,7 @@ import time
 
 import run as smoke
 
-SCENARIOS = ("output", "interrupt", "failure", "permission", "question", "cancel", "recovery", "recovery_question")
+SCENARIOS = ("output", "interrupt", "failure", "permission", "question", "cancel", "recovery", "recovery_question", "command", "compact", "clear")
 FILE_TEXT = "fixture-file-content"
 
 
@@ -27,7 +27,7 @@ def environment(root, password, origin, token):
     env = smoke.server_environment(root, password)
     env["OPENCODE_CONFIG_CONTENT"] = json.dumps({
         "model": "fixture/output", "default_agent": "fixture",
-        "update": "disable", "share": "disabled", "snapshots": False,
+        "update": "disable", "share": "disabled", "snapshots": True,
         "warming": False, "compaction": {"auto": False},
         "permissions": [
             {"action": "*", "resource": "*", "effect": "deny"},
@@ -38,6 +38,11 @@ def environment(root, password, origin, token):
             {"action": "provider.use", "resource": "*", "effect": "deny"},
             {"action": "provider.use", "resource": "fixture", "effect": "allow"},
         ],
+        "commands": {
+            "fixture-command": {"template": "workflow fixture $ARGUMENTS", "description": "Local fixture"},
+            "fixture-command-fails": {"template": "unused", "agent": "missing-fixture-agent"},
+        },
+        "skills": [str(root / "fixture-skills")],
         "agents": {
             "fixture": {"mode": "primary", "steps": 3, "system": "Local compatibility fixture."},
             "title": {"disabled": True},
@@ -81,7 +86,13 @@ def plan(body, count):
             {"text": "missed ", "gate": "recovery/after"},
             {"text": "after", "gate": "recovery/end"},
         ], "last": ""}
-    if scenario in {"output", "interrupt"}:
+    if scenario == "clear":
+        return {"last": "cleared revert resumed"}
+    if scenario == "compact":
+        if "## Objective" not in json.dumps(messages):
+            raise ValueError("missing compaction instruction")
+        return {"last": "## Objective\nVerify workflow fixtures.\n\n## Work State\n### Completed\nCommand and snapshot checks passed.\n\n## Next Move\n(none)"}
+    if scenario in {"output", "interrupt", "command"}:
         return {"first": "first ", "last": "second", "hold": True}
     name = "read" if scenario == "permission" else "question"
     tools = {tool.get("function", {}).get("name") for tool in body.get("tools", [])}
@@ -113,7 +124,7 @@ class Fixture(ThreadingHTTPServer):
         self.aborted = []
         self.errors = []
         self.gates = {name: threading.Event() for name in [
-            "output", "interrupt", "recovery/missed", "recovery/after", "recovery/end",
+            "output", "interrupt", "command", "recovery/missed", "recovery/after", "recovery/end",
         ]}
 
     def snapshot(self):
@@ -242,8 +253,18 @@ def run(manifest, archive):
         workspace = root / "workspace"
         workspace.mkdir()
         (workspace / "fixture.txt").write_text(FILE_TEXT + "\n")
+        (workspace / "workflow.txt").write_text("before workflow\n")
+        skill = root / "fixture-skills" / "workflow" / "SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text("---\nname: workflow-fixture\ndescription: Local compatibility fixture\ndisable-model-invocation: true\n---\nLocal skill content.\n")
         password = secrets.token_urlsafe(32)
         env = environment(root, password, origin, fixture.token)
+        # Only the disposable workspace is initialized, with inherited Git config disabled.
+        for args in [["init", "--quiet"], ["add", "fixture.txt", "workflow.txt"],
+                     ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                      "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
+                      "commit", "--quiet", "-m", "Fixture"]]:
+            subprocess.run(["git", *args], cwd=workspace, env=env, check=True, capture_output=True, timeout=15)
         with (root / "server.log").open("w") as log:
             process = subprocess.Popen(
                 [str(executable), "serve", "--stdio", "--hostname", "127.0.0.1", "--port", "0"],

@@ -87,6 +87,16 @@ class ActiveFixtureTests(unittest.TestCase):
             with self.subTest(request=request, count=count), self.assertRaises(ValueError):
                 active.plan(request, count)
 
+    def test_workflow_summary_requires_instructions_and_never_repeats(self):
+        request = self.request("compact", [{"role": "user", "content": "## Objective"}])
+        self.assertIn("## Objective", active.plan(request, 1)["last"])
+        with self.assertRaises(ValueError):
+            active.plan(request, 2)
+        with self.assertRaises(ValueError):
+            active.plan(self.request("compact"), 1)
+        self.assertTrue(active.plan(self.request("command"), 1)["hold"])
+        self.assertEqual(active.plan(self.request("clear"), 1)["last"], "cleared revert resumed")
+
     def test_chunks_encode_sse_and_tool_arguments(self):
         chunk = active.chunk({"tool_calls": [{"index": 0, "function": {"arguments": "雪"}}]})
         self.assertTrue(chunk.startswith(b"data: "))

@@ -55,7 +55,7 @@ No credentials are discovered from local OpenCode files.
 the `websocket` feature adds `Error::PtySocket`. Use `operation()`,
 `status()`, and `is_timeout()` for diagnostics and control flow. JSON response
 methods expect exactly HTTP 200; session update/remove/switch/wait, permission reply,
-form reply/cancel, PTY remove, and inbox update/cancel methods expect HTTP 204 with no
+form reply/cancel, PTY remove, worktree refresh/remove, VCS initialization, and inbox update/cancel methods expect HTTP 204 with no
 JSON decoding. Unexpected redirects and other success statuses are HTTP errors
 too. Encoding errors happen before any request is sent and have no status.
 JSON-body operations set `Content-Type: application/json`, overriding defaults.
@@ -66,7 +66,8 @@ HTTP errors retain a bounded raw body and recognize `InvalidRequestError`,
 `MessageNotFoundError` (also used when a message belongs to another session), and
 `AgentNotFoundError`, `PermissionNotFoundError`, `FormNotFoundError`,
 `FormAlreadySettledError`, `FormInvalidAnswerError`, `FileNotFoundError`,
-`ProjectNotFoundError`, `PtyNotFoundError`, `ForbiddenError`, and `ConflictError`
+`ProjectNotFoundError`, `PtyNotFoundError`, `ForbiddenError`, `WorktreeError`,
+`VcsInitNotSupportedError`, and `ConflictError`
 (with an optional resource identifier).
 Other JSON, including malformed known error shapes, is
 available as `ApiError::Unrecognized`. Known payloads' additional fields remain

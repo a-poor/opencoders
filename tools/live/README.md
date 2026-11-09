@@ -67,7 +67,8 @@ to include these checks.
 
 [`active.py`](active.py) reuses the smoke runner's checksum-pinned archive,
 environment allowlist, ephemeral password, loopback port allocation and process
-cleanup. It creates a separate disposable workspace/database. A local HTTP server
+cleanup. It creates a separate disposable Git workspace/database with snapshots
+enabled for workflow checks. A local HTTP server
 speaks the pinned bundled OpenAI-compatible chat streaming protocol. The runner
 configures only this provider, denies other providers by policy, disables warming,
 automatic compaction, updates and sharing, and removes the title agent. Named
@@ -491,8 +492,8 @@ same v2.2.5 archive. The new fixture is in `tests/support/workspace.rs`; the
 existing parent verifies the server PID, paths and empty disposable state before
 calling it. It creates binary fixtures and a separate Git repository with isolated
 Git configuration/hooks, and starts only `/bin/cat` and `/usr/bin/false`. It does
-not submit prompts, call providers or launch a user shell. The manual Linux smoke
-job now includes `--websocket`; that new Linux execution has not yet been run.
+not submit prompts, call providers or launch a user shell. The Linux smoke job
+also passed with `--websocket` at `88224a1`; see the hosted follow-up below.
 Earlier hosted results remain evidence for their original scope.
 
 Observed assertions cover filesystem list/find, special-character filenames,
@@ -529,3 +530,73 @@ errors and message/byte limits, authentication/prefix/query preservation, ping,
 peer close metadata, independent handshake/idle deadlines, read cancellation and
 no mutation retries. TLS/proxy deployments, ticket expiry timing, buffer eviction,
 slow consumers, server restarts and real network failure remain unverified live.
+
+## Hosted workspace/PTY verification and lifecycle follow-up
+
+At `88224a1`, [Linux CI 42707538439](https://github.com/a-poor/opencoders/actions/runs/42707538439)
+passed all seven jobs, including all four test feature combinations, Rust 1.88,
+quality and eleven generation targets. Both jobs in
+[pinned compatibility 42707625108](https://github.com/a-poor/opencoders/actions/runs/42707625108)
+passed on Linux x86-64 on 2026-11-09: the smoke job includes workspace reads and
+ordinary PTY WebSockets; the active job uses only the scripted localhost provider.
+These runs supersede the earlier Linux-pending note for the initial 16 operations.
+
+The subsequent four-operation lifecycle slice adds
+`tests/support/workspace_lifecycle.rs`. It passes locally on macOS arm64 with
+`python3 tools/live/run.py --websocket`: unknown-provider rejection, Git
+initialization, repeated-init conflict, detached checkout contents, collision
+suffixes, accepted clean removal, dirty removal refused with `forceRequired`,
+explicit forced cleanup of a known fixture, externally created worktree discovery,
+stale-row removal, canonical-root rejection and missing-project errors. All
+repository/filesystem changes are under the runner-owned temporary root; fixtures
+use isolated Git configuration and no project setup scripts or remote operations.
+This new lifecycle fixture has not yet run on Linux.
+
+The pinned [worktree service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/worktree.ts),
+[Git strategy](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/worktree/git.ts),
+[worktree handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/worktree.ts)
+and [VCS handler](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/vcs.ts)
+were reviewed. Creation loads canonical configuration, uses the selected strategy,
+persists the checkout and then runs any project setup script; failures can follow
+partial effects. `directory` is a parent path and the returned path is authoritative.
+Refresh reconciles inventory and can tolerate per-strategy discovery failures.
+Removal requires an explicit force decision and uses the saved strategy. No SDK
+mutation retry, force escalation or rollback is added. Custom strategies/providers,
+Mercurial, setup-script failures, concurrent operations and permission/network
+filesystem failures remain source-reviewed or unverified rather than live claims.
+
+
+## Stable session workflow evidence (2026-11-09)
+
+`python3 tools/live/active.py` now also runs
+[`live_workflows.rs`](../../tests/support/live_workflows.rs). Locally on macOS
+arm64 with v2.2.5 it verifies configured command/skill discovery (including skill
+content/autoinvoke), missing/failing command callbacks, immediate callback return
+followed by gated execution, context/diff reads and invalid turn anchors, and
+409 busy responses for all revert mutations. The disposable Git workspace and
+its two files belong to the runner. A controlled harness write after the first
+text delta and before stream completion produces real server snapshots/diffs;
+it does not claim model-selected edit-tool coverage.
+
+History-only staging retains messages and file contents. Default file staging
+restores the original file and clear restores its post-execution content. Clearing
+also wakes a parked prompt. Compaction commits a staged boundary, admits an
+identified input, obtains a summary from the scripted localhost provider and
+exposes a context starting at the completed compaction. Explicit commit then
+removes its boundary inclusively; empty commit/clear behavior and cleanup are
+checked. Provider scenarios reject unexpected/repeated calls, and provider-use
+policy denies every provider except the local fixture. No real model is called.
+
+Reviewed pinned sources: [command callbacks](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/command.ts),
+[session operations](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/session.ts),
+[reverts](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/revert.ts),
+[inclusive projections](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/projector.ts),
+[turn diffs](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/diff.ts),
+[history windows](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/history.ts),
+and [compaction](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/session/compaction.ts).
+
+These nine new methods have local macOS evidence only; the hosted `88224a1` runs
+predate them. Linux, arbitrary command/plugin side effects, native compaction,
+remote providers, cross-location ranges, snapshot failures, concurrent writers
+and large histories remain unverified. The SDK adds no mutation retries or UI
+state. See [workflow usage](../../docs/workflows.md).

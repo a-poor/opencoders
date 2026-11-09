@@ -39,6 +39,32 @@ fn settings() -> typify::TypeSpaceSettings {
 
 pub fn generate_workspace(spec: &Value) -> GenerationResult {
     let mut spec = spec.clone();
+    let create = spec["components"]["schemas"]["Worktree.CreateInput"].clone();
+    let remove = spec["components"]["schemas"]["Worktree.RemoveInput"].clone();
+    let refresh = spec["paths"]["/api/worktree/refresh"]["post"]["requestBody"]["content"]["application/json"]["schema"].clone();
+    if create
+        != json!({"type":"object","properties":{
+        "projectID":{"$ref":"#/components/schemas/Project.ID"},
+        "from":{"$ref":"#/components/schemas/AbsolutePath"},
+        "branch":{"type":"string"},"directory":{"$ref":"#/components/schemas/AbsolutePath"},"name":{"type":"string"}
+    },"required":["projectID"],"additionalProperties":false})
+        || remove
+            != json!({"type":"object","properties":{
+            "projectID":{"$ref":"#/components/schemas/Project.ID"},"directory":{"$ref":"#/components/schemas/AbsolutePath"},"force":{"type":"boolean"}
+        },"required":["projectID","directory","force"],"additionalProperties":false})
+        || refresh
+            != json!({"type":"object","properties":{"projectID":{"$ref":"#/components/schemas/Project.ID"}},"required":["projectID"],"additionalProperties":false})
+        || response(&spec, "/api/worktree", "post")?
+            != json!({"$ref":"#/components/schemas/Worktree.Info"})
+        || spec["paths"]["/api/worktree"]["post"]["requestBody"]["content"]["application/json"]["schema"]
+            != json!({"$ref":"#/components/schemas/Worktree.CreateInput"})
+        || spec["paths"]["/api/worktree"]["delete"]["requestBody"]["content"]["application/json"]["schema"]
+            != json!({"$ref":"#/components/schemas/Worktree.RemoveInput"})
+    {
+        return Err(
+            "worktree mutation contract changed; review strict inputs and explicit force".into(),
+        );
+    }
     if response(&spec, "/api/fs/list", "get")? != response(&spec, "/api/fs/find", "get")? {
         return Err("filesystem list/find envelopes diverged; review shared response".into());
     }
@@ -66,7 +92,12 @@ pub fn generate_workspace(spec: &Value) -> GenerationResult {
         spec["components"]["schemas"][name] = response(&spec, path, "get")?;
     }
     let mut names: Vec<_> = roots.iter().map(|(name, _)| *name).collect();
-    names.extend(["Worktree.List", "Vcs.Mode", "Vcs.Untracked"]);
+    names.extend([
+        "Worktree.List",
+        "Worktree.Info",
+        "Vcs.Mode",
+        "Vcs.Untracked",
+    ]);
     if response(&spec, "/api/worktree", "get")?
         != json!({"$ref":"#/components/schemas/Worktree.List"})
     {
@@ -74,6 +105,21 @@ pub fn generate_workspace(spec: &Value) -> GenerationResult {
     }
     let mut schema = select_schemas(&spec, &names)?;
     allow_additive_fields(&mut schema);
+    spec["components"]["schemas"]["WorktreeCreateRequest"] = create;
+    spec["components"]["schemas"]["WorktreeRemoveRequest"] = remove;
+    spec["components"]["schemas"]["WorktreeRefreshRequest"] = refresh;
+    let inputs = select_schemas(
+        &spec,
+        &[
+            "WorktreeCreateRequest",
+            "WorktreeRemoveRequest",
+            "WorktreeRefreshRequest",
+        ],
+    )?;
+    schema["definitions"]
+        .as_object_mut()
+        .unwrap()
+        .extend(inputs["definitions"].as_object().unwrap().clone());
     let mut syntax = syn::parse_file(&generate_with_settings(schema, &settings())?)?;
     let mut adapted = 0;
     for item in &mut syntax.items {
@@ -82,6 +128,14 @@ pub fn generate_workspace(spec: &Value) -> GenerationResult {
                 item.attrs.push(parse_quote!(#[non_exhaustive]));
                 for field in &mut item.fields {
                     let key = field.ident.as_ref().unwrap().to_string();
+                    if item.ident == "WorktreeCreateRequest" && key != "project_id" {
+                        let inner =
+                            option_inner(&field.ty).ok_or("worktree optional input changed")?;
+                        field.ty = parse_quote!(Option<#inner>);
+                        field.attrs.retain(|a| !a.path().is_ident("serde"));
+                        field.attrs.push(parse_quote!(#[serde(default,skip_serializing_if="Option::is_none",deserialize_with="super::deserialize_optional_value")]));
+                        adapted += 1;
+                    }
                     if item.ident == "VcsFileStatus"
                         && matches!(key.as_str(), "additions" | "deletions")
                     {
@@ -102,7 +156,7 @@ pub fn generate_workspace(spec: &Value) -> GenerationResult {
             _ => {}
         }
     }
-    if adapted != 3 {
+    if adapted != 7 {
         return Err("workspace fields changed; review adapters".into());
     }
     Ok(format!(

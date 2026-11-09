@@ -13,6 +13,8 @@ use std::{collections::BTreeSet, env, path::PathBuf, time::Duration};
 
 #[path = "support/forks.rs"]
 mod forks;
+#[path = "support/workspace_lifecycle.rs"]
+mod workspace_lifecycle;
 #[path = "support/workspace.rs"]
 mod workspace_reads;
 
@@ -500,6 +502,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     )
     .await;
     workspace_reads::verify(&client, &root, workspace, other).await;
+    workspace_lifecycle::verify(&client, &root).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())

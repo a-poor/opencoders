@@ -10,6 +10,7 @@ pub mod messages;
 pub mod permissions;
 pub mod server_info;
 pub mod sessions;
+pub mod workflows;
 pub mod workspace;
 #[rustfmt::skip]
 pub mod generated;

@@ -15,7 +15,8 @@ pub use workspace::{
     FileListResponse, FileSystemEntry, FileSystemEntryType, VcsBase, VcsBaseResponse,
     VcsBaseSource, VcsBranch, VcsBranchList, VcsBranchesResponse, VcsDiffResponse, VcsFileStatus,
     VcsFileStatusStatus, VcsInfo, VcsMode, VcsResponse, VcsStatusResponse, VcsUntracked,
-    WorktreeDirectory, WorktreeList,
+    WorktreeCreateRequest, WorktreeDirectory, WorktreeInfo, WorktreeList, WorktreeRefreshRequest,
+    WorktreeRemoveRequest,
 };
 #[rustfmt::skip]
 mod ptys;
@@ -274,3 +275,13 @@ fn deserialize_pid<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<
     }
     Ok(pid)
 }
+
+#[rustfmt::skip]
+#[allow(dead_code)] // Typify conversion helper is unused for these external-leaf models.
+mod workflows;
+pub use workflows::{
+    CommandInfo, CommandListResponse, SessionCommandRequest, SessionCompactRequest,
+    SessionCompactResponse, SessionContextResponse, SessionDiffResponse, SessionRevertResponse,
+    SessionRevertStageRequest, SkillInfo, SkillListResponse,
+};
+mod workflow_inputs;

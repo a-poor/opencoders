@@ -160,7 +160,7 @@ pub fn generate_inbox(spec: &Value) -> Result<String, Box<dyn std::error::Error>
     ))
 }
 
-fn option_inner(ty: &syn::Type) -> Option<syn::Type> {
+pub(crate) fn option_inner(ty: &syn::Type) -> Option<syn::Type> {
     let syn::Type::Path(path) = ty else {
         return None;
     };
@@ -177,7 +177,7 @@ fn option_inner(ty: &syn::Type) -> Option<syn::Type> {
     Some(inner.clone())
 }
 
-fn guard(spec: &Value) -> Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn guard(spec: &Value) -> Result<(), Box<dyn std::error::Error>> {
     let reference = |name: &str| json!({"$ref":format!("#/components/schemas/{name}")});
     let nullable = |value: Value| json!({"anyOf":[value,{"type":"null"}]});
     let array = |name: &str| json!({"type":"array","items":reference(name)});

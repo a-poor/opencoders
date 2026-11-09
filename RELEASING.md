@@ -8,7 +8,7 @@ for the published revision, checksum and validation, and the
 
 ## Archive policy
 
-The `Cargo.toml` include list keeps Rust sources, all sixteen examples and their
+The `Cargo.toml` include list keeps Rust sources, all examples and their
 support modules, integration tests and JSON fixtures, README, `docs/` guides,
 changelog, and both licenses. Keeping tests lets consumers verify the extracted source distribution.
 The two live tests remain ignored and require the repository's separate runners.

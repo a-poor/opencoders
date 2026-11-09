@@ -85,11 +85,9 @@ Version 0.1.0 was published and tagged on 2026-11-03; see the
 
 ## Soon: terminal and workspace APIs (milestone 3)
 
-Workspace reads and ordinary PTYs are complete; see the goal record under
-**Completed**. Remaining candidates require separate goals:
-
-- [ ] Review worktree create/refresh/remove and VCS initialization as a separate
-  mutation-focused goal with disposable fixtures and explicit effect boundaries.
+The non-experimental workspace and ordinary-PTY slice is complete, including
+worktree lifecycle and VCS initialization. See the goal records under **Completed**.
+The remaining 14 milestone-3 operations are experimental and stay out for now:
 - [ ] Leave experimental filesystem write/watch/unwatch out for now; reconsider
   behind an opt-in feature after reviewing mutation scope and watch lifecycle.
 - [ ] Leave experimental persistent PTYs out for now; reconsider behind an opt-in
@@ -97,9 +95,11 @@ Workspace reads and ordinary PTYs are complete; see the goal record under
 
 ## Later: broader API coverage and release hardening (milestone 4)
 
-- [ ] Implement remaining session operations such as commands, skills, synthetic
-  messages, compaction, revert, context/diff, import/export, and instructions.
-- [ ] Implement configuration, project, command, skill, and reference APIs.
+- [ ] Implement remaining session operations such as explicit skill invocation,
+  synthetic messages, import/export, and instructions. Commands, compaction,
+  revert and context/diff are complete; see the stable workflow goal.
+- [ ] Implement remaining configuration, project, skill and reference APIs.
+  Command/skill list discovery is complete.
 - [ ] Implement saved-permission listing/update/removal. Request replies can save
   project allow rules, but their management APIs are not yet exposed.
 - [ ] Implement provider, integration, and credential management APIs.
@@ -221,6 +221,44 @@ when a decision is made.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 
 ## Completed
+
+- [x] Complete stable session workflows: command/skill discovery, command execution,
+  context and turn diffs, durable compaction, and staged/cleared/committed reverts.
+  Nine new routes bring coverage from 55 to 64; experimental/persistent,
+  deprecated and migration APIs remain out. Strict generated inputs reuse
+  reviewed wire models; typed errors retain command/busy/server-reference details.
+  The client adds no automatic mutation retries or UI state.
+  Validation (2026-11-09, macOS arm64): 311 workspace tests/doctests pass with all
+  features (2 opt-in tests ignored); Rust 1.88 builds all four feature combinations
+  and examples. Formatting, strict Clippy/rustdoc, all 12 generation targets, 34
+  Python tests and coverage checks pass; the complete disposable smoke suite
+  (including WebSocket PTYs and worktree lifecycle) also passes. Active checks exercise
+  commands/skills, real Git snapshots/diffs and restoration, busy errors, clearing
+  a revert waking parked work, completed compaction/context, automatic boundary
+  commit and permanent inclusive deletion. Linux validation is pending; hosted
+  `88224a1` evidence predates these additions.
+
+- [x] Verify pushed schema/workspace/PTY commits on Linux, then complete stable
+  workspace lifecycle: worktree create/refresh/remove and VCS initialization.
+  - [x] Push `cf8237f` and `88224a1` to `main`.
+  - [x] Verify ordinary CI and manual pinned-server smoke/active checks on
+    `88224a1`: [CI](https://github.com/a-poor/opencoders/actions/runs/42707538439)
+    and [compatibility](https://github.com/a-poor/opencoders/actions/runs/42707625108).
+  - [x] Review pinned contracts/implementation, generate strict inputs and typed
+    worktree failures, and add test-first resource methods with no SDK retries.
+  - [x] Verify disposable Git/worktree lifecycle, force-required failures,
+    discovery refresh and initialization conflicts without touching user data.
+  - [x] Update usage/examples, explicit coverage (51 to 55 operations), and
+    compatibility evidence; pass generation, feature/MSRV, fmt/lint/docs checks.
+  Complete this goal before the proposed session-workflow slice (command/skill
+  discovery and execution, context/diff, compaction and revert). Experimental,
+  persistent, deprecated and migration-only APIs remain outside these goals.
+  Validation (2026-11-09, macOS arm64): 304 workspace tests/doctests pass with
+  all features (2 opt-in tests ignored), all four feature combinations build on
+  Rust 1.88, examples compile, and fmt/clippy/docs, 11 generation targets, 33
+  Python checks and the coverage report pass. The new lifecycle fixture passes
+  against disposable v2.2.5 locally; hosted evidence above applies to `88224a1`.
+
 
 - [x] Complete workspace reads and ordinary PTYs: filesystem list/find/streamed
   read; read-only VCS info/base/status/branches/diff and worktree listing; PTY

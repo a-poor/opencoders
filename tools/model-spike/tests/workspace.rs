@@ -6,6 +6,28 @@ fn spec() -> Value {
 }
 
 #[test]
+fn worktree_mutations_require_review_when_nullability_force_or_success_contract_changes() {
+    for (pointer, replacement) in [
+        (
+            "/components/schemas/Worktree.CreateInput/properties/branch",
+            json!({"type":["string","null"]}),
+        ),
+        (
+            "/components/schemas/Worktree.RemoveInput/required",
+            json!(["projectID", "directory"]),
+        ),
+        (
+            "/paths/~1api~1worktree/post/responses/200/content/application~1json/schema",
+            json!({"type":"boolean"}),
+        ),
+    ] {
+        let mut changed = spec();
+        *changed.pointer_mut(pointer).unwrap() = replacement;
+        assert!(generate_workspace(&changed).is_err(), "{pointer}");
+    }
+}
+
+#[test]
 fn workspace_adapters_require_review_of_nullable_base_and_integer_bounds() {
     for (pointer, replacement) in [
         (

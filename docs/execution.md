@@ -188,3 +188,7 @@ with deterministic fixtures. A separate active fixture verifies SDK execution
 outcomes and waiting-tool resumption against OpenCode with a scripted localhost
 provider; it does not run this example's complete policy. See
 [compatibility notes](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md#active-execution).
+
+Prompt admission on v2.2.5 can commit a staged revert after preparation succeeds.
+See [session workflows](workflows.md#revert-lifecycle) before combining prompts
+with a pending revert boundary.

@@ -3,7 +3,8 @@
 //! Supports server information, location/agent/model discovery, and session creation, retrieval,
 //! updates, deletion, paginated listing, projected message history, prompt admission,
 //! pending inbox management, interruption/waiting, permissions, forms, live event subscriptions,
-//! experimental session logs, workspace reads/VCS/worktrees, and ordinary PTYs.
+//! experimental session logs, workspace reads/VCS/worktrees, ordinary PTYs,
+//! command/skill catalogs, context/diffs, compaction and revert workflows.
 //! Enable `websocket` for caller-driven PTY connections. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
@@ -221,6 +222,8 @@
 //! # }
 //! ```
 
+mod workflows;
+pub use workflows::{Commands, SessionDiffOptions, SessionReverts, Skills};
 mod agents;
 #[cfg(feature = "websocket")]
 mod pty_socket;
@@ -235,7 +238,8 @@ mod file_stream;
 pub use file_stream::{FileReadOptions, FileResponse, FileStream};
 mod workspace;
 pub use workspace::{
-    FileFindOptions, FileListOptions, Files, Vcs, VcsBranchOptions, VcsDiffOptions, Worktrees,
+    FileFindOptions, FileListOptions, Files, Vcs, VcsBranchOptions, VcsDiffOptions, VcsInitOptions,
+    Worktrees,
 };
 mod catalog;
 mod client;

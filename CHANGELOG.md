@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add command/skill discovery, slash-command execution, context and turn diffs,
+  durable compaction admission, and staged/cleared/committed session reverts.
+  Reuse existing wire models, preserve nullable/omitted inputs, expose typed
+  command/busy/server-reference failures, and document irreversible history and
+  execution side effects. No SDK mutation retries.
+
+- Add worktree create/refresh/remove and explicit VCS initialization. Requests
+  preserve optional fields and require an explicit removal force decision;
+  typed worktree failures preserve `forceRequired` without automatic escalation.
+  Pinned disposable tests cover Git initialization, detached checkouts, dirty
+  removal and inventory reconciliation. See [workspace APIs](docs/workspace.md).
+
 - Add filesystem listing/search and streamed binary reads with range/conditional
   response metadata, independent deadlines and optional byte bounds.
 - Add read-only VCS info/base/status/branches/diffs and project worktree listing.

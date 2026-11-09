@@ -418,6 +418,38 @@ impl ::std::convert::TryFrom<::std::string::String> for VcsUntracked {
         value.parse()
     }
 }
+///`WorktreeCreateRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct WorktreeCreateRequest {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::deserialize_optional_value"
+    )]
+    pub branch: Option<::std::string::String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::deserialize_optional_value"
+    )]
+    pub directory: Option<super::AbsolutePath>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::deserialize_optional_value"
+    )]
+    pub from: Option<super::AbsolutePath>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::deserialize_optional_value"
+    )]
+    pub name: Option<::std::string::String>,
+    #[serde(rename = "projectID")]
+    pub project_id: super::ProjectId,
+}
 ///`WorktreeDirectory`
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[non_exhaustive]
@@ -425,6 +457,14 @@ pub struct WorktreeDirectory {
     pub directory: super::AbsolutePath,
     #[serde(skip_serializing_if = "::std::option::Option::is_none")]
     pub strategy: ::std::option::Option<::std::string::String>,
+    #[serde(flatten)]
+    pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+}
+///`WorktreeInfo`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[non_exhaustive]
+pub struct WorktreeInfo {
+    pub directory: super::AbsolutePath,
     #[serde(flatten)]
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
@@ -447,6 +487,24 @@ impl ::std::convert::From<::std::vec::Vec<WorktreeDirectory>> for WorktreeList {
     fn from(value: ::std::vec::Vec<WorktreeDirectory>) -> Self {
         Self(value)
     }
+}
+///`WorktreeRefreshRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct WorktreeRefreshRequest {
+    #[serde(rename = "projectID")]
+    pub project_id: super::ProjectId,
+}
+///`WorktreeRemoveRequest`
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+#[non_exhaustive]
+pub struct WorktreeRemoveRequest {
+    pub directory: super::AbsolutePath,
+    pub force: bool,
+    #[serde(rename = "projectID")]
+    pub project_id: super::ProjectId,
 }
 /// Error types.
 pub mod error {

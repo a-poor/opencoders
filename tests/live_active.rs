@@ -10,6 +10,8 @@ use std::{env, path::PathBuf, time::Duration};
 
 #[path = "support/live_recovery.rs"]
 mod recovery;
+#[path = "support/live_workflows.rs"]
+mod workflows;
 
 fn required(name: &str) -> String {
     env::var(name).unwrap_or_else(|_| panic!("{name} missing; use python3 tools/live/active.py"))
@@ -493,10 +495,11 @@ async fn pinned_server_active_execution_and_waiting_tools() {
         client.sessions().remove(id).await.unwrap();
     }
     recovery::verify(&client, &provider, workspace.to_str().unwrap()).await;
+    workflows::verify(&client, &provider, &workspace).await;
     assert_eq!(
         provider.state().await,
         json!({
-            "requests": {"output": 1, "interrupt": 1, "failure": 1, "permission": 2, "question": 2, "cancel": 2, "recovery": 1, "recovery_question": 2},
+            "requests": {"output": 1, "interrupt": 1, "failure": 1, "permission": 2, "question": 2, "cancel": 2, "recovery": 1, "recovery_question": 2, "command": 1, "compact": 1, "clear": 1},
             "aborted": ["interrupt"], "errors": [],
         })
     );

@@ -95,7 +95,7 @@ Hand-written constructors/setters live in the root `src/models/session_inputs.rs
 Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.
 
-Run [all eleven generation checks](#verify-checked-in-models) after schema/tool changes.
+Run [all twelve generation checks](#verify-checked-in-models) after schema/tool changes.
 Normal library builds use the checked-in output without invoking the tool.
 
 ## Reviewed message models
@@ -145,7 +145,7 @@ that Typify's adjacent-tag file-source decoder otherwise accepts, including an
 unexpected null `uri` on an inline source. Guards check request shapes, optionality,
 source unions, inbox tags, and opaque payload constraints before adaptation.
 Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
-`src/models/prompt_inputs.rs`. CI verifies all eleven generation targets, including the slices below.
+`src/models/prompt_inputs.rs`. CI verifies all twelve generation targets, including the slices below.
 
 ## Reviewed live-event models
 
@@ -232,11 +232,15 @@ generated into the client. Run both `--events --check` and `--forms --check`.
 ## Reviewed workspace and PTY models
 
 `--workspace` selects filesystem list/find envelopes, VCS info/base/status/branches/
-diff and project worktree lists into `src/models/workspace.rs`. `--ptys` selects
+diff, project worktree lists/create responses and strict create/refresh/remove
+inputs into `src/models/workspace.rs`. `--ptys` selects
 ordinary lifecycle/ticket responses and strict create/update inputs into
 `src/models/ptys.rs`. Each accepts `--check`. Adaptations live in `src/workspace.rs`.
 Shared paths, project IDs, location metadata and file diffs reuse existing types.
-Responses retain additive fields and non-exhaustive types; unknown closed enums
+Worktree guards require review when request shapes, explicit removal force or
+create response contracts change. Optional create fields reject null while
+preserving omission and empty strings. Responses retain additive fields and
+non-exhaustive types; unknown closed enums
 remain decode errors. VCS base data must be present but may be null.
 
 Guards check matching envelopes, request shapes, nullable-base semantics and
@@ -246,6 +250,16 @@ null while preserving empty collections/maps separately from omission. Explicit
 null exit codes are rejected. Request/ticket Debug redacts sensitive values.
 The root `workspace_adapters.rs` supplies constructors and validators. File bytes
 and WebSocket messages are hand-written transports, not generated JSON responses.
+
+## Reviewed session workflows
+
+`--workflows` generates command/skill catalogs, strict command/compaction/revert
+inputs and their response envelopes. Existing generated/adapted message, inbox,
+attachment, diff and revert types are external leaves rather than duplicates.
+The inbox guard owns attachment validation; the workflow guard verifies strict
+inputs, nullability and shared response references. Run all targets together to
+check the owners of reused types. Four nullable input fields use `RequestField`;
+three optional attachment arrays distinguish absence from empty and reject null.
 
 ## Verify checked-in models
 
@@ -268,12 +282,13 @@ running these offline checks. The subshell keeps the toolchain override local:
   cargo run --locked --offline -p opencoders-model-spike -- --forms --check
   cargo run --locked --offline -p opencoders-model-spike -- --workspace --check
   cargo run --locked --offline -p opencoders-model-spike -- --ptys --check
+  cargo run --locked --offline -p opencoders-model-spike -- --workflows --check
 )
 ```
 
 Each `--check` compares generated text without rewriting it. To regenerate a
 reviewed slice, use the same toolchain and omit only `--check` from its command.
-The diagnostic full-schema experiment below is separate from these eleven checks.
+The diagnostic full-schema experiment below is separate from these twelve checks.
 
 ## Run the experiment
 

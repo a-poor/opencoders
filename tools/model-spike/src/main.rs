@@ -11,15 +11,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args().skip(1).collect();
     if matches!(
         args.first().map(String::as_str),
-        Some("--workspace" | "--ptys")
+        Some("--workspace" | "--ptys" | "--workflows")
     ) {
         if args.len() > 2 || args.get(1).is_some_and(|arg| arg != "--check") {
-            return Err("usage: model-spike --workspace|--ptys [--check]".into());
+            return Err("usage: model-spike --workspace|--ptys|--workflows [--check]".into());
         }
         let (output, file) = if args[0] == "--workspace" {
             (
                 opencoders_model_spike::workspace::generate_workspace(&spec)?,
                 "workspace.rs",
+            )
+        } else if args[0] == "--workflows" {
+            (
+                opencoders_model_spike::workflows::generate_workflows(&spec)?,
+                "workflows.rs",
             )
         } else {
             (
@@ -163,7 +168,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         || (check && (all || raw))
     {
         return Err(
-            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check] | --events [--check] | --permissions [--check] | --forms [--check] | --workspace [--check] | --ptys [--check]]".into(),
+            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check] | --events [--check] | --permissions [--check] | --forms [--check] | --workspace [--check] | --ptys [--check] | --workflows [--check]]".into(),
         );
     }
     let config: Value = serde_json::from_str(include_str!("../probes.json"))?;

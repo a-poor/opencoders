@@ -248,6 +248,49 @@ impl fmt::Debug for HttpError {
 /// Known API errors, with an escape hatch for future or malformed shapes.
 #[non_exhaustive]
 pub enum ApiError {
+    /// No registered slash command has this name.
+    CommandNotFound {
+        /// Raw command name supplied by the server.
+        command: String,
+        /// Server explanation.
+        message: String,
+    },
+    /// A registered command callback failed; partial side effects may remain.
+    CommandExecution {
+        /// Raw command name supplied by the server.
+        command: String,
+        /// Server explanation, potentially containing callback diagnostics.
+        message: String,
+    },
+    /// A mutation requires the session to be idle.
+    SessionBusy {
+        /// Raw session identifier reported by the server.
+        session_id: String,
+        /// Server explanation.
+        message: String,
+    },
+    /// A server failure with an optional diagnostic reference.
+    Unknown {
+        /// Server explanation.
+        message: String,
+        /// Optional server diagnostic reference; raw bytes preserve absent/null.
+        reference: Option<String>,
+    },
+    /// A worktree strategy, path or setup operation failed.
+    Worktree {
+        /// Server-provided explanation; may include paths or setup-script output.
+        message: String,
+        /// Whether the server reports that removal requires an explicit force
+        /// decision. Absence/null remain `None`; the raw body preserves the wire form.
+        force_required: Option<bool>,
+    },
+    /// The selected VCS provider does not implement initialization.
+    VcsInitNotSupported {
+        /// Registered provider identifier returned by the server.
+        provider_id: String,
+        /// Server-provided explanation.
+        message: String,
+    },
     /// The requested file or directory was not found.
     FileNotFound {
         /// Server-side path reported by the server.
@@ -372,9 +415,47 @@ pub enum ApiError {
 impl ApiError {
     fn from_json(raw: Value) -> Self {
         #[derive(Deserialize)]
+        enum WorktreeName {
+            WorktreeError,
+        }
+        #[derive(Deserialize)]
+        struct WorktreeData {
+            message: String,
+            #[serde(rename = "forceRequired")]
+            force_required: Option<bool>,
+        }
+        #[derive(Deserialize)]
         #[serde(tag = "_tag")]
         #[allow(clippy::enum_variant_names)] // Names intentionally match upstream wire tags.
         enum Known {
+            CommandNotFoundError {
+                command: String,
+                message: String,
+            },
+            CommandExecutionError {
+                command: String,
+                message: String,
+            },
+            SessionBusyError {
+                #[serde(rename = "sessionID")]
+                session_id: String,
+                message: String,
+            },
+            UnknownError {
+                message: String,
+                #[serde(rename = "ref")]
+                reference: Option<String>,
+            },
+            WorktreeError {
+                #[serde(rename = "name")]
+                _name: WorktreeName,
+                data: WorktreeData,
+            },
+            VcsInitNotSupportedError {
+                #[serde(rename = "providerID")]
+                provider_id: String,
+                message: String,
+            },
             FileNotFoundError {
                 path: String,
                 message: String,
@@ -451,6 +532,31 @@ impl ApiError {
             },
         }
         match serde_json::from_value::<Known>(raw.clone()) {
+            Ok(Known::CommandNotFoundError { command, message }) => {
+                Self::CommandNotFound { command, message }
+            }
+            Ok(Known::CommandExecutionError { command, message }) => {
+                Self::CommandExecution { command, message }
+            }
+            Ok(Known::SessionBusyError {
+                session_id,
+                message,
+            }) => Self::SessionBusy {
+                session_id,
+                message,
+            },
+            Ok(Known::UnknownError { message, reference }) => Self::Unknown { message, reference },
+            Ok(Known::WorktreeError { data, .. }) => Self::Worktree {
+                message: data.message,
+                force_required: data.force_required,
+            },
+            Ok(Known::VcsInitNotSupportedError {
+                provider_id,
+                message,
+            }) => Self::VcsInitNotSupported {
+                provider_id,
+                message,
+            },
             Ok(Known::FileNotFoundError { path, message }) => Self::FileNotFound { path, message },
             Ok(Known::ProjectNotFoundError {
                 project_id,
@@ -522,6 +628,12 @@ impl ApiError {
 impl fmt::Debug for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::CommandNotFound { .. } => "CommandNotFound { .. }",
+            Self::CommandExecution { .. } => "CommandExecution { .. }",
+            Self::SessionBusy { .. } => "SessionBusy { .. }",
+            Self::Unknown { .. } => "Unknown { .. }",
+            Self::Worktree { .. } => "Worktree { .. }",
+            Self::VcsInitNotSupported { .. } => "VcsInitNotSupported { .. }",
             Self::FileNotFound { .. } => "FileNotFound { .. }",
             Self::ProjectNotFound { .. } => "ProjectNotFound { .. }",
             Self::PtyNotFound { .. } => "PtyNotFound { .. }",
