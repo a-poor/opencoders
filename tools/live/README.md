@@ -697,6 +697,47 @@ are protocol-tested. Cross-process ownership, restarts, concurrent admission/vie
 synthetic steering during execution, remote providers and synthetic tool execution
 remain outside this fixture. See [usage](../../docs/workflows.md).
 
+## Integration and tool discovery (2026-11-09)
+
+The six stable reads are exercised by
+[`tool_discovery.rs`](../../tests/support/tool_discovery.rs), using the owned
+[`discovery.py`](discovery.py) stdio servers and
+[`discovery-plugin.mjs`](discovery-plugin.mjs) plugin. The runner copies plugins
+into disposable local directories with server entrypoints; configured standalone
+plugin files are ignored by v2.2.5. No packages are installed, credentials written,
+authentication callbacks invoked, resource contents read or search queries run.
+
+The smoke test checks all five integration method kinds and shared form fields;
+an environment connection with needs-auth status exposes its variable name but
+not its harmless sentinel value. A policy-denied integration is absent from list
+yet available through direct lookup; a missing ID returns the typed 404. Plugin
+inventory includes builtin, active local and deliberately failed local entries.
+Configured MCP servers cover connected, disabled and failed startup. Two local
+servers return unsorted resources, and one omits template support; the aggregate
+retains both resource lists and the supported templates in server/name order.
+The disabled server never starts. Method-only audit logs verify listing traffic
+without tool calls or resource reads. Registered search providers remain listed
+with search disabled. All six per-call location overrides are exercised too.
+
+The [integration handlers](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/integration.ts)
+explain list activation/policy filtering versus direct lookup. The
+[MCP implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/mcp/index.ts)
+starts connections asynchronously, aggregates only available catalogs and can
+return partial results. The [MCP client](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/mcp/client.ts)
+can retry/recover upstream operations. The
+[plugin source loader](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/config/plugin/source.ts)
+requires directories for configured local sources. These are pinned semantics,
+not cross-version guarantees. See the [usage guide](../../docs/tool-discovery.md).
+
+Local macOS arm64 smoke with WebSocket checks and the active-execution regression
+pass against v2.2.5. Pending and
+needs-auth MCP variants, saved credential descriptors, package/SDK plugin sources,
+missing plugin IDs, extension fields, exact numbers and invalid known fields are
+covered by protocol/model tests. Real OAuth/credential flows, remote MCP auth and
+recovery, package updates, dynamic reloads and concurrent catalogs remain outside
+this fixture's evidence. Hosted validation is recorded after the implementation
+revision is pushed.
+
 ## App-setup discovery (2026-11-09)
 
 Implementation revision `2b178893a03912f0c63195ec9797730e0699d0fa` passes all seven

@@ -12,6 +12,7 @@ pub mod server_info;
 pub mod sessions;
 pub mod setup;
 pub mod shells;
+pub mod tool_discovery;
 pub mod workflows;
 pub mod workspace;
 #[rustfmt::skip]

@@ -11,11 +11,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args().skip(1).collect();
     if matches!(
         args.first().map(String::as_str),
-        Some("--workspace" | "--ptys" | "--workflows" | "--setup" | "--shells")
+        Some(
+            "--workspace" | "--ptys" | "--workflows" | "--setup" | "--shells" | "--tool-discovery"
+        )
     ) {
         if args.len() > 2 || args.get(1).is_some_and(|arg| arg != "--check") {
             return Err(
-                "usage: model-spike --workspace|--ptys|--workflows|--setup|--shells [--check]"
+                "usage: model-spike --workspace|--ptys|--workflows|--setup|--shells|--tool-discovery [--check]"
                     .into(),
             );
         }
@@ -23,6 +25,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             (
                 opencoders_model_spike::workspace::generate_workspace(&spec)?,
                 "workspace.rs",
+            )
+        } else if args[0] == "--tool-discovery" {
+            (
+                opencoders_model_spike::tool_discovery::generate_tool_discovery(&spec)?,
+                "tool_discovery.rs",
             )
         } else if args[0] == "--shells" {
             (
@@ -181,7 +188,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         || (check && (all || raw))
     {
         return Err(
-            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check] | --events [--check] | --permissions [--check] | --forms [--check] | --workspace [--check] | --ptys [--check] | --workflows [--check] | --setup [--check] | --shells [--check]]".into(),
+            "usage: model-spike [--check | --all [--raw] | --raw | --server-info [--check] | --discovery [--check] | --sessions [--check] | --messages [--check] | --inbox [--check] | --events [--check] | --permissions [--check] | --forms [--check] | --workspace [--check] | --ptys [--check] | --workflows [--check] | --setup [--check] | --shells [--check] | --tool-discovery [--check]]".into(),
         );
     }
     let config: Value = serde_json::from_str(include_str!("../probes.json"))?;

@@ -242,6 +242,23 @@ impl Client {
         crate::References { client: self }
     }
 
+    /// Discover integration methods and current connection descriptors.
+    pub fn integrations(&self) -> crate::Integrations<'_> {
+        crate::Integrations { client: self }
+    }
+    /// Inspect configured MCP servers and their resource catalogs.
+    pub fn mcp(&self) -> crate::Mcp<'_> {
+        crate::Mcp { client: self }
+    }
+    /// Inspect server plugin inventory and activation states.
+    pub fn plugins(&self) -> crate::Plugins<'_> {
+        crate::Plugins { client: self }
+    }
+    /// Discover registered web-search providers at a location.
+    pub fn websearch(&self) -> crate::WebSearch<'_> {
+        crate::WebSearch { client: self }
+    }
+
     /// The validated base URL, normalized to end in `/`.
     pub fn base_url(&self) -> &Url {
         &self.inner.base_url

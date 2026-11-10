@@ -1,12 +1,13 @@
 # opencoders design and implementation plan
 
-Status: 83 pinned operations have public methods and protocol tests, covering
+Status: 89 pinned operations have public methods and protocol tests, covering
 server/project/configuration/provider/reference/location/agent/model discovery,
 session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events, experimental session logs, workspace reads/VCS/worktree discovery,
 ordinary PTYs with optional WebSocket I/O, worktree lifecycle/VCS initialization,
-stable session workflows, non-interactive shells and session environments.
+stable session workflows, non-interactive shells and session environments,
+and integration/MCP/plugin/search discovery.
 Workspace/PTY/lifecycle and shell fixtures pass on macOS arm64 and Linux. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
@@ -559,9 +560,9 @@ adjacent-tag input decoding. Responses retain added fields and numeric precision
 conversation models. Event dispatch preserves unknown kinds while rejecting
 malformed known payloads; permission and form inputs retain their reviewed
 validation and omission/null rules. See the [generation guide](tools/model-spike/README.md)
-for each slice's adapters and schema guards. CI checks all fourteen targets: the raw
-probe and thirteen production slices, including `--workspace`, `--ptys`, `--workflows`,
-`--setup` and `--shells`. Normal builds never run generation.
+for each slice's adapters and schema guards. CI checks all fifteen targets: the raw
+probe and fourteen production slices, including `--workspace`, `--ptys`, `--workflows`,
+`--setup`, `--shells` and `--tool-discovery`. Normal builds never run generation.
 
 Production request models use three-state fields where the reviewed schema allows
 omission, null and a value; non-nullable inputs retain their stricter contracts.
@@ -784,6 +785,22 @@ and park a synthetic notification without waking model execution. Environment
 replacement is in-memory and local-session scoped. These APIs do not add a job
 manager or a PTY; background ownership remains a separate goal. See
 [shell semantics and limits](docs/shells.md).
+
+### Integration and tool discovery
+
+Six stable reads expose integrations, configured MCP servers/resource catalogs,
+plugin inventory and search-provider registration. `--tool-discovery` shares
+configuration IDs and the existing form field model; explicit union dispatch,
+true-only plugin flags and typed integration lookup errors have schema guards.
+All new model Debug output is redacted; envelopes and extensions are retained.
+
+Readiness remains server-defined: integration listing waits for plugin activation,
+while direct lookup and other inventories can observe partial startup. MCP catalog
+retrieval contacts connected servers and can omit failed sources. The SDK neither
+polls nor interprets empty data as readiness. Applications own refresh and rendering;
+authentication, credential mutation, MCP management and plugin RPC are separate.
+See [tool discovery](docs/tool-discovery.md) and the populated disposable fixtures
+in [compatibility notes](tools/live/README.md).
 
 ### Application setup discovery
 

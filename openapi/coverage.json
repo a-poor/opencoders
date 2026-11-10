@@ -491,6 +491,25 @@
       "examples": [
         "examples/shell.rs"
       ]
+    },
+    "tool-discovery": {
+      "live_scope": "The disposable v2.2.5 smoke fixture checks all six reads and location overrides using owned local plugin directories and stdio MCP servers: five integration methods/shared forms, environment connection status without values, policy-filtered list versus direct lookup, typed missing integration, active/failed/builtin plugins, connected/disabled/failed MCP states, populated sorted resources/templates, unsupported template listing and search registration with web search disabled.",
+      "live_tests": [
+        {
+          "file": "tests/support/tool_discovery.rs",
+          "anchor": "async fn verify(",
+          "label": "populated local discovery"
+        }
+      ],
+      "source_reviewed": [
+        "Integration listing awaits plugin activation and applies a policy filter; direct lookup does neither. Other inventories are current snapshots. MCP catalog reads contact connected servers and may retry/recover or omit failed sources."
+      ],
+      "unverified": [
+        "Real OAuth/credential flows, remote MCP authentication/recovery, package updates, dynamic plugin reload and concurrent catalogs. Pending/needs-auth, credential descriptors, package/SDK sources and absent plugin IDs are protocol-tested only."
+      ],
+      "examples": [
+        "examples/tool_discovery.rs"
+      ]
     }
   },
   "operations": {
@@ -1198,16 +1217,48 @@
     "integration.get": {
       "method": "GET",
       "path": "/api/integration/{integrationID}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+      "status": "supported",
+      "rust": {
+        "file": "src/tool_discovery.rs",
+        "anchor": "`integration.get`",
+        "label": "Integrations::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn tool_discovery_preserves_locations_envelopes_order_and_encoded_ids(",
+          "label": "routes, typed data, metadata and locations"
+        },
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn discovery_overrides_preserve_empty_and_unspecified_location_queries(",
+          "label": "location overrides and typed errors"
+        }
+      ],
+      "evidence": "tool-discovery"
     },
     "integration.list": {
       "method": "GET",
       "path": "/api/integration",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+      "status": "supported",
+      "rust": {
+        "file": "src/tool_discovery.rs",
+        "anchor": "`integration.list`",
+        "label": "Integrations::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn tool_discovery_preserves_locations_envelopes_order_and_encoded_ids(",
+          "label": "routes, typed data, metadata and locations"
+        },
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn discovery_overrides_preserve_empty_and_unspecified_location_queries(",
+          "label": "location overrides and typed errors"
+        }
+      ],
+      "evidence": "tool-discovery"
     },
     "integration.oauth.cancel": {
       "method": "DELETE",
@@ -1265,16 +1316,48 @@
     "mcp.list": {
       "method": "GET",
       "path": "/api/mcp",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+      "status": "supported",
+      "rust": {
+        "file": "src/tool_discovery.rs",
+        "anchor": "`mcp.list`",
+        "label": "Mcp::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn tool_discovery_preserves_locations_envelopes_order_and_encoded_ids(",
+          "label": "routes, typed data, metadata and locations"
+        },
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn discovery_overrides_preserve_empty_and_unspecified_location_queries(",
+          "label": "location overrides and typed errors"
+        }
+      ],
+      "evidence": "tool-discovery"
     },
     "mcp.resource.catalog": {
       "method": "GET",
       "path": "/api/mcp/resource",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "MCP discovery, lifecycle and client transport/token contracts."
+      "status": "supported",
+      "rust": {
+        "file": "src/tool_discovery.rs",
+        "anchor": "`mcp.resource.catalog`",
+        "label": "Mcp::resource_catalog"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn tool_discovery_preserves_locations_envelopes_order_and_encoded_ids(",
+          "label": "routes, typed data, metadata and locations"
+        },
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn discovery_overrides_preserve_empty_and_unspecified_location_queries(",
+          "label": "location overrides and typed errors"
+        }
+      ],
+      "evidence": "tool-discovery"
     },
     "model.default": {
       "method": "GET",
@@ -1411,9 +1494,25 @@
     "plugin.list": {
       "method": "GET",
       "path": "/api/plugin",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Plugin management and dynamic RPC contracts; library access only, no UI rendering."
+      "status": "supported",
+      "rust": {
+        "file": "src/tool_discovery.rs",
+        "anchor": "`plugin.list`",
+        "label": "Plugins::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn tool_discovery_preserves_locations_envelopes_order_and_encoded_ids(",
+          "label": "routes, typed data, metadata and locations"
+        },
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn discovery_overrides_preserve_empty_and_unspecified_location_queries(",
+          "label": "location overrides and typed errors"
+        }
+      ],
+      "evidence": "tool-discovery"
     },
     "plugin.update": {
       "method": "POST",
@@ -2699,9 +2798,25 @@
     "websearch.providers": {
       "method": "GET",
       "path": "/api/websearch/provider",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Additional voice/search capabilities and their provider/transport requirements."
+      "status": "supported",
+      "rust": {
+        "file": "src/tool_discovery.rs",
+        "anchor": "`websearch.providers`",
+        "label": "WebSearch::providers"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn tool_discovery_preserves_locations_envelopes_order_and_encoded_ids(",
+          "label": "routes, typed data, metadata and locations"
+        },
+        {
+          "file": "tests/tool_discovery.rs",
+          "anchor": "fn discovery_overrides_preserve_empty_and_unspecified_location_queries(",
+          "label": "location overrides and typed errors"
+        }
+      ],
+      "evidence": "tool-discovery"
     },
     "websearch.query": {
       "method": "POST",

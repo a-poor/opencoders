@@ -5,7 +5,7 @@
 //! pending inbox management, interruption/waiting, permissions, forms, live event subscriptions,
 //! experimental session logs, workspace reads/VCS/worktrees, ordinary PTYs,
 //! command/skill catalogs, context/diffs, compaction and revert workflows,
-//! non-interactive shell commands and session environments.
+//! non-interactive shell commands, session environments and integration/MCP/plugin/search discovery.
 //! Enable `websocket` for caller-driven PTY connections. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
@@ -224,6 +224,8 @@
 //! ```
 
 mod setup;
+mod tool_discovery;
+pub use tool_discovery::{Integrations, Mcp, Plugins, WebSearch};
 mod workflows;
 pub use setup::{Config, ProjectListOptions, Projects, Providers, References};
 pub use workflows::{Commands, SessionDiffOptions, SessionReverts, Skills};

@@ -2,6 +2,9 @@
 
 [Documentation index](README.md)
 
+For integration methods, MCP catalogs, plugins and web-search providers, see
+[integration and tool discovery](tool-discovery.md).
+
 ## Application setup
 
 ```rust

@@ -373,6 +373,13 @@ pub enum ApiError {
         /// Server-provided explanation.
         message: String,
     },
+    /// The requested integration has not been registered at this location.
+    IntegrationNotFound {
+        /// Integration ID reported by the server.
+        integration_id: String,
+        /// Server explanation.
+        message: String,
+    },
     /// An individual agent was not found at the requested location.
     AgentNotFound {
         /// Raw server-reported agent ID.
@@ -533,6 +540,11 @@ impl ApiError {
                 provider_id: String,
                 message: String,
             },
+            IntegrationNotFoundError {
+                #[serde(rename = "integrationID")]
+                integration_id: String,
+                message: String,
+            },
             MessageNotFoundError {
                 #[serde(rename = "sessionID")]
                 session_id: String,
@@ -632,6 +644,13 @@ impl ApiError {
                 provider_id,
                 message,
             },
+            Ok(Known::IntegrationNotFoundError {
+                integration_id,
+                message,
+            }) => Self::IntegrationNotFound {
+                integration_id,
+                message,
+            },
             Ok(Known::MessageNotFoundError {
                 session_id,
                 message_id,
@@ -692,6 +711,7 @@ impl fmt::Debug for ApiError {
             Self::Conflict { .. } => "Conflict { .. }",
             Self::AgentNotFound { .. } => "AgentNotFound { .. }",
             Self::ProviderNotFound { .. } => "ProviderNotFound { .. }",
+            Self::IntegrationNotFound { .. } => "IntegrationNotFound { .. }",
             Self::MessageNotFound { .. } => "MessageNotFound { .. }",
             Self::SessionNotFound { .. } => "SessionNotFound { .. }",
             Self::InvalidCursor { .. } => "InvalidCursor { .. }",

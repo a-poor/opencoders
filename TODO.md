@@ -38,7 +38,19 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-None.
+- [ ] Complete stable integration/tool discovery (83 → 89 supported):
+  integration list/get, MCP server/resource catalogs, plugin list and web-search
+  providers. Review pinned schemas and v2.2.5 semantics; add typed resources,
+  shared models, location metadata/extensions and sensitive Debug redaction.
+  Add model/protocol regressions and populated disposable local fixtures;
+  update guides/example, generation guards and coverage. Pass workspace tests,
+  feature/MSRV builds, fmt/clippy/docs, generation and pinned smoke/active checks;
+  commit/push and verify Linux CI. Local validation passed: 347 workspace tests/
+  doctests (two opt-in tests ignored), 41 Python tests, all 15 generation targets,
+  four Rust 1.88 feature builds/examples, fmt/strict Clippy/docs and disposable
+  v2.2.5 smoke with WebSocket plus active execution. Hosted checks are next.
+  Authentication/credential mutations, MCP
+  management, plugin updates/RPC and experimental APIs remain separate goals.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -105,12 +117,14 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
   Command/skill list discovery and stable project/config/shell/reference reads
   are implemented. Mutations and experimental operations need separate review.
 - [ ] Implement provider, integration, and credential management APIs.
-  Stable provider list/get discovery is implemented; connection/credential changes
+  Stable provider list/get and integration list/get discovery are implemented; connection/credential changes
   remain a separate goal.
-- [ ] Implement MCP management/resources and client-hosted MCP WebSockets.
+- [ ] Implement MCP management/resource reads and client-hosted MCP WebSockets.
+  Configured-server status and aggregate resource/template catalogs are implemented.
 - [ ] Implement plugin management and generic plugin RPC calls/events with typed
-  envelopes and support for dynamic payloads.
+  envelopes and support for dynamic payloads. Plugin inventory is implemented.
 - [ ] Implement generation, voice, web search, and usage APIs.
+  Search-provider listing is implemented; queries remain separate.
 - [ ] Implement schedule, artifact, and media APIs, preserving streamed
   binary responses where applicable.
 - [ ] Implement experimental background-job discovery for shell, subagent and

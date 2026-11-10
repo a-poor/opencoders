@@ -20,6 +20,19 @@ pub use setup::{
 mod setup_adapters;
 pub use setup_adapters::{ConfigEntry, SchemaBoolean, SchemaInteger};
 
+/// Generated integration, MCP, plugin and web-search discovery payloads.
+/// Debug hides payloads; explicit fields and serialization retain their values.
+#[rustfmt::skip]
+pub mod tool_discovery;
+pub use setup::{IntegrationId, WebSearchId};
+pub use tool_discovery::{
+    ConnectionInfo, ConnectionStatus, CredentialId, IntegrationInfo, IntegrationListResponse,
+    IntegrationMethod, IntegrationResponse, McpListResponse, McpResource, McpResourceCatalog,
+    McpResourceCatalogResponse, McpResourceTemplate, McpServer, McpStatus, PluginFeatures,
+    PluginId, PluginInfo, PluginListResponse, PluginSource, PluginState, WebSearchProvider,
+    WebSearchProvidersResponse,
+};
+
 #[rustfmt::skip]
 #[allow(dead_code)] // Typify's conversion-error helper is unused by these envelopes.
 mod shells;

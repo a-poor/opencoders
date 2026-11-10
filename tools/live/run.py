@@ -19,6 +19,7 @@ import threading
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 import zipfile
+import discovery
 
 REPO = Path(__file__).resolve().parents[2]
 MANIFEST = Path(__file__).with_name("server.json")
@@ -205,7 +206,7 @@ def setup_discovery_fixture(root, env):
     """Only owned local sources; no provider requests or remote references."""
     directory = root / "config"
     (directory / "reference-fixture").mkdir()
-    (directory / "opencode.json").write_text(json.dumps({
+    document = {
         "username": "setup-file", "warming": False,
         "references": {"local-fixture": {"path": "./reference-fixture", "hidden": True}},
         "providers": {"setup-provider": {
@@ -214,7 +215,9 @@ def setup_discovery_fixture(root, env):
             "settings": {"baseURL": "http://127.0.0.1:9", "timeout": False},
             "models": {},
         }},
-    }))
+    }
+    discovery.install(root, env, document)
+    (directory / "opencode.json").write_text(json.dumps(document))
     env["OPENCODE_CONFIG_CONTENT"] = json.dumps({"username": "setup-content", "warming": False})
 
 

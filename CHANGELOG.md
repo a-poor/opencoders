@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add integration list/get, configured MCP servers/resource catalogs, plugin
+  inventory and web-search provider discovery (89 supported operations).
+  Preserve typed variants, shared forms/IDs, location envelopes and extensions;
+  redact Debug output and expose typed missing-integration errors. Document
+  plugin readiness and partial MCP catalogs in the [discovery guide](docs/tool-discovery.md).
+
 - Add standalone shell create/get/list/output/remove and session shell/environment
   methods (83 supported operations). Share event payloads, preserve byte cursors
   and metadata, validate strict inputs, redact Debug values and expose typed

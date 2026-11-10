@@ -95,7 +95,7 @@ Hand-written constructors/setters live in the root `src/models/session_inputs.rs
 Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.
 
-Run [all fourteen generation checks](#verify-checked-in-models) after schema/tool changes.
+Run [all fifteen generation checks](#verify-checked-in-models) after schema/tool changes.
 Normal library builds use the checked-in output without invoking the tool.
 
 ## Reviewed message models
@@ -145,7 +145,7 @@ that Typify's adjacent-tag file-source decoder otherwise accepts, including an
 unexpected null `uri` on an inline source. Guards check request shapes, optionality,
 source unions, inbox tags, and opaque payload constraints before adaptation.
 Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
-`src/models/prompt_inputs.rs`. CI verifies all fourteen generation targets, including the slices below.
+`src/models/prompt_inputs.rs`. CI verifies all fifteen generation targets, including the slices below.
 
 ## Reviewed live-event models
 
@@ -294,6 +294,20 @@ and response extensions. Shared `ProviderSettings` is redacted in its owning
 discovery target. Root types are re-exported; detailed types are public under
 `models::setup`. No configuration mutation API is implied by these response types.
 
+## Reviewed integration and tool discovery
+
+`--tool-discovery` generates the six location/data envelopes and nested integration,
+MCP, plugin and search-provider models. Integration/search IDs reuse `--setup`;
+authentication forms reuse `FormFields` with the same response/event equivalence
+guard as `--forms`. Five unions use explicit discriminator dispatch. Optional
+plugin feature/update flags accept only literal true and reject explicit null.
+
+Guards cover envelope shape, shared IDs/forms, union tags, literal flags and the
+handwritten missing-integration error. Additive response fields and exact JSON
+numbers are preserved. Every generated Debug implementation redacts values;
+public detailed types live in `models::tool_discovery`. No mutation input or
+credential-write contract is implied. Check all targets together for shared types.
+
 ## Verify checked-in models
 
 From the repository root, use the same Rust/rustfmt **1.99.1** toolchain as CI.
@@ -318,12 +332,13 @@ running these offline checks. The subshell keeps the toolchain override local:
   cargo run --locked --offline -p opencoders-model-spike -- --workflows --check
   cargo run --locked --offline -p opencoders-model-spike -- --setup --check
   cargo run --locked --offline -p opencoders-model-spike -- --shells --check
+  cargo run --locked --offline -p opencoders-model-spike -- --tool-discovery --check
 )
 ```
 
 Each `--check` compares generated text without rewriting it. To regenerate a
 reviewed slice, use the same toolchain and omit only `--check` from its command.
-The diagnostic full-schema experiment below is separate from these fourteen checks.
+The diagnostic full-schema experiment below is separate from these fifteen checks.
 
 ## Run the experiment
 
@@ -428,4 +443,4 @@ The `--permissions` target also generates saved-rule ID/info/time envelopes and
 strict action/resource patches. Both nullable patch fields use `RequestField`;
 timestamps use `serde_json::Number`, and project IDs reuse the shared model.
 Contract guards require review when IDs, input optionality or envelope references
-change. This remains part of the existing fourteen-target generation check.
+change. This remains part of the existing fifteen-target generation check.

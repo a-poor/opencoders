@@ -39,10 +39,7 @@ pub(crate) fn normalize_form_values(
     Ok(())
 }
 
-pub fn generate_forms(spec: &Value) -> Result<String, Box<dyn std::error::Error>> {
-    guard_inputs(spec)?;
-    normalize_form_values(&mut select_schemas(spec, &["Form.Value", "Form.When"])?, "")?;
-    let mut spec = spec.clone();
+pub(crate) fn guard_shared_forms(spec: &Value) -> Result<(), Box<dyn std::error::Error>> {
     // Shared response/event types are safe only while both wire contracts agree.
     for name in [
         "Info",
@@ -66,6 +63,14 @@ pub fn generate_forms(spec: &Value) -> Result<String, Box<dyn std::error::Error>
             return Err(format!("Form.{name} differs from event contract; review reuse").into());
         }
     }
+    Ok(())
+}
+
+pub fn generate_forms(spec: &Value) -> Result<String, Box<dyn std::error::Error>> {
+    guard_inputs(spec)?;
+    normalize_form_values(&mut select_schemas(spec, &["Form.Value", "Form.When"])?, "")?;
+    let mut spec = spec.clone();
+    guard_shared_forms(&spec)?;
     for (name, path) in [
         (
             "FormListResponse",
