@@ -5,7 +5,8 @@
 //! pending inbox management, interruption/waiting, permissions, forms, live event subscriptions,
 //! experimental session logs, workspace reads/VCS/worktrees, ordinary PTYs,
 //! command/skill catalogs, context/diffs, compaction and revert workflows,
-//! non-interactive shell commands, session environments and integration/MCP/plugin/search discovery.
+//! non-interactive shell commands, session environments, integration/MCP/plugin/search discovery,
+//! global credentials and direct key/external connections.
 //! Enable `websocket` for caller-driven PTY connections. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
@@ -292,3 +293,6 @@ pub use sessions::{ParentFilter, SessionListOptions, SessionOrder, Sessions};
 
 /// Result returned by API operations.
 pub type Result<T> = std::result::Result<T, Error>;
+
+mod credentials;
+pub use credentials::Credentials;

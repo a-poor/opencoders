@@ -1,13 +1,13 @@
 # opencoders design and implementation plan
 
-Status: 89 pinned operations have public methods and protocol tests, covering
+Status: 96 pinned operations have public methods and protocol tests, covering
 server/project/configuration/provider/reference/location/agent/model discovery,
 session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events, experimental session logs, workspace reads/VCS/worktree discovery,
 ordinary PTYs with optional WebSocket I/O, worktree lifecycle/VCS initialization,
 stable session workflows, non-interactive shells and session environments,
-and integration/MCP/plugin/search discovery.
+integration/MCP/plugin/search discovery, global credentials and direct key/external connections.
 Workspace/PTY/lifecycle, shell and integration/tool discovery fixtures pass on
 macOS arm64 and Linux. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
@@ -561,9 +561,9 @@ adjacent-tag input decoding. Responses retain added fields and numeric precision
 conversation models. Event dispatch preserves unknown kinds while rejecting
 malformed known payloads; permission and form inputs retain their reviewed
 validation and omission/null rules. See the [generation guide](tools/model-spike/README.md)
-for each slice's adapters and schema guards. CI checks all fifteen targets: the raw
-probe and fourteen production slices, including `--workspace`, `--ptys`, `--workflows`,
-`--setup`, `--shells` and `--tool-discovery`. Normal builds never run generation.
+for each slice's adapters and schema guards. CI checks all sixteen targets: the raw
+probe and fifteen production slices, including `--workspace`, `--ptys`, `--workflows`,
+`--setup`, `--shells`, `--tool-discovery` and `--credentials`. Normal builds never run generation.
 
 Production request models use three-state fields where the reviewed schema allows
 omission, null and a value; non-nullable inputs retain their stricter contracts.
@@ -799,9 +799,27 @@ Readiness remains server-defined: integration listing waits for plugin activatio
 while direct lookup and other inventories can observe partial startup. MCP catalog
 retrieval contacts connected servers and can omit failed sources. The SDK neither
 polls nor interprets empty data as readiness. Applications own refresh and rendering;
-authentication, credential mutation, MCP management and plugin RPC are separate.
+credential storage and direct key/external connections are described below.
+OAuth/command authentication, MCP management and plugin RPC are separate.
 See [tool discovery](docs/tool-discovery.md) and the populated disposable fixtures
 in [compatibility notes](tools/live/README.md).
+
+### Credentials and direct connections
+
+Credential storage is global and ignores the SDK default location. Direct key and
+external connection methods select a location's registry/policy while writing to
+that global store. `--credentials` generates separate strict input and tolerant
+response unions, sharing credential/integration/method IDs and `FormAnswer`.
+All generated payload Debug output is redacted; explicit fields/serialization
+remain secret-bearing. OAuth expiry uses a checked safe integer; nullable direct
+connection fields preserve three states. Credential IDs in URLs reject empty and
+dot segments before HTTP.
+
+The SDK preserves activation flags and leaves selection semantics to the server.
+It never retries these mutations or treats IDs as idempotency keys. Updates only
+rename; removal does not revoke tokens at the provider. Applications own refresh,
+secret handling and authentication navigation. See [credentials](docs/credentials.md)
+for global policy versus location policy and concrete compatibility evidence.
 
 ### Application setup discovery
 

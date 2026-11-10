@@ -27,10 +27,10 @@ pub mod tool_discovery;
 pub use setup::{IntegrationId, WebSearchId};
 pub use tool_discovery::{
     ConnectionInfo, ConnectionStatus, CredentialId, IntegrationInfo, IntegrationListResponse,
-    IntegrationMethod, IntegrationResponse, McpListResponse, McpResource, McpResourceCatalog,
-    McpResourceCatalogResponse, McpResourceTemplate, McpServer, McpStatus, PluginFeatures,
-    PluginId, PluginInfo, PluginListResponse, PluginSource, PluginState, WebSearchProvider,
-    WebSearchProvidersResponse,
+    IntegrationMethod, IntegrationMethodId, IntegrationResponse, McpListResponse, McpResource,
+    McpResourceCatalog, McpResourceCatalogResponse, McpResourceTemplate, McpServer, McpStatus,
+    PluginFeatures, PluginId, PluginInfo, PluginListResponse, PluginSource, PluginState,
+    WebSearchProvider, WebSearchProvidersResponse,
 };
 
 #[rustfmt::skip]
@@ -324,3 +324,16 @@ pub use workflows::{
     SessionSyntheticResponse, SessionViewRequest, SkillInfo, SkillListResponse,
 };
 mod workflow_inputs;
+
+/// Generated credential responses and strict connection/storage inputs.
+/// Debug is redacted; explicit fields and serialization retain secrets.
+#[rustfmt::skip]
+pub mod credentials;
+pub use credentials::{
+    CredentialCreateRequest, CredentialEntry, CredentialExternal, CredentialExternalInput,
+    CredentialKey, CredentialKeyInput, CredentialListResponse, CredentialOauth,
+    CredentialOauthInput, CredentialResponse, CredentialUpdateRequest, CredentialValue,
+    CredentialValueInput, IntegrationConnectExternalRequest, IntegrationConnectKeyRequest,
+};
+mod credential_inputs;
+pub use credential_inputs::CredentialExpires;

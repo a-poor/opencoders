@@ -13,6 +13,8 @@ use std::{collections::BTreeSet, env, path::PathBuf, time::Duration};
 
 #[path = "support/activity.rs"]
 mod activity;
+#[path = "support/credentials.rs"]
+mod credentials;
 #[path = "support/forks.rs"]
 mod forks;
 #[path = "support/saved_permissions.rs"]
@@ -518,6 +520,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     setup::verify(&client, &fallback, &root, other).await;
     shells::verify(&client, &root, other).await;
     tool_discovery::verify(&client, &fallback, &root, other).await;
+    credentials::verify(&client, &fallback, other).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())

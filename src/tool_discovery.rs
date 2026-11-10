@@ -1,7 +1,7 @@
 //! Location-aware integration and tool discovery. Applications own refresh policy.
 use crate::{Client, Location, Result, StatusCode, models::*};
 
-/// Registered integrations and connection descriptors, from [`Client::integrations`].
+/// Registered integrations, connection descriptors and direct connections, from [`Client::integrations`].
 #[derive(Clone, Copy, Debug)]
 pub struct Integrations<'a> {
     pub(crate) client: &'a Client,

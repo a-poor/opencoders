@@ -98,3 +98,5 @@ pub(crate) fn generate_with_settings(
         prettyplease::unparse(&syntax)
     ))
 }
+
+pub mod credentials;

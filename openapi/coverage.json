@@ -510,6 +510,25 @@
       "examples": [
         "examples/tool_discovery.rs"
       ]
+    },
+    "credentials": {
+      "live_scope": "Disposable v2.2.5 fixtures exercise global storage of dummy key/OAuth/external values, cross-location listing, first-credential activation despite activate:false, preserved selection, explicit activation, rename, duplicate-ID conflict, deletion fallback and missing-ID no-ops. Owned plugin methods exercise key/external connections with form metadata, omitted/null/default/empty labels and location overrides, plus policy, form, method and integration errors. All dummy credentials are removed.",
+      "live_tests": [
+        {
+          "file": "tests/support/credentials.rs",
+          "anchor": "async fn verify(",
+          "label": "owned credential lifecycle and direct connections"
+        }
+      ],
+      "source_reviewed": [
+        "Credential creation uses global config policy without requiring a registered integration; direct methods use location registry/policy without awaiting plugin activation. Key/external methods validate forms and store values/references without checking provider access or resolving external secrets."
+      ],
+      "unverified": [
+        "Real credentials/providers, token refresh/revocation, OAuth and command attempt lifecycles, cross-process persistence, concurrent writers and active model/provider effects of selection changes. Mock tests cover malformed values, strict inputs, diagnostic redaction, byte bounds and no retries."
+      ],
+      "examples": [
+        "examples/credentials.rs"
+      ]
     }
   },
   "operations": {
@@ -621,37 +640,117 @@
     "credential.activate": {
       "method": "POST",
       "path": "/api/credential/{credentialID}/activate",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/credentials.rs",
+        "anchor": "`credential.activate`",
+        "label": "Credentials::activate"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_routes_are_global_and_preserve_envelopes_and_encoded_ids(",
+          "label": "credential_routes_are_global_and_preserve_envelopes_and_encoded_ids"
+        },
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_mutations_do_not_retry_and_diagnostics_hide_secret_values(",
+          "label": "no mutation retries and secret-safe diagnostics"
+        }
+      ],
+      "evidence": "credentials"
     },
     "credential.create": {
       "method": "POST",
       "path": "/api/credential",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/credentials.rs",
+        "anchor": "`credential.create`",
+        "label": "Credentials::create"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_routes_are_global_and_preserve_envelopes_and_encoded_ids(",
+          "label": "credential_routes_are_global_and_preserve_envelopes_and_encoded_ids"
+        },
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_mutations_do_not_retry_and_diagnostics_hide_secret_values(",
+          "label": "no mutation retries and secret-safe diagnostics"
+        }
+      ],
+      "evidence": "credentials"
     },
     "credential.list": {
       "method": "GET",
       "path": "/api/credential",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/credentials.rs",
+        "anchor": "`credential.list`",
+        "label": "Credentials::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_routes_are_global_and_preserve_envelopes_and_encoded_ids(",
+          "label": "credential_routes_are_global_and_preserve_envelopes_and_encoded_ids"
+        },
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_mutations_do_not_retry_and_diagnostics_hide_secret_values(",
+          "label": "no mutation retries and secret-safe diagnostics"
+        }
+      ],
+      "evidence": "credentials"
     },
     "credential.remove": {
       "method": "DELETE",
       "path": "/api/credential/{credentialID}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/credentials.rs",
+        "anchor": "`credential.remove`",
+        "label": "Credentials::remove"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_routes_are_global_and_preserve_envelopes_and_encoded_ids(",
+          "label": "credential_routes_are_global_and_preserve_envelopes_and_encoded_ids"
+        },
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_mutations_do_not_retry_and_diagnostics_hide_secret_values(",
+          "label": "no mutation retries and secret-safe diagnostics"
+        }
+      ],
+      "evidence": "credentials"
     },
     "credential.update": {
       "method": "PATCH",
       "path": "/api/credential/{credentialID}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/credentials.rs",
+        "anchor": "`credential.update`",
+        "label": "Credentials::update"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_routes_are_global_and_preserve_envelopes_and_encoded_ids(",
+          "label": "credential_routes_are_global_and_preserve_envelopes_and_encoded_ids"
+        },
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_mutations_do_not_retry_and_diagnostics_hide_secret_values(",
+          "label": "no mutation retries and secret-safe diagnostics"
+        }
+      ],
+      "evidence": "credentials"
     },
     "debug.heapDump": {
       "method": "POST",
@@ -1203,16 +1302,48 @@
     "integration.connect.external": {
       "method": "POST",
       "path": "/api/integration/{integrationID}/connect/external",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+      "status": "supported",
+      "rust": {
+        "file": "src/credentials.rs",
+        "anchor": "`integration.connect.external`",
+        "label": "Integrations::connect_external"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn direct_connections_preserve_location_selection_and_null_fields(",
+          "label": "direct_connections_preserve_location_selection_and_null_fields"
+        },
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_mutations_do_not_retry_and_diagnostics_hide_secret_values(",
+          "label": "no mutation retries and secret-safe diagnostics"
+        }
+      ],
+      "evidence": "credentials"
     },
     "integration.connect.key": {
       "method": "POST",
       "path": "/api/integration/{integrationID}/connect/key",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Integration connection/authentication workflows and cancellation; explicit caller-owned navigation."
+      "status": "supported",
+      "rust": {
+        "file": "src/credentials.rs",
+        "anchor": "`integration.connect.key`",
+        "label": "Integrations::connect_key"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn direct_connections_preserve_location_selection_and_null_fields(",
+          "label": "direct_connections_preserve_location_selection_and_null_fields"
+        },
+        {
+          "file": "tests/credentials.rs",
+          "anchor": "fn credential_mutations_do_not_retry_and_diagnostics_hide_secret_values(",
+          "label": "no mutation retries and secret-safe diagnostics"
+        }
+      ],
+      "evidence": "credentials"
     },
     "integration.get": {
       "method": "GET",

@@ -697,6 +697,49 @@ are protocol-tested. Cross-process ownership, restarts, concurrent admission/vie
 synthetic steering during execution, remote providers and synthetic tool execution
 remain outside this fixture. See [usage](../../docs/workflows.md).
 
+## Credentials and direct connections (2026-11-09)
+
+[`credentials.rs`](../../tests/support/credentials.rs) runs after the harness has
+verified ownership and the discovery fixture has activated its local plugins.
+It starts with empty isolated credential storage and uses conspicuously dummy
+key/OAuth/external values. All created credentials are removed; the runner also
+disposes the database on success or failure. No real accounts, provider requests,
+OAuth callbacks, external secret resolution or authentication commands are used.
+
+The fixture verifies raw creation for an unregistered integration, all three
+value kinds, global visibility across clients/locations, exact maximum expiry,
+first-credential selection despite `activate:false`, preserved selection,
+explicit/repeated activation, empty-label rename and duplicate-ID conflict.
+Removing the selected credential picks the newest survivor; removing an inactive
+credential preserves selection. Missing-ID rename/activate/remove succeed, and
+global policy denial blocks creation.
+
+Using the existing owned integration, both direct methods store form metadata.
+Tests cover default/per-call locations, null/omitted answers and labels, generated
+unique labels and explicit empty labels. The global credential catalog and
+location connection descriptors agree. Invalid form answers, unknown external
+methods, policy denial and missing integrations return typed errors without
+adding credentials. The final catalog is empty again.
+
+These observations match the pinned
+[credential handlers](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/credential.ts),
+[storage service](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/credential.ts),
+[integration handlers](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/server/src/handlers/integration.ts)
+and [direct connection implementation](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/integration.ts).
+The first uses global configuration policy; direct methods use location policy
+and registered methods without an activation wait. Direct methods store the key
+or external reference without verifying remote access. Deletion does not revoke
+provider tokens. These are v2.2.5 semantics, not cross-version guarantees.
+
+Local macOS arm64 smoke with WebSocket checks and the active-execution regression
+pass. Protocol tests cover strict
+inputs/tolerant responses, omission/null distinctions, shared form answers,
+encoded IDs, expiry bounds, redacted diagnostics, response limits and no mutation
+retries. Real credentials/providers, refresh/revocation, OAuth/command attempts,
+cross-process persistence, concurrent writers and selection changes during active
+execution remain unverified. Hosted validation is recorded after pushing the
+implementation. See the [credential guide](../../docs/credentials.md).
+
 ## Integration and tool discovery (2026-11-09)
 
 The six stable reads are exercised by
@@ -704,8 +747,9 @@ The six stable reads are exercised by
 [`discovery.py`](discovery.py) stdio servers and
 [`discovery-plugin.mjs`](discovery-plugin.mjs) plugin. The runner copies plugins
 into disposable local directories with server entrypoints; configured standalone
-plugin files are ignored by v2.2.5. No packages are installed, credentials written,
-authentication callbacks invoked, resource contents read or search queries run.
+plugin files are ignored by v2.2.5. No packages are installed. Discovery assertions
+do not write credentials, invoke authentication callbacks, read resource contents
+or run search queries; the credential fixture above separately tests dummy writes.
 
 The smoke test checks all five integration method kinds and shared form fields;
 an environment connection with needs-auth status exposes its variable name but

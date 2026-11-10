@@ -57,14 +57,14 @@ unverified.
 ## Coverage and generation
 
 The [API coverage inventory](https://github.com/a-poor/opencoders/blob/main/API_COVERAGE.md) classifies all 170 pinned operations:
-89 supported, 76 planned and 5 deferred. Each supported route links to its Rust
+96 supported, 69 planned and 5 deferred. Each supported route links to its Rust
 method, representative protocol tests and verification limits. See the
 [milestone 2 readiness audit](https://github.com/a-poor/opencoders/blob/main/RELEASE_READINESS.md) for remaining integration,
 execution/recovery and release work. The inventory checks are offline and do not
 run during ordinary crate builds.
 
 The private [`tools/model-spike/`](https://github.com/a-poor/opencoders/blob/main/tools/model-spike/README.md) workspace tool
-contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event/permission/form/workspace/PTY/workflow/setup/shell/tool-discovery generation commands.
+contains the initial experiment and reviewed server-info/discovery/session/message/inbox/event/permission/form/workspace/PTY/workflow/setup/shell/tool-discovery/credential generation commands.
 Models are checked in; normal builds do not generate code or fetch a schema.
 Ordinary `cargo build` and `cargo test` select the root library; `--workspace`
 also checks the tool.

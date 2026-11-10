@@ -95,7 +95,7 @@ Hand-written constructors/setters live in the root `src/models/session_inputs.rs
 Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.
 
-Run [all fifteen generation checks](#verify-checked-in-models) after schema/tool changes.
+Run [all sixteen generation checks](#verify-checked-in-models) after schema/tool changes.
 Normal library builds use the checked-in output without invoking the tool.
 
 ## Reviewed message models
@@ -145,7 +145,7 @@ that Typify's adjacent-tag file-source decoder otherwise accepts, including an
 unexpected null `uri` on an inline source. Guards check request shapes, optionality,
 source unions, inbox tags, and opaque payload constraints before adaptation.
 Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
-`src/models/prompt_inputs.rs`. CI verifies all fifteen generation targets, including the slices below.
+`src/models/prompt_inputs.rs`. CI verifies all sixteen generation targets, including the slices below.
 
 ## Reviewed live-event models
 
@@ -308,6 +308,21 @@ numbers are preserved. Every generated Debug implementation redacts values;
 public detailed types live in `models::tool_discovery`. No mutation input or
 credential-write contract is implied. Check all targets together for shared types.
 
+## Reviewed credentials and direct connections
+
+`--credentials` generates global list/create envelopes, strict create/rename and
+key/external connection inputs, and separate response/input credential-value
+unions. Explicit tag dispatch validates OAuth/key/external variants. Shared IDs
+and form answers reuse their owning generators; schema guards cover those
+contracts, response scope, input optionality, success statuses and expiry bounds.
+
+Responses preserve added fields and exact numbers; inputs reject added properties.
+Metadata preserves omission versus an empty object and rejects null. Direct
+connection answer/label fields retain omitted/null/value states. Optional create
+fields reject null. All generated Debug implementations redact values, including
+nested tokens/metadata. The checked expiry scalar is also valid during serialization.
+Constructors are handwritten in `src/models/credential_inputs.rs`.
+
 ## Verify checked-in models
 
 From the repository root, use the same Rust/rustfmt **1.99.1** toolchain as CI.
@@ -333,12 +348,13 @@ running these offline checks. The subshell keeps the toolchain override local:
   cargo run --locked --offline -p opencoders-model-spike -- --setup --check
   cargo run --locked --offline -p opencoders-model-spike -- --shells --check
   cargo run --locked --offline -p opencoders-model-spike -- --tool-discovery --check
+  cargo run --locked --offline -p opencoders-model-spike -- --credentials --check
 )
 ```
 
 Each `--check` compares generated text without rewriting it. To regenerate a
 reviewed slice, use the same toolchain and omit only `--check` from its command.
-The diagnostic full-schema experiment below is separate from these fifteen checks.
+The diagnostic full-schema experiment below is separate from these sixteen checks.
 
 ## Run the experiment
 
@@ -443,4 +459,4 @@ The `--permissions` target also generates saved-rule ID/info/time envelopes and
 strict action/resource patches. Both nullable patch fields use `RequestField`;
 timestamps use `serde_json::Number`, and project IDs reuse the shared model.
 Contract guards require review when IDs, input optionality or envelope references
-change. This remains part of the existing fifteen-target generation check.
+change. This remains part of the existing sixteen-target generation check.

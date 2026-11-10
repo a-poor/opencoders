@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add global credential list/create/rename/activate/remove and location-aware key
+  and external integration connections (96 supported operations). Separate strict
+  secret-bearing inputs from tolerant responses, preserve form omission/null
+  semantics and metadata, and redact Debug diagnostics. Document selection,
+  missing-ID no-ops and ambiguous writes in the [credential guide](docs/credentials.md).
+
 - Add integration list/get, configured MCP servers/resource catalogs, plugin
   inventory and web-search provider discovery (89 supported operations).
   Preserve typed variants, shared forms/IDs, location envelopes and extensions;

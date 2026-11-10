@@ -92,3 +92,4 @@ jobs:
           cargo run --locked --offline -p opencoders-model-spike -- --setup --check
           cargo run --locked --offline -p opencoders-model-spike -- --shells --check
           cargo run --locked --offline -p opencoders-model-spike -- --tool-discovery --check
+          cargo run --locked --offline -p opencoders-model-spike -- --credentials --check

@@ -38,7 +38,19 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
--
+- [ ] Complete credential management and direct integration connections
+  (89 → 96 supported): credential list/create/rename/activate/remove and key/external
+  connection methods. Review pinned contracts and v2.2.5 behavior, preserve shared
+  IDs/forms and omission/null semantics, redact diagnostics and never retry mutations.
+  Add protocol regressions and disposable fake-credential/plugin fixtures; update
+  docs/example, coverage, generation guards and design. Pass workspace tests,
+  feature/MSRV builds, formatting/Clippy/docs, generation and pinned smoke/active
+  checks; commit/push and verify Linux CI. OAuth/command attempts, real accounts
+  and experimental APIs remain outside this goal. Local validation passed: 355
+  workspace tests/doctests (two opt-in tests ignored), 41 Python tests, all 16
+  generation targets, four Rust 1.88 feature builds/examples, fmt/strict Clippy/docs
+  and pinned v2.2.5 smoke with WebSocket plus active execution. Commit/push and
+  hosted validation remain.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -105,8 +117,8 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
   Command/skill list discovery and stable project/config/shell/reference reads
   are implemented. Mutations and experimental operations need separate review.
 - [ ] Implement provider, integration, and credential management APIs.
-  Stable provider list/get and integration list/get discovery are implemented; connection/credential changes
-  remain a separate goal.
+  Stable provider/integration discovery, credential storage and direct key/external
+  connections are implemented. OAuth and command attempt lifecycles remain.
 - [ ] Implement MCP management/resource reads and client-hosted MCP WebSockets.
   Configured-server status and aggregate resource/template catalogs are implemented.
 - [ ] Implement plugin management and generic plugin RPC calls/events with typed

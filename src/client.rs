@@ -242,6 +242,11 @@ impl Client {
         crate::References { client: self }
     }
 
+    /// Inspect and manage global stored credentials, including secret values.
+    pub fn credentials(&self) -> crate::Credentials<'_> {
+        crate::Credentials { client: self }
+    }
+
     /// Discover integration methods and current connection descriptors.
     pub fn integrations(&self) -> crate::Integrations<'_> {
         crate::Integrations { client: self }

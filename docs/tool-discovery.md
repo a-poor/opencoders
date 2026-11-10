@@ -66,8 +66,8 @@ authentication or credential writes.
 connections by variable name. It does not contain credential values. Optional
 runtime status can indicate `needs_auth` with a message and URL. The pinned core
 orders saved credential descriptors newest first, followed by nonempty matching
-environment variables; the SDK retains that order. This slice does not implement
-the separate credential-list operation, which exposes secret values.
+environment variables; the SDK retains that order. For secret-bearing credential lists and direct key/external connections, see
+[credential management](credentials.md).
 
 IDs are encoded as single path segments. Since integration IDs are unrestricted
 strings, `get` rejects empty IDs and `.`/`..` locally rather than sending a

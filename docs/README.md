@@ -9,6 +9,7 @@ Applications own their Tokio runtime, rendering, state and approval decisions.
 | [Configuration](configuration.md) | Authentication, transport, deadlines, features and errors. |
 | [Discovery](discovery.md) | Projects, configuration/shells, providers/references, locations, agents and models. |
 | [Integration and tool discovery](tool-discovery.md) | Integration methods/connections, MCP status/resources, plugins and search providers. |
+| [Credentials and connections](credentials.md) | Global secret-bearing storage, selection, and direct key/external connections. |
 | [Sessions and history](sessions.md) | Pagination, creation, forks, updates, deletion and messages. |
 | [Session workflows](workflows.md) | Activity/viewed state, synthetic input, commands/skills, context/diffs, compaction and reverts. |
 | [Input and execution](execution.md) | Prompt admission, inbox management, interruption, waiting and bounded automation. |
