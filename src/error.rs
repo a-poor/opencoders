@@ -319,6 +319,13 @@ pub enum ApiError {
         /// Server explanation.
         message: String,
     },
+    /// The shell command is unknown, removed, evicted, or belongs to another location.
+    ShellNotFound {
+        /// Shell ID reported by the server.
+        id: String,
+        /// Server explanation.
+        message: String,
+    },
     /// The request was forbidden, for example when minting a connection ticket.
     Forbidden {
         /// Server explanation.
@@ -491,6 +498,10 @@ impl ApiError {
             ForbiddenError {
                 message: String,
             },
+            ShellNotFoundError {
+                id: String,
+                message: String,
+            },
             FormNotFoundError {
                 id: String,
                 message: String,
@@ -595,6 +606,7 @@ impl ApiError {
                 Self::PtyNotFound { pty_id, message }
             }
             Ok(Known::ForbiddenError { message }) => Self::Forbidden { message },
+            Ok(Known::ShellNotFoundError { id, message }) => Self::ShellNotFound { id, message },
             Ok(Known::FormNotFoundError { id, message }) => Self::FormNotFound { id, message },
             Ok(Known::FormAlreadySettledError { id, message }) => {
                 Self::FormAlreadySettled { id, message }
@@ -671,6 +683,7 @@ impl fmt::Debug for ApiError {
             Self::FileNotFound { .. } => "FileNotFound { .. }",
             Self::ProjectNotFound { .. } => "ProjectNotFound { .. }",
             Self::PtyNotFound { .. } => "PtyNotFound { .. }",
+            Self::ShellNotFound { .. } => "ShellNotFound { .. }",
             Self::Forbidden { .. } => "Forbidden { .. }",
             Self::PermissionNotFound { .. } => "PermissionNotFound { .. }",
             Self::FormNotFound { .. } => "FormNotFound { .. }",

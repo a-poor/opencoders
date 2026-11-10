@@ -31,6 +31,10 @@ struct Inner {
 }
 
 impl Client {
+    /// Run and inspect non-interactive commands at a server location.
+    pub fn shells(&self) -> crate::Shells<'_> {
+        crate::Shells { client: self }
+    }
     /// Manage ordinary pseudo-terminals at a server location.
     pub fn ptys(&self) -> crate::Ptys<'_> {
         crate::Ptys { client: self }
@@ -517,7 +521,7 @@ impl Client {
             .await
     }
 
-    async fn send_response_with_timeout(
+    pub(crate) async fn send_response_with_timeout(
         &self,
         mut request: reqwest::RequestBuilder,
         operation: &'static str,

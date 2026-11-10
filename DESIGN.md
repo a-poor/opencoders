@@ -1,12 +1,14 @@
 # opencoders design and implementation plan
 
-Status: 76 pinned operations have public methods and protocol tests, covering
-server/location/agent/model discovery, session lifecycle and forks, history,
+Status: 83 pinned operations have public methods and protocol tests, covering
+server/project/configuration/provider/reference/location/agent/model discovery,
+session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events, experimental session logs, workspace reads/VCS/worktree discovery,
-ordinary PTYs with optional WebSocket I/O, worktree lifecycle/VCS initialization, and stable session workflows.
-The read/PTY fixture passes on macOS arm64 and Linux; new lifecycle checks pass
-locally on macOS arm64. Background observation and automation
+ordinary PTYs with optional WebSocket I/O, worktree lifecycle/VCS initialization,
+stable session workflows, non-interactive shells and session environments.
+Workspace/PTY/lifecycle fixtures pass on macOS arm64 and Linux; the new shell
+fixture passes locally on macOS arm64. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
 hosted smoke and active checks pass on macOS arm64 and Linux x86-64.
@@ -558,9 +560,9 @@ adjacent-tag input decoding. Responses retain added fields and numeric precision
 conversation models. Event dispatch preserves unknown kinds while rejecting
 malformed known payloads; permission and form inputs retain their reviewed
 validation and omission/null rules. See the [generation guide](tools/model-spike/README.md)
-for each slice's adapters and schema guards. CI checks all thirteen targets: the raw
-probe and twelve production slices, including `--workspace`, `--ptys`, `--workflows`
-and `--setup`. Normal builds never run generation.
+for each slice's adapters and schema guards. CI checks all fourteen targets: the raw
+probe and thirteen production slices, including `--workspace`, `--ptys`, `--workflows`,
+`--setup` and `--shells`. Normal builds never run generation.
 
 Production request models use three-state fields where the reviewed schema allows
 omission, null and a value; non-nullable inputs retain their stricter contracts.
@@ -764,6 +766,25 @@ Failures can follow partial effects, so no automatic cleanup/rollback is added.
 [Workspace usage](docs/workspace.md)
 records range, caching and query semantics. Experimental filesystem writes/watch
 and persistent PTYs are outside this goal; future opt-in exposure needs review.
+
+### Stable shell execution
+
+Seven stable shell routes expose standalone command creation/status/output/removal
+and session shell/environment mutations. `--shells` generates strict inputs and
+tolerant response envelopes; `ShellInfo` and `ShellOutput` reuse the event target's
+checked numeric/shared payload types. Request/response and shared record/output
+Debug values are redacted without changing serialization. Optional request fields
+preserve omitted/null/empty distinctions and invalid safe integers fail locally.
+
+The application owns polling, process cancellation and output presentation.
+Standalone creation returns before exit, and listing excludes exited commands.
+Output cursors are byte offsets; the server decodes pages independently, which
+can split UTF-8. Session shell requests wait with a separate per-call HTTP deadline
+and continue server-side after client disconnection. They record shell history
+and park a synthetic notification without waking model execution. Environment
+replacement is in-memory and local-session scoped. These APIs do not add a job
+manager or a PTY; background ownership remains a separate goal. See
+[shell semantics and limits](docs/shells.md).
 
 ### Application setup discovery
 

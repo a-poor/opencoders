@@ -45,6 +45,35 @@ and inbox updates only queue work, so the test does not wake model execution or 
 to an existing server. Do not manually point its environment
 variables at your normal server. `cargo test` compiles but skips this test.
 
+## Stable shell execution
+
+The owned smoke fixture in [`tests/support/shells.rs`](../../tests/support/shells.rs)
+passes locally on **2026-11-09, macOS arm64, OpenCode v2.2.5, Rust 1.99.1**.
+It runs builtins and bounded local sleeps only: zero/nonzero exits, merged output,
+server execution timeout, explicit termination with process disappearance,
+running-only lists, retained detail, location overrides and deleted captures.
+Output assertions cover byte cursors, aligned and split UTF-8 pages, and an EOF
+cursor beyond the captured size. Zero-length reads are used only beyond EOF.
+
+The same fixture runs session commands without waking a model. It verifies
+started/ended events, caller-provided message IDs, shell history, nonzero exits,
+parked synthetic completion, and continuation after a local HTTP timeout.
+Environment checks cover initial inheritance, replacement/removal of previous
+values, an empty replacement, and the server's terminal marker injection. The
+fixture deletes its session and all retained shell records.
+
+Source review at `9bbb8ce18c80f099e0e448775f59d965ead40a21` covers
+[`core/shell.ts`](https://github.com/anomalyco/opencode/blob/9bbb8ce18c80f099e0e448775f59d965ead40a21/packages/core/src/shell.ts),
+[`session/session.ts`](https://github.com/anomalyco/opencode/blob/9bbb8ce18c80f099e0e448775f59d965ead40a21/packages/core/src/session/session.ts),
+[`session/shell.ts`](https://github.com/anomalyco/opencode/blob/9bbb8ce18c80f099e0e448775f59d965ead40a21/packages/core/src/session/shell.ts),
+[`session/environment.ts`](https://github.com/anomalyco/opencode/blob/9bbb8ce18c80f099e0e448775f59d965ead40a21/packages/core/src/session/environment.ts),
+[`schema/shell.ts`](https://github.com/anomalyco/opencode/blob/9bbb8ce18c80f099e0e448775f59d965ead40a21/packages/schema/src/shell.ts)
+and the protocol/server shell handlers. Retention eviction (25 exited commands),
+the seven-day file sweep, remote workspace bypass, plugin hooks, the 1 MiB ended
+preview and bounded synthetic tail are source-reviewed, not live stress coverage.
+Windows, restarts, concurrent session moves and plugin environment overrides are
+unverified. Hosted Linux verification is pending for this slice.
+
 ## Active execution
 
 The separate opt-in runner exercises the real pinned server's execution loop

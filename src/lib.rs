@@ -4,7 +4,8 @@
 //! updates, deletion, paginated listing, projected message history, prompt admission,
 //! pending inbox management, interruption/waiting, permissions, forms, live event subscriptions,
 //! experimental session logs, workspace reads/VCS/worktrees, ordinary PTYs,
-//! command/skill catalogs, context/diffs, compaction and revert workflows.
+//! command/skill catalogs, context/diffs, compaction and revert workflows,
+//! non-interactive shell commands and session environments.
 //! Enable `websocket` for caller-driven PTY connections. Run
 //! requests on a caller-owned Tokio runtime. Clones share the HTTP connection pool.
 //!
@@ -236,6 +237,8 @@ pub use pty_socket::{
 };
 mod ptys;
 pub use ptys::Ptys;
+mod shells;
+pub use shells::{SessionShellOptions, ShellOutputOptions, Shells};
 mod file_stream;
 pub use file_stream::{FileReadOptions, FileResponse, FileStream};
 mod workspace;

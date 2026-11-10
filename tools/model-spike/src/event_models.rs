@@ -167,10 +167,23 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
     normalize_arrays(&mut schema, &mut settings)?;
     allow_additive_fields(&mut schema);
     let mut syntax = syn::parse_file(&generate_with_settings(schema, &settings)?)?;
+    let mut shell_debug = String::new();
     for item in &mut syntax.items {
         match item {
             Item::Struct(item) if matches!(item.fields, syn::Fields::Named(_)) => {
                 item.attrs.push(parse_quote!(#[non_exhaustive]));
+                if matches!(
+                    item.ident.to_string().as_str(),
+                    "ShellInfo" | "ShellInfoTime" | "EventSessionShellEndedDataOutput"
+                ) {
+                    for attr in &mut item.attrs {
+                        if attr.path().is_ident("derive") {
+                            *attr = parse_quote!(#[derive(::serde::Deserialize, ::serde::Serialize, Clone)]);
+                        }
+                    }
+                    let name = &item.ident;
+                    shell_debug.push_str(&format!("impl ::std::fmt::Debug for {name} {{ fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {{ f.debug_struct(\"{name}\").finish_non_exhaustive() }} }}"));
+                }
                 for field in &mut item.fields {
                     if optional_constraint(&field.ty) {
                         field.attrs.push(parse_quote!(#[serde(default, deserialize_with="super::deserialize_optional_value")]));
@@ -201,6 +214,7 @@ pub fn generate_events(spec: &Value) -> Result<String, Box<dyn std::error::Error
     dispatch.push_str(&enum_dispatch("Event", &variants, true));
     dispatch.push_str(&log_accessors(&spec, &roots)?);
     let mut output = prettyplease::unparse(&syntax);
+    output.push_str(&prettyplease::unparse(&syn::parse_file(&shell_debug)?));
     output.push_str(&prettyplease::unparse(&syn::parse_file(&dispatch)?));
     Ok(format!(
         "// Generated from openapi/opencode-v2.json by model-spike --events.\n// Do not edit manually; adaptations live in tools/model-spike/src/event_models.rs.\n{output}"

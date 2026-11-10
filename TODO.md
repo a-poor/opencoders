@@ -38,7 +38,20 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-None.
+- [ ] Complete the seven-operation stable shell goal (76 → 83 supported):
+  `shell.create/get/list/output/remove`, `session.shell`, `session.environment`.
+  Review v2.2.5 execution, output paging/UTF-8, retention and environment semantics;
+  generate strict inputs and shared responses; preserve metadata/numbers and
+  redact sensitive Debug output. Add model/protocol regressions and owned live
+  fixtures for exits, timeouts, termination, paging, session events/history and
+  environment replacement. Update guides/example/coverage and generation guards;
+  pass workspace/feature/MSRV, formatting/lints/docs, all generation checks and
+  pinned compatibility, then commit/push and verify Linux CI. Keep background
+  ownership, experimental/deprecated/migration APIs and publishing out of scope.
+  Implementation and local validation complete: 339 workspace tests/doctests
+  (2 opt-in ignored), 38 Python tests, four Rust 1.88 feature builds and examples,
+  fmt/clippy/docs, 14 generation checks, and pinned v2.2.5 smoke/active fixtures.
+  Hosted Linux CI and compatibility verification remain before goal completion.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -95,9 +108,10 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
 
 ## Later: broader API coverage and release hardening (milestone 4)
 
-- [ ] Implement remaining stable session operations such as environment and moves.
+- [ ] Implement remaining stable session operations such as background and moves.
   Activity, viewed acknowledgements, synthetic input, commands, compaction,
-  revert and context/diff are implemented; see the goal records. Explicit
+  revert, context/diff, shell commands and environment replacement are implemented;
+  see the goal records. Explicit
   skill invocation, instruction management and import/export are experimental in
   the current pin and stay out until a separate opt-in review.
 - [ ] Implement remaining configuration, project, skill and reference APIs.
@@ -110,7 +124,7 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
 - [ ] Implement plugin management and generic plugin RPC calls/events with typed
   envelopes and support for dynamic payloads.
 - [ ] Implement generation, voice, web search, and usage APIs.
-- [ ] Implement shell, schedule, artifact, and media APIs, preserving streamed
+- [ ] Implement schedule, artifact, and media APIs, preserving streamed
   binary responses where applicable.
 - [ ] Implement experimental background-job discovery for shell, subagent and
   image work, including session/descendant, kind and status filters. Review

@@ -19,6 +19,8 @@ mod forks;
 mod saved_permissions;
 #[path = "support/setup.rs"]
 mod setup;
+#[path = "support/shells.rs"]
+mod shells;
 #[path = "support/workspace_lifecycle.rs"]
 mod workspace_lifecycle;
 #[path = "support/workspace.rs"]
@@ -512,6 +514,7 @@ async fn pinned_server_discovery_and_session_pagination() {
     saved_permissions::verify(&client, &root).await;
     activity::verify(&client, &root).await;
     setup::verify(&client, &fallback, &root, other).await;
+    shells::verify(&client, &root, other).await;
     let remaining = client
         .sessions()
         .list(&SessionListOptions::default())

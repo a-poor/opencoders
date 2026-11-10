@@ -42,13 +42,15 @@ operations. The 20 new workspace, nine session-workflow and three saved-permissi
 workspace/PTY methods pass on macOS arm64 and Linux at `88224a1` (2026-11-09); the
 four lifecycle and nine session-workflow methods also passed on Linux at
 `3ff1edb` in run 42713795590. Saved-permission methods also pass on macOS arm64
-and Linux at `ea1df6f` in run 42715208158.
+and Linux at `ea1df6f` in run 42715208158. Subsequent activity/setup discovery and
+the seven shell/environment methods are also unreleased; their current evidence
+and limits are recorded in [the compatibility notes](tools/live/README.md).
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
-| Supported | 76 | Public Rust methods with protocol tests; live scope varies. |
+| Supported | 83 | Public Rust methods with protocol tests; live scope varies. |
 | Planned, milestone 3 | 14 | Experimental persistent PTYs and filesystem write/watch APIs; deferred from current goals. |
-| Planned, milestone 4 | 75 | Broader session, configuration, integration and other APIs. |
+| Planned, milestone 4 | 68 | Broader session, configuration, integration and other APIs. |
 | Deferred | 5 | Three debug routes, deprecated text-generation alias and V1 migration status. |
 
 These counts measure route implementation, not behavioral coverage. The report

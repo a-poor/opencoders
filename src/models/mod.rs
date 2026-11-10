@@ -21,6 +21,19 @@ mod setup_adapters;
 pub use setup_adapters::{ConfigEntry, SchemaBoolean, SchemaInteger};
 
 #[rustfmt::skip]
+#[allow(dead_code)] // Typify's conversion-error helper is unused by these envelopes.
+mod shells;
+pub use events::{
+    EventSessionShellEndedDataOutput as ShellOutput, ShellInfo, ShellInfoStatus as ShellStatus,
+    ShellInfoTime,
+};
+pub use shells::{
+    SessionEnvironmentRequest, SessionShellRequest, ShellCreateRequest, ShellListResponse,
+    ShellOutputResponse, ShellResponse,
+};
+mod shell_inputs;
+
+#[rustfmt::skip]
 mod workspace;
 pub use workspace::{
     FileListResponse, FileSystemEntry, FileSystemEntryType, VcsBase, VcsBaseResponse,

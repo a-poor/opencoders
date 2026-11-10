@@ -51,6 +51,9 @@ The session uses the server's working directory. `prompt` acknowledges acceptanc
 see [streaming responses](https://github.com/a-poor/opencoders/blob/main/docs/events.md)
 to receive the assistant's output.
 
+For non-interactive commands and session environments, see the
+[shell guide](https://github.com/a-poor/opencoders/blob/main/docs/shells.md).
+
 ## Pinned API contract
 
 Models use the [pinned OpenAPI 3.1.0 snapshot](https://github.com/a-poor/opencoders/blob/main/openapi/opencode-v2.json)

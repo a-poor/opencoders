@@ -471,6 +471,26 @@
       "examples": [
         "examples/app_setup.rs"
       ]
+    },
+    "shells": {
+      "live_scope": "The owned smoke fixture runs local commands with zero/nonzero exits, server timeout and explicit removal; checks merged output, running-only lists, retained detail, location overrides, byte cursors, UTF-8 splitting and deleted capture files; verifies session shell started/ended events, message history, parked synthetic completion, environment replacement including empty maps, and completion after a local HTTP timeout.",
+      "live_tests": [
+        {
+          "file": "tests/support/shells.rs",
+          "anchor": "fn verify(",
+          "label": "owned shell and environment fixtures"
+        }
+      ],
+      "source_reviewed": [
+        "OpenCode v2.2.5 core shell service: zero disables the millisecond timeout, 25 exited records per location, seven-day capture-file retention sweep, output flush before terminal status, independent UTF-8 page decoding, and idempotent HTTP removal.",
+        "Session shell completion is server-owned after client disconnection; completion queues synthetic input with resume:false. Session environment replaces an in-memory local map; TERM/OPENCODE_TERMINAL are injected, remote workspaces bypass it. The ended-event preview is capped at 1 MiB; synthetic notifications use a bounded tail."
+      ],
+      "unverified": [
+        "Windows, remote workspace execution, plugin overrides, retention eviction/sweep/restart cleanup and concurrent session movement. Zero-length reads of nonempty output can fail on v2.2.5; the fixture uses zero only beyond EOF. HTTP timeout coverage establishes local caller disconnection behavior, not distributed exactly-once execution."
+      ],
+      "examples": [
+        "examples/shell.rs"
+      ]
     }
   },
   "operations": {
@@ -1814,9 +1834,25 @@
     "session.environment": {
       "method": "PUT",
       "path": "/api/session/{sessionID}/environment",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/shells.rs",
+        "anchor": "pub async fn environment(",
+        "label": "Sessions::environment"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn session_shell_and_environment_have_strict_204_and_independent_deadlines(",
+          "label": "session_shell_and_environment_have_strict_204_and_independent_deadlines"
+        },
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn failed_shell_mutations_are_not_retried_and_missing_shells_are_typed(",
+          "label": "typed errors and no mutation retries"
+        }
+      ],
+      "evidence": "shells"
     },
     "session.fork": {
       "method": "POST",
@@ -2274,9 +2310,25 @@
     "session.shell": {
       "method": "POST",
       "path": "/api/session/{sessionID}/shell",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/shells.rs",
+        "anchor": "pub async fn shell(",
+        "label": "Sessions::shell"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn session_shell_and_environment_have_strict_204_and_independent_deadlines(",
+          "label": "session_shell_and_environment_have_strict_204_and_independent_deadlines"
+        },
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn failed_shell_mutations_are_not_retried_and_missing_shells_are_typed(",
+          "label": "typed errors and no mutation retries"
+        }
+      ],
+      "evidence": "shells"
     },
     "session.switchAgent": {
       "method": "POST",
@@ -2401,37 +2453,117 @@
     "shell.create": {
       "method": "POST",
       "path": "/api/shell",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/shells.rs",
+        "anchor": "pub async fn create(",
+        "label": "Shells::create"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn shell_routes_preserve_prefix_locations_bodies_and_output_cursors(",
+          "label": "shell_routes_preserve_prefix_locations_bodies_and_output_cursors"
+        },
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn failed_shell_mutations_are_not_retried_and_missing_shells_are_typed(",
+          "label": "typed errors and no mutation retries"
+        }
+      ],
+      "evidence": "shells"
     },
     "shell.get": {
       "method": "GET",
       "path": "/api/shell/{id}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/shells.rs",
+        "anchor": "pub async fn get(",
+        "label": "Shells::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn shell_routes_preserve_prefix_locations_bodies_and_output_cursors(",
+          "label": "shell_routes_preserve_prefix_locations_bodies_and_output_cursors"
+        },
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn failed_shell_mutations_are_not_retried_and_missing_shells_are_typed(",
+          "label": "typed errors and no mutation retries"
+        }
+      ],
+      "evidence": "shells"
     },
     "shell.list": {
       "method": "GET",
       "path": "/api/shell",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/shells.rs",
+        "anchor": "pub async fn list(",
+        "label": "Shells::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn shell_routes_preserve_prefix_locations_bodies_and_output_cursors(",
+          "label": "shell_routes_preserve_prefix_locations_bodies_and_output_cursors"
+        },
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn failed_shell_mutations_are_not_retried_and_missing_shells_are_typed(",
+          "label": "typed errors and no mutation retries"
+        }
+      ],
+      "evidence": "shells"
     },
     "shell.output": {
       "method": "GET",
       "path": "/api/shell/{id}/output",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/shells.rs",
+        "anchor": "pub async fn output(",
+        "label": "Shells::output"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn shell_routes_preserve_prefix_locations_bodies_and_output_cursors(",
+          "label": "shell_routes_preserve_prefix_locations_bodies_and_output_cursors"
+        },
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn failed_shell_mutations_are_not_retried_and_missing_shells_are_typed(",
+          "label": "typed errors and no mutation retries"
+        }
+      ],
+      "evidence": "shells"
     },
     "shell.remove": {
       "method": "DELETE",
       "path": "/api/shell/{id}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Advanced session/shell workflows beyond the first conversation release; review execution and mutation effects."
+      "status": "supported",
+      "rust": {
+        "file": "src/shells.rs",
+        "anchor": "pub async fn remove(",
+        "label": "Shells::remove"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn shell_routes_preserve_prefix_locations_bodies_and_output_cursors(",
+          "label": "shell_routes_preserve_prefix_locations_bodies_and_output_cursors"
+        },
+        {
+          "file": "tests/shells.rs",
+          "anchor": "fn failed_shell_mutations_are_not_retried_and_missing_shells_are_typed(",
+          "label": "typed errors and no mutation retries"
+        }
+      ],
+      "evidence": "shells"
     },
     "skill.list": {
       "method": "GET",

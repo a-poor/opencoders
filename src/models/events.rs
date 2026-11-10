@@ -5267,7 +5267,7 @@ pub struct EventSessionShellEndedData {
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
 ///`EventSessionShellEndedDataOutput`
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone)]
 #[non_exhaustive]
 pub struct EventSessionShellEndedDataOutput {
     pub cursor: super::EventInteger<0, 9007199254740991>,
@@ -9803,7 +9803,7 @@ for SessionMessageToolStateStreamingStatus {
     }
 }
 ///`ShellInfo`
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone)]
 #[non_exhaustive]
 pub struct ShellInfo {
     pub command: ::std::string::String,
@@ -9889,7 +9889,7 @@ impl ::std::convert::TryFrom<::std::string::String> for ShellInfoStatus {
     }
 }
 ///`ShellInfoTime`
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone)]
 #[non_exhaustive]
 pub struct ShellInfoTime {
     #[serde(skip_serializing_if = "::std::option::Option::is_none")]
@@ -10112,6 +10112,21 @@ pub mod error {
         fn from(value: String) -> Self {
             Self(value.into())
         }
+    }
+}
+impl ::std::fmt::Debug for EventSessionShellEndedDataOutput {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.debug_struct("EventSessionShellEndedDataOutput").finish_non_exhaustive()
+    }
+}
+impl ::std::fmt::Debug for ShellInfo {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.debug_struct("ShellInfo").finish_non_exhaustive()
+    }
+}
+impl ::std::fmt::Debug for ShellInfoTime {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.debug_struct("ShellInfoTime").finish_non_exhaustive()
     }
 }
 /// Typed wire event or payload; malformed known tags fail decoding.

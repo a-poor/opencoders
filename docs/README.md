@@ -15,6 +15,7 @@ Applications own their Tokio runtime, rendering, state and approval decisions.
 | [Events and recovery](events.md) | Live SSE, background observation, snapshot refresh and experimental logs. |
 | [Workspace APIs](workspace.md) | Filesystem reads, VCS snapshots/initialization and project worktree lifecycle. |
 | [Ordinary PTYs](terminals.md) | Lifecycle, resize, tickets and optional WebSocket I/O. |
+| [Shell commands](shells.md) | Standalone execution/output, session shell history and environment replacement. |
 | [Development and compatibility](development.md) | Repository checks, pinned server evidence, coverage and generation. |
 
 ## Running examples

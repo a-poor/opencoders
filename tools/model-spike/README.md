@@ -95,7 +95,7 @@ Hand-written constructors/setters live in the root `src/models/session_inputs.rs
 Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.
 
-Run [all thirteen generation checks](#verify-checked-in-models) after schema/tool changes.
+Run [all fourteen generation checks](#verify-checked-in-models) after schema/tool changes.
 Normal library builds use the checked-in output without invoking the tool.
 
 ## Reviewed message models
@@ -145,7 +145,7 @@ that Typify's adjacent-tag file-source decoder otherwise accepts, including an
 unexpected null `uri` on an inline source. Guards check request shapes, optionality,
 source unions, inbox tags, and opaque payload constraints before adaptation.
 Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
-`src/models/prompt_inputs.rs`. CI verifies all thirteen generation targets, including the slices below.
+`src/models/prompt_inputs.rs`. CI verifies all fourteen generation targets, including the slices below.
 
 ## Reviewed live-event models
 
@@ -266,6 +266,17 @@ adapter guards the exact `^ses` pattern and shared Session ID definition, then
 uses validated `SessionId` keys with generated tolerant state values. Unknown
 state enum variants fail decoding; additive fields remain available in `extra`.
 
+## Reviewed stable shell APIs
+
+`--shells` generates strict standalone/session shell inputs and location-bearing
+envelopes. The event target owns the shared `ShellInfo` and output payloads, so
+polling, events and numeric validation stay consistent. The guard requires equal
+output shapes and reviewed request, status and query contracts. Safe-integer
+timeout validation applies on serialization and decoding; optional fields preserve
+omission/empty values and the session message ID uses `RequestField`.
+New inputs/envelopes and shared shell record/output Debug implementations redact
+payloads. Run `--events` and all other checks alongside `--shells`.
+
 ## Reviewed app-setup discovery
 
 `--setup` generates configuration entries and nested settings, shell options,
@@ -306,12 +317,13 @@ running these offline checks. The subshell keeps the toolchain override local:
   cargo run --locked --offline -p opencoders-model-spike -- --ptys --check
   cargo run --locked --offline -p opencoders-model-spike -- --workflows --check
   cargo run --locked --offline -p opencoders-model-spike -- --setup --check
+  cargo run --locked --offline -p opencoders-model-spike -- --shells --check
 )
 ```
 
 Each `--check` compares generated text without rewriting it. To regenerate a
 reviewed slice, use the same toolchain and omit only `--check` from its command.
-The diagnostic full-schema experiment below is separate from these thirteen checks.
+The diagnostic full-schema experiment below is separate from these fourteen checks.
 
 ## Run the experiment
 
@@ -416,4 +428,4 @@ The `--permissions` target also generates saved-rule ID/info/time envelopes and
 strict action/resource patches. Both nullable patch fields use `RequestField`;
 timestamps use `serde_json::Number`, and project IDs reuse the shared model.
 Contract guards require review when IDs, input optionality or envelope references
-change. This remains part of the existing thirteen-target generation check.
+change. This remains part of the existing fourteen-target generation check.

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add standalone shell create/get/list/output/remove and session shell/environment
+  methods (83 supported operations). Share event payloads, preserve byte cursors
+  and metadata, validate strict inputs, redact Debug values and expose typed
+  missing-shell errors. Session shell HTTP deadlines are independent of ordinary
+  requests; server completion continues after client timeout. Document UTF-8
+  paging, retention and environment replacement in the [shell guide](docs/shells.md).
+
 - Add known-project listing, configuration source/shell discovery, provider
   list/get and reference catalogs (76 supported operations). Preserve source
   order, location envelopes and shared types; validate configuration unions and
