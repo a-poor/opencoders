@@ -38,19 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-- [ ] Complete credential management and direct integration connections
-  (89 → 96 supported): credential list/create/rename/activate/remove and key/external
-  connection methods. Review pinned contracts and v2.2.5 behavior, preserve shared
-  IDs/forms and omission/null semantics, redact diagnostics and never retry mutations.
-  Add protocol regressions and disposable fake-credential/plugin fixtures; update
-  docs/example, coverage, generation guards and design. Pass workspace tests,
-  feature/MSRV builds, formatting/Clippy/docs, generation and pinned smoke/active
-  checks; commit/push and verify Linux CI. OAuth/command attempts, real accounts
-  and experimental APIs remain outside this goal. Local validation passed: 355
-  workspace tests/doctests (two opt-in tests ignored), 41 Python tests, all 16
-  generation targets, four Rust 1.88 feature builds/examples, fmt/strict Clippy/docs
-  and pinned v2.2.5 smoke with WebSocket plus active execution. Commit/push and
-  hosted validation remain.
+-
 
 ## Now: contract and foundation (milestone 1)
 
@@ -239,6 +227,24 @@ when a decision is made.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 
 ## Completed
+
+- [x] Complete credential management and direct integration connections
+  (89 → 96 supported): credential list/create/rename/activate/remove and key/external
+  connection methods. Preserve global versus location scope, shared IDs/forms,
+  omission/null semantics, exact expiry/metadata, strict inputs and tolerant
+  responses. Debug diagnostics redact values; mutations never retry. Documentation,
+  example, coverage, generation guards and design are updated.
+  Disposable fixtures cover dummy key/OAuth/external storage, activation and
+  deletion fallback, rename/missing-ID no-ops, conflict/policy failures and direct
+  connections with form/default/null behavior. All dummy credentials are removed.
+  Validation: 355 workspace tests/doctests (two opt-in tests ignored), 41 Python
+  tests, all 16 generation targets, four Rust 1.88 feature builds/examples,
+  fmt/strict Clippy/docs and local v2.2.5 smoke with WebSocket plus active execution.
+  Implementation `667afa309308ac29eed2f398d1940a279d0f53de` passes all seven jobs in
+  [Linux CI 42770531155](https://github.com/a-poor/opencoders/actions/runs/42770531155)
+  and both jobs in [pinned compatibility 42836792793](https://github.com/a-poor/opencoders/actions/runs/42836792793),
+  verified 2026-11-10. Real credentials/providers, refresh/revocation, concurrent
+  writers and OAuth/command attempts remain outside this goal's live evidence.
 
 - [x] Complete stable integration/tool discovery (83 → 89 supported):
   integration list/get, MCP server/resource catalogs, plugin inventory and search

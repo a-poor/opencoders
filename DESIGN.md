@@ -8,8 +8,8 @@ live events, experimental session logs, workspace reads/VCS/worktree discovery,
 ordinary PTYs with optional WebSocket I/O, worktree lifecycle/VCS initialization,
 stable session workflows, non-interactive shells and session environments,
 integration/MCP/plugin/search discovery, global credentials and direct key/external connections.
-Workspace/PTY/lifecycle, shell and integration/tool discovery fixtures pass on
-macOS arm64 and Linux. Background observation and automation
+Workspace/PTY/lifecycle, shell, integration/tool discovery and credential fixtures
+pass on macOS arm64 and Linux. Background observation and automation
 examples have deterministic tests. A separate localhost provider fixture verifies
 active execution, waiting tools and controlled observer recovery on v2.2.5;
 hosted smoke and active checks pass on macOS arm64 and Linux x86-64.

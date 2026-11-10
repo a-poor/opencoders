@@ -737,8 +737,12 @@ inputs/tolerant responses, omission/null distinctions, shared form answers,
 encoded IDs, expiry bounds, redacted diagnostics, response limits and no mutation
 retries. Real credentials/providers, refresh/revocation, OAuth/command attempts,
 cross-process persistence, concurrent writers and selection changes during active
-execution remain unverified. Hosted validation is recorded after pushing the
-implementation. See the [credential guide](../../docs/credentials.md).
+execution remain unverified. Implementation revision
+`667afa309308ac29eed2f398d1940a279d0f53de` passes all seven jobs in
+[Linux CI 42770531155](https://github.com/a-poor/opencoders/actions/runs/42770531155)
+and both smoke/active jobs in
+[pinned compatibility 42836792793](https://github.com/a-poor/opencoders/actions/runs/42836792793),
+verified 2026-11-10. See the [credential guide](../../docs/credentials.md).
 
 ## Integration and tool discovery (2026-11-09)
 
