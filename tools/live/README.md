@@ -735,8 +735,11 @@ needs-auth MCP variants, saved credential descriptors, package/SDK plugin source
 missing plugin IDs, extension fields, exact numbers and invalid known fields are
 covered by protocol/model tests. Real OAuth/credential flows, remote MCP auth and
 recovery, package updates, dynamic reloads and concurrent catalogs remain outside
-this fixture's evidence. Hosted validation is recorded after the implementation
-revision is pushed.
+this fixture's evidence. Implementation revision
+`34de662d68a471ad7d38c45244805ca4ec807803` passes all seven jobs in
+[Linux CI 42760245991](https://github.com/a-poor/opencoders/actions/runs/42760245991)
+and both smoke/active jobs in
+[pinned compatibility 42762514852](https://github.com/a-poor/opencoders/actions/runs/42762514852).
 
 ## App-setup discovery (2026-11-09)
 

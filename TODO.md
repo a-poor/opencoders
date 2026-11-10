@@ -38,19 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-- [ ] Complete stable integration/tool discovery (83 → 89 supported):
-  integration list/get, MCP server/resource catalogs, plugin list and web-search
-  providers. Review pinned schemas and v2.2.5 semantics; add typed resources,
-  shared models, location metadata/extensions and sensitive Debug redaction.
-  Add model/protocol regressions and populated disposable local fixtures;
-  update guides/example, generation guards and coverage. Pass workspace tests,
-  feature/MSRV builds, fmt/clippy/docs, generation and pinned smoke/active checks;
-  commit/push and verify Linux CI. Local validation passed: 347 workspace tests/
-  doctests (two opt-in tests ignored), 41 Python tests, all 15 generation targets,
-  four Rust 1.88 feature builds/examples, fmt/strict Clippy/docs and disposable
-  v2.2.5 smoke with WebSocket plus active execution. Hosted checks are next.
-  Authentication/credential mutations, MCP
-  management, plugin updates/RPC and experimental APIs remain separate goals.
+-
 
 ## Now: contract and foundation (milestone 1)
 
@@ -239,6 +227,24 @@ when a decision is made.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 
 ## Completed
+
+- [x] Complete stable integration/tool discovery (83 → 89 supported):
+  integration list/get, MCP server/resource catalogs, plugin inventory and search
+  providers. Generated models share IDs/forms, preserve location envelopes and
+  extensions, enforce tagged variants/true-only flags and redact Debug values.
+  Typed missing-integration errors, docs, example, coverage and schema guards
+  are included. Populated disposable local plugin/MCP fixtures verify policy
+  filtering, connection descriptors, failed/disabled sources, partial templates
+  and registered-but-disabled search providers without remote services.
+  Validation: 347 workspace tests/doctests (two opt-in tests ignored), 41 Python
+  tests, all 15 generation targets, four Rust 1.88 feature builds/examples,
+  fmt/strict Clippy/docs and local v2.2.5 smoke with WebSocket plus active execution.
+  Implementation `34de662d68a471ad7d38c45244805ca4ec807803` passes all seven jobs in
+  [Linux CI 42760245991](https://github.com/a-poor/opencoders/actions/runs/42760245991)
+  and both jobs in [pinned compatibility 42762514852](https://github.com/a-poor/opencoders/actions/runs/42762514852).
+  Authentication/credential changes, MCP management, plugin updates/RPC and
+  experimental APIs remain separate goals; remote authentication/recovery and
+  concurrent reloads are outside this fixture's evidence.
 
 - [x] Complete stable standalone and session shell APIs (76 → 83 supported):
   `shell.create/get/list/output/remove`, `session.shell`, `session.environment`,
