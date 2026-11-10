@@ -190,6 +190,25 @@ async fn pinned_server_active_execution_and_waiting_tools() {
         provider.state().await,
         json!({"requests": {}, "aborted": [], "errors": []})
     );
+    let providers = client.providers().list().await.unwrap();
+    let configured = providers
+        .data
+        .iter()
+        .find(|p| p.id.as_str() == "fixture")
+        .unwrap();
+    let detail = client.providers().get(&configured.id).await.unwrap();
+    // A failed equality check must not print the fixture's credential fields.
+    assert!(
+        serde_json::to_value(&detail.data).unwrap() == serde_json::to_value(configured).unwrap()
+    );
+    assert!(
+        !format!("{providers:?} {detail:?} {:?}", detail.data.settings).contains(&provider.token)
+    );
+    assert!(!format!("{:?}", client.config().get().await.unwrap()).contains(&provider.token));
+    assert_eq!(
+        provider.state().await,
+        json!({"requests": {}, "aborted": [], "errors": []})
+    );
 
     for scenario in [
         "output",

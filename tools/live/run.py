@@ -169,6 +169,7 @@ def run(manifest, archive, websocket=False):
         (root / "other-workspace").mkdir()
         password = secrets.token_urlsafe(32)
         env = server_environment(root, password)
+        setup_discovery_fixture(root, env)
         with (root / "server.log").open("w") as log:
             process = subprocess.Popen(
                 [str(executable), "serve", "--stdio", "--hostname", "127.0.0.1", "--port", "0"],
@@ -198,6 +199,23 @@ def run(manifest, archive, websocket=False):
                 return result.returncode
             finally:
                 stop(process)
+
+
+def setup_discovery_fixture(root, env):
+    """Only owned local sources; no provider requests or remote references."""
+    directory = root / "config"
+    (directory / "reference-fixture").mkdir()
+    (directory / "opencode.json").write_text(json.dumps({
+        "username": "setup-file", "warming": False,
+        "references": {"local-fixture": {"path": "./reference-fixture", "hidden": True}},
+        "providers": {"setup-provider": {
+            "name": "Setup fixture", "env": [],
+            "package": "@opencode/ai/providers/openai-compatible",
+            "settings": {"baseURL": "http://127.0.0.1:9", "timeout": False},
+            "models": {},
+        }},
+    }))
+    env["OPENCODE_CONFIG_CONTENT"] = json.dumps({"username": "setup-content", "warming": False})
 
 
 def main():

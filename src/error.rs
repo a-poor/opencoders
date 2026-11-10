@@ -359,6 +359,13 @@ pub enum ApiError {
         /// Server-provided explanation.
         message: String,
     },
+    /// A provider was not registered at the requested location.
+    ProviderNotFound {
+        /// Raw server-reported provider ID.
+        provider_id: String,
+        /// Server-provided explanation.
+        message: String,
+    },
     /// An individual agent was not found at the requested location.
     AgentNotFound {
         /// Raw server-reported agent ID.
@@ -510,6 +517,11 @@ impl ApiError {
                 agent_id: String,
                 message: String,
             },
+            ProviderNotFoundError {
+                #[serde(rename = "providerID")]
+                provider_id: String,
+                message: String,
+            },
             MessageNotFoundError {
                 #[serde(rename = "sessionID")]
                 session_id: String,
@@ -601,6 +613,13 @@ impl ApiError {
             Ok(Known::AgentNotFoundError { agent_id, message }) => {
                 Self::AgentNotFound { agent_id, message }
             }
+            Ok(Known::ProviderNotFoundError {
+                provider_id,
+                message,
+            }) => Self::ProviderNotFound {
+                provider_id,
+                message,
+            },
             Ok(Known::MessageNotFoundError {
                 session_id,
                 message_id,
@@ -659,6 +678,7 @@ impl fmt::Debug for ApiError {
             Self::FormInvalidAnswer { .. } => "FormInvalidAnswer { .. }",
             Self::Conflict { .. } => "Conflict { .. }",
             Self::AgentNotFound { .. } => "AgentNotFound { .. }",
+            Self::ProviderNotFound { .. } => "ProviderNotFound { .. }",
             Self::MessageNotFound { .. } => "MessageNotFound { .. }",
             Self::SessionNotFound { .. } => "SessionNotFound { .. }",
             Self::InvalidCursor { .. } => "InvalidCursor { .. }",

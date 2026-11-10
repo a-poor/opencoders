@@ -663,3 +663,32 @@ it does not pause an existing one. Explicit null defaults and numeric precision
 are protocol-tested. Cross-process ownership, restarts, concurrent admission/viewers,
 synthetic steering during execution, remote providers and synthetic tool execution
 remain outside this fixture. See [usage](../../docs/workflows.md).
+
+## App-setup discovery (2026-11-09)
+
+The six stable reads are checked by [`setup.rs`](../../tests/support/setup.rs)
+against the owned smoke server. Local macOS arm64 v2.2.5 smoke and active suites
+pass. Configuration has a file-backed document and a higher-priority virtual
+document, plus directory sources; tests preserve that ordering and verify location
+overrides. Shell candidates include names, paths and compatibility flags. A local
+configured provider is listed/read with matching settings and a missing provider
+returns its typed error. Hidden local references remain visible in the catalog.
+
+[`seed_projects.py`](seed_projects.py) inserts three fixed rows into the owned
+disposable SQLite database to test archive inclusion and activity/ID ordering;
+it removes only those rows after the checks. Root, database and owner checks reject
+external state. This does not exercise the server's archive transition mechanism.
+The active fixture reads its scripted localhost provider/config, checks Debug
+redaction against the ephemeral fixture credential, and verifies no provider
+requests result from discovery before normal execution scenarios begin.
+
+Pinned source review covers [configuration](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/config.ts),
+[provider availability](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/provider.ts),
+[project ordering](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/project.ts),
+[shell candidates](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/shell/select.ts)
+and [references](https://github.com/anomalyco/opencode/blob/v2.2.5/packages/core/src/reference.ts).
+Managed/integration configuration, hot reloads/concurrent catalog changes, lookup
+of unavailable registered providers, remote provider/credential health, Git
+reference materialization and Windows shell discovery remain unverified live.
+Read-only here describes SDK requests; location/plugin initialization can have
+server-managed effects such as background reference caching.

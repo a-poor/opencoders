@@ -95,7 +95,7 @@ Hand-written constructors/setters live in the root `src/models/session_inputs.rs
 Selection bodies are guarded strict objects with required non-null fields; the
 model body reuses `SessionModelInput` rather than tolerating response extensions.
 
-Run [all twelve generation checks](#verify-checked-in-models) after schema/tool changes.
+Run [all thirteen generation checks](#verify-checked-in-models) after schema/tool changes.
 Normal library builds use the checked-in output without invoking the tool.
 
 ## Reviewed message models
@@ -145,7 +145,7 @@ that Typify's adjacent-tag file-source decoder otherwise accepts, including an
 unexpected null `uri` on an inline source. Guards check request shapes, optionality,
 source unions, inbox tags, and opaque payload constraints before adaptation.
 Adapters/constructors live in the root `src/models/inbox_adapters.rs` and
-`src/models/prompt_inputs.rs`. CI verifies all twelve generation targets, including the slices below.
+`src/models/prompt_inputs.rs`. CI verifies all thirteen generation targets, including the slices below.
 
 ## Reviewed live-event models
 
@@ -266,6 +266,23 @@ adapter guards the exact `^ses` pattern and shared Session ID definition, then
 uses validated `SessionId` keys with generated tolerant state values. Unknown
 state enum variants fail decoding; additive fields remain available in `extra`.
 
+## Reviewed app-setup discovery
+
+`--setup` generates configuration entries and nested settings, shell options,
+projects, providers and references. Array/envelope guards retain the six route
+shapes; existing IDs/paths/settings/permissions/model contracts are shared leaves.
+Config-specific settings retain null-capable arbitrary overlays. A guarded
+normalization of `allOf` with unrestricted values prevents Typify from losing
+known property types. Timeout unions reuse `ProviderTimeout`; bounded integers
+and literal booleans use checked `SchemaInteger`/`SchemaBoolean` adapters.
+Known string/tagged unions remain validated; response extensions are retained.
+`ConfigEntry` is a guarded adapter with a boxed document variant, keeping small
+directory entries from occupying the full nested configuration size.
+All setup model Debug implementations redact values, including nested config
+and response extensions. Shared `ProviderSettings` is redacted in its owning
+discovery target. Root types are re-exported; detailed types are public under
+`models::setup`. No configuration mutation API is implied by these response types.
+
 ## Verify checked-in models
 
 From the repository root, use the same Rust/rustfmt **1.99.1** toolchain as CI.
@@ -288,12 +305,13 @@ running these offline checks. The subshell keeps the toolchain override local:
   cargo run --locked --offline -p opencoders-model-spike -- --workspace --check
   cargo run --locked --offline -p opencoders-model-spike -- --ptys --check
   cargo run --locked --offline -p opencoders-model-spike -- --workflows --check
+  cargo run --locked --offline -p opencoders-model-spike -- --setup --check
 )
 ```
 
 Each `--check` compares generated text without rewriting it. To regenerate a
 reviewed slice, use the same toolchain and omit only `--check` from its command.
-The diagnostic full-schema experiment below is separate from these twelve checks.
+The diagnostic full-schema experiment below is separate from these thirteen checks.
 
 ## Run the experiment
 
@@ -398,4 +416,4 @@ The `--permissions` target also generates saved-rule ID/info/time envelopes and
 strict action/resource patches. Both nullable patch fields use `RequestField`;
 timestamps use `serde_json::Number`, and project IDs reuse the shared model.
 Contract guards require review when IDs, input optionality or envelope references
-change. This remains part of the existing twelve-target generation check.
+change. This remains part of the existing thirteen-target generation check.

@@ -1,6 +1,82 @@
-# Workspace and model discovery
+# Workspace, configuration and model discovery
 
 [Documentation index](README.md)
+
+## Application setup
+
+```rust
+use opencoders::{Client, ProjectListOptions};
+
+async fn setup(client: &Client) -> opencoders::Result<()> {
+    let projects = client.projects().list(&ProjectListOptions::default()).await?;
+    let sources = client.config().get().await?;
+    let shells = client.config().shells().await?;
+    let providers = client.providers().list().await?;
+    let references = client.references().list().await?;
+    // Applications own selection and presentation. Avoid logging raw configuration.
+    Ok(())
+}
+```
+
+Project lists, configuration sources and shell options are bare arrays.
+Provider and reference responses retain their `location`/`data` envelopes.
+All six operations require HTTP 200, use ordinary request deadlines/response
+limits and return the standard transport, HTTP or decode errors. The SDK keeps
+server order, unknown object fields and numeric precision; it does not sort,
+merge configuration, probe providers or execute shells.
+
+`projects().list` ignores the client's default location. By default, archived
+projects are excluded. `.archived(true)` includes both active and archived
+projects; `.archived(false)` explicitly excludes them. On v2.2.5 ordering is
+descending `time.active`, then ascending ID. This is known server inventory,
+not a scan of client directories. Times use bounded `SchemaInteger` values;
+`.get()` returns their integer value. `canonical`, `sandboxes` and commands are
+server metadata; listing does not initialize or run a project.
+
+`config().get()` returns `ConfigEntry::DocumentEncoded` and `DirectoryEncoded`
+sources in server priority order. Document `path` may be absent for virtual
+configuration; directory entries identify discovery roots. Documents include
+typed settings, with additional fields retained, and may already contain
+substituted values. This is not a merged effective configuration: domain owners
+apply their own precedence and policy rules. `.get_at(location)` overrides the
+default, with `Unspecified` retaining server/header fallback.
+
+`config().shells()` ignores the default location and returns path, name and
+`acceptable` for each server candidate. That flag expresses compatibility;
+it does not guarantee the executable currently exists. Shell discovery differs
+by platform. Listing neither selects a shell nor changes configuration.
+
+`providers().list()` returns currently available providers after plugin readiness
+on v2.2.5. Activation and integration connections affect availability; this is
+not a model health check. `providers().get(&provider_id)` can inspect a registered
+provider absent from that available list, and reports `ApiError::ProviderNotFound`
+when missing. `list_at`/`get_at` override location. IDs are encoded as one path
+segment; empty IDs and `.`/`..` fail locally before HTTP.
+
+`references().list()` retains hidden references; applications choose visibility.
+Sources are typed local/Git variants. Paths belong to the server, and a Git cache
+path does not prove materialization succeeded. The server may maintain reference
+caches in the background. `list_at` overrides location; the SDK performs no local
+filesystem reads, clones or downloads.
+
+Configuration/provider responses can contain secrets in settings, headers, body
+overlays, plugin options and added fields. New setup model `Debug` output and
+shared `ProviderSettings` debug output are redacted. Serialization and explicit
+field/raw-map access retain values and require application logging discipline.
+Detailed generated configuration types live in `models::setup`; common entry,
+project, provider and reference roots are also exported from `models`.
+Boolean literals, bounded integers and known union tags are validated. Unknown
+closed enum values fail decoding; most optional response fields accept null as
+absent, and optional empty collections may serialize as omitted. These are
+response models, not configuration patch bodies. Reading experimental/deprecated
+settings present in a configuration document does not expose those operations.
+
+Run `cargo run --example app_setup` with `OPENCODE_BASE_URL`, optional
+`OPENCODE_PASSWORD` and `OPENCODE_DIRECTORY`. It prints counts and makes no model
+requests. Live checks cover ordered file/virtual sources, archive filters and
+ordering from seeded inventory, local references and a scripted local provider.
+Remote references/providers, managed configuration, hot reloads and Windows shell
+discovery remain outside that live evidence.
 
 ## Location-aware discovery
 

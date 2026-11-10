@@ -1,6 +1,6 @@
 # opencoders design and implementation plan
 
-Status: 70 pinned operations have public methods and protocol tests, covering
+Status: 76 pinned operations have public methods and protocol tests, covering
 server/location/agent/model discovery, session lifecycle and forks, history,
 prompt admission/inbox management, interruption/waiting, permissions/forms,
 live events, experimental session logs, workspace reads/VCS/worktree discovery,
@@ -558,8 +558,9 @@ adjacent-tag input decoding. Responses retain added fields and numeric precision
 conversation models. Event dispatch preserves unknown kinds while rejecting
 malformed known payloads; permission and form inputs retain their reviewed
 validation and omission/null rules. See the [generation guide](tools/model-spike/README.md)
-for each slice's adapters and schema guards. CI checks all twelve targets: the raw
-probe and eleven production slices, including `--workspace`, `--ptys` and `--workflows`. Normal builds never run generation.
+for each slice's adapters and schema guards. CI checks all thirteen targets: the raw
+probe and twelve production slices, including `--workspace`, `--ptys`, `--workflows`
+and `--setup`. Normal builds never run generation.
 
 Production request models use three-state fields where the reviewed schema allows
 omission, null and a value; non-nullable inputs retain their stricter contracts.
@@ -763,6 +764,19 @@ Failures can follow partial effects, so no automatic cleanup/rollback is added.
 [Workspace usage](docs/workspace.md)
 records range, caching and query semantics. Experimental filesystem writes/watch
 and persistent PTYs are outside this goal; future opt-in exposure needs review.
+
+### Application setup discovery
+
+Project/config/shell reads preserve bare arrays; provider/reference reads retain
+location envelopes. Projects and shell candidates ignore default location;
+config, providers and references support per-call overrides. Config sources are
+ordered documents/directories, never an SDK-merged effective configuration.
+The `--setup` generator preserves detailed configuration types, validates bounded
+integer/boolean scalars, and normalizes reviewed open settings intersections so
+known fields retain their types. Existing IDs, paths, permissions, provider
+settings and model contracts are shared. Generated setup model Debug output is
+redacted, as is shared `ProviderSettings`; explicit serialization retains values.
+Applications own selection, presentation and logging. See [discovery](docs/discovery.md).
 
 ### Stable session workflows
 

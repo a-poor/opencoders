@@ -221,6 +221,23 @@ impl Client {
         crate::Skills { client: self }
     }
 
+    /// Discover known projects independently of the default location.
+    pub fn projects(&self) -> crate::Projects<'_> {
+        crate::Projects { client: self }
+    }
+    /// Inspect configuration sources and server shell candidates.
+    pub fn config(&self) -> crate::Config<'_> {
+        crate::Config { client: self }
+    }
+    /// Inspect provider availability and registered settings.
+    pub fn providers(&self) -> crate::Providers<'_> {
+        crate::Providers { client: self }
+    }
+    /// Discover references registered at a working location.
+    pub fn references(&self) -> crate::References<'_> {
+        crate::References { client: self }
+    }
+
     /// The validated base URL, normalized to end in `/`.
     pub fn base_url(&self) -> &Url {
         &self.inner.base_url

@@ -142,6 +142,7 @@ pub fn generate_discovery(spec: &Value) -> Result<String, Box<dyn std::error::Er
                     }
                 }
                 if item.ident == "ProviderRequest"
+                    || item.ident == "ProviderSettings"
                     || item.ident == "ModelInfo"
                     || item.ident == "ModelVariant"
                 {

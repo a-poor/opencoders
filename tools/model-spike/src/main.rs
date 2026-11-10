@@ -11,15 +11,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args().skip(1).collect();
     if matches!(
         args.first().map(String::as_str),
-        Some("--workspace" | "--ptys" | "--workflows")
+        Some("--workspace" | "--ptys" | "--workflows" | "--setup")
     ) {
         if args.len() > 2 || args.get(1).is_some_and(|arg| arg != "--check") {
-            return Err("usage: model-spike --workspace|--ptys|--workflows [--check]".into());
+            return Err(
+                "usage: model-spike --workspace|--ptys|--workflows|--setup [--check]".into(),
+            );
         }
         let (output, file) = if args[0] == "--workspace" {
             (
                 opencoders_model_spike::workspace::generate_workspace(&spec)?,
                 "workspace.rs",
+            )
+        } else if args[0] == "--setup" {
+            (
+                opencoders_model_spike::setup::generate_setup(&spec)?,
+                "setup.rs",
             )
         } else if args[0] == "--workflows" {
             (

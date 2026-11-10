@@ -89,3 +89,4 @@ jobs:
           cargo run --locked --offline -p opencoders-model-spike -- --workspace --check
           cargo run --locked --offline -p opencoders-model-spike -- --ptys --check
           cargo run --locked --offline -p opencoders-model-spike -- --workflows --check
+          cargo run --locked --offline -p opencoders-model-spike -- --setup --check

@@ -222,7 +222,9 @@
 //! # }
 //! ```
 
+mod setup;
 mod workflows;
+pub use setup::{Config, ProjectListOptions, Projects, Providers, References};
 pub use workflows::{Commands, SessionDiffOptions, SessionReverts, Skills};
 mod agents;
 #[cfg(feature = "websocket")]

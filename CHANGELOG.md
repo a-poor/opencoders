@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add known-project listing, configuration source/shell discovery, provider
+  list/get and reference catalogs (76 supported operations). Preserve source
+  order, location envelopes and shared types; validate configuration unions and
+  numeric bounds, redact sensitive Debug output and expose missing-provider errors.
+
 - Add process-scoped session activity, exact observed-idle acknowledgements and
   synthetic input admission. Preserve typed session-map keys, nullable/omitted
   inputs and inbox records; document stale-view, reconciliation and staged-revert

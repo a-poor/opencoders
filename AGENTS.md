@@ -23,7 +23,7 @@ developers. Applications own rendering and UI state; do not build an interface.
 
 `cargo test` selects only the root crate. See
 [generation checks](tools/model-spike/README.md#verify-checked-in-models) for all
-twelve pinned-toolchain checks; [RELEASING.md](RELEASING.md) covers package validation.
+thirteen pinned-toolchain checks; [RELEASING.md](RELEASING.md) covers package validation.
 
 ## Coding Style and Architecture
 

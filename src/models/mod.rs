@@ -9,6 +9,17 @@
 //! Unknown closed enum values are decoding errors. Model types and reasoning-field
 //! names are open strings, as specified by the schema.
 
+/// Generated configuration, project, provider and reference response models.
+/// Debug output is redacted; serialization and explicit field access retain values.
+#[rustfmt::skip]
+pub mod setup;
+pub use setup::{
+    ConfigShellOption, Project, ProviderInfo, ProviderListResponse, ProviderResponse,
+    ReferenceInfo, ReferenceListResponse,
+};
+mod setup_adapters;
+pub use setup_adapters::{ConfigEntry, SchemaBoolean, SchemaInteger};
+
 #[rustfmt::skip]
 mod workspace;
 pub use workspace::{

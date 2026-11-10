@@ -1,6 +1,12 @@
 use super::{ModelInfo, ModelVariant};
 use serde::Deserialize;
 
+impl std::fmt::Debug for super::ProviderSettings {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ProviderSettings { .. }")
+    }
+}
+
 impl std::fmt::Debug for ModelInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("ModelInfo { .. }")

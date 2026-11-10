@@ -1,6 +1,7 @@
 """Deterministic checks for the disposable live-test runner (no server/download)."""
 
 import hashlib
+import json
 import io
 from pathlib import Path
 import tempfile
@@ -13,6 +14,17 @@ import run
 
 
 class RunnerTests(unittest.TestCase):
+    def test_discovery_fixture_uses_only_owned_files_and_loopback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            env = run.server_environment(root, "password")
+            run.setup_discovery_fixture(root, env)
+            document = json.loads((root / "config" / "opencode.json").read_text())
+            self.assertEqual(document["username"], "setup-file")
+            self.assertEqual(json.loads(env["OPENCODE_CONFIG_CONTENT"])["username"], "setup-content")
+            self.assertTrue((root / "config" / document["references"]["local-fixture"]["path"]).is_dir())
+            self.assertEqual(document["providers"]["setup-provider"]["settings"]["baseURL"], "http://127.0.0.1:9")
+
     def test_environment_excludes_user_credentials_and_redirects_state(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve()

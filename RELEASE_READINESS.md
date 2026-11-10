@@ -46,9 +46,9 @@ and Linux at `ea1df6f` in run 42715208158.
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
-| Supported | 70 | Public Rust methods with protocol tests; live scope varies. |
+| Supported | 76 | Public Rust methods with protocol tests; live scope varies. |
 | Planned, milestone 3 | 14 | Experimental persistent PTYs and filesystem write/watch APIs; deferred from current goals. |
-| Planned, milestone 4 | 81 | Broader session, configuration, integration and other APIs. |
+| Planned, milestone 4 | 75 | Broader session, configuration, integration and other APIs. |
 | Deferred | 5 | Three debug routes, deprecated text-generation alias and V1 migration status. |
 
 These counts measure route implementation, not behavioral coverage. The report

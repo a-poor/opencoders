@@ -1344,7 +1344,7 @@ pub struct ProviderRequest {
     pub extra: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
 }
 ///`ProviderSettings`
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone)]
 #[non_exhaustive]
 pub struct ProviderSettings {
     #[serde(skip_serializing_if = "::std::option::Option::is_none")]

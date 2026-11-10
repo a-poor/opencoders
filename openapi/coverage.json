@@ -447,6 +447,30 @@
       "examples": [
         "examples/session_workflows.rs"
       ]
+    },
+    "setup-discovery": {
+      "live_scope": "Smoke checks ordered file/virtual configuration documents and directory sources, location overrides, shell candidates, provider list/get equality and missing-provider errors, hidden local references, and project archive filters/recency ordering using fixed owned SQLite rows. Active tests read the scripted localhost provider and config, check Debug redaction against its ephemeral credential, and assert discovery makes no provider requests.",
+      "live_tests": [
+        {
+          "file": "tests/support/setup.rs",
+          "anchor": "fn verify(",
+          "label": "setup discovery smoke"
+        },
+        {
+          "file": "tests/live_active.rs",
+          "anchor": "fn pinned_server_active_execution_and_waiting_tools(",
+          "label": "scripted-provider discovery before execution"
+        }
+      ],
+      "source_reviewed": [
+        "Pinned v2.2.5 config.ts/discovery.ts: ordered sources are not an effective merged configuration; managed policies and settings have separate ordering. Provider list filters availability after plugin readiness, while get inspects registered definitions. Project list excludes archived by default and sorts active descending/id ascending. Shell acceptable is compatibility, not executability. Reference listing retains hidden entries and can expose unmaterialized Git cache paths."
+      ],
+      "unverified": [
+        "Remote providers, unavailable registered-provider lookup, managed/integration configuration, hot reload/concurrent catalog changes, remote Git reference materialization and Windows shell discovery. Archive transitions are not exercised: the owned fixture seeds metadata solely to test read filters and ordering."
+      ],
+      "examples": [
+        "examples/app_setup.rs"
+      ]
     }
   },
   "operations": {
@@ -507,16 +531,53 @@
     "config.get": {
       "method": "GET",
       "path": "/api/config",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+      "status": "supported",
+      "rust": {
+        "file": "src/setup.rs",
+        "anchor": "pub async fn get(&self) -> Result<Vec<ConfigEntry>>",
+        "label": "Config::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_preserve_array_shapes_locations_filters_and_provider_ids(",
+          "label": "setup_reads_preserve_array_shapes_locations_filters_and_provider_ids"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_reject_wrong_success_statuses_and_malformed_envelopes(",
+          "label": "setup_reads_reject_wrong_success_statuses_and_malformed_envelopes"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn configuration_preserves_documents_sources_numbers_and_redacts_nested_values(",
+          "label": "configuration_preserves_documents_sources_numbers_and_redacts_nested_values"
+        }
+      ],
+      "evidence": "setup-discovery"
     },
     "config.shells": {
       "method": "GET",
       "path": "/api/config/shell",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+      "status": "supported",
+      "rust": {
+        "file": "src/setup.rs",
+        "anchor": "pub async fn shells(",
+        "label": "Config::shells"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_preserve_array_shapes_locations_filters_and_provider_ids(",
+          "label": "setup_reads_preserve_array_shapes_locations_filters_and_provider_ids"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_reject_wrong_success_statuses_and_malformed_envelopes(",
+          "label": "setup_reads_reject_wrong_success_statuses_and_malformed_envelopes"
+        }
+      ],
+      "evidence": "setup-discovery"
     },
     "credential.activate": {
       "method": "POST",
@@ -1344,9 +1405,30 @@
     "project.list": {
       "method": "GET",
       "path": "/api/project",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Broader project/configuration discovery and mutation; preserve location and reload semantics."
+      "status": "supported",
+      "rust": {
+        "file": "src/setup.rs",
+        "anchor": "pub async fn list(&self, options: &ProjectListOptions)",
+        "label": "Projects::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_preserve_array_shapes_locations_filters_and_provider_ids(",
+          "label": "setup_reads_preserve_array_shapes_locations_filters_and_provider_ids"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_reject_wrong_success_statuses_and_malformed_envelopes(",
+          "label": "setup_reads_reject_wrong_success_statuses_and_malformed_envelopes"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn projects_and_references_validate_known_shapes_and_preserve_extensions(",
+          "label": "projects_and_references_validate_known_shapes_and_preserve_extensions"
+        }
+      ],
+      "evidence": "setup-discovery"
     },
     "project.update": {
       "method": "PATCH",
@@ -1358,16 +1440,53 @@
     "provider.get": {
       "method": "GET",
       "path": "/api/provider/{providerID}",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/setup.rs",
+        "anchor": "pub async fn get(&self, id: &ProviderId)",
+        "label": "Providers::get"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_preserve_array_shapes_locations_filters_and_provider_ids(",
+          "label": "setup_reads_preserve_array_shapes_locations_filters_and_provider_ids"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_reject_wrong_success_statuses_and_malformed_envelopes(",
+          "label": "setup_reads_reject_wrong_success_statuses_and_malformed_envelopes"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn provider_errors_retain_typed_details_and_reject_unrepresentable_ids(",
+          "label": "provider_errors_retain_typed_details_and_reject_unrepresentable_ids"
+        }
+      ],
+      "evidence": "setup-discovery"
     },
     "provider.list": {
       "method": "GET",
       "path": "/api/provider",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Provider/credential management with secret-safe diagnostics and explicit activation behavior."
+      "status": "supported",
+      "rust": {
+        "file": "src/setup.rs",
+        "anchor": "pub async fn list(&self) -> Result<ProviderListResponse>",
+        "label": "Providers::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_preserve_array_shapes_locations_filters_and_provider_ids(",
+          "label": "setup_reads_preserve_array_shapes_locations_filters_and_provider_ids"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_reject_wrong_success_statuses_and_malformed_envelopes(",
+          "label": "setup_reads_reject_wrong_success_statuses_and_malformed_envelopes"
+        }
+      ],
+      "evidence": "setup-discovery"
     },
     "pty.connect": {
       "method": "GET",
@@ -1498,9 +1617,30 @@
     "reference.list": {
       "method": "GET",
       "path": "/api/reference",
-      "status": "planned",
-      "milestone": 4,
-      "reason": "Instruction/skill/reference discovery and mutation beyond the core conversation workflow."
+      "status": "supported",
+      "rust": {
+        "file": "src/setup.rs",
+        "anchor": "pub async fn list(&self) -> Result<ReferenceListResponse>",
+        "label": "References::list"
+      },
+      "protocol_tests": [
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_preserve_array_shapes_locations_filters_and_provider_ids(",
+          "label": "setup_reads_preserve_array_shapes_locations_filters_and_provider_ids"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn setup_reads_reject_wrong_success_statuses_and_malformed_envelopes(",
+          "label": "setup_reads_reject_wrong_success_statuses_and_malformed_envelopes"
+        },
+        {
+          "file": "tests/setup.rs",
+          "anchor": "fn projects_and_references_validate_known_shapes_and_preserve_extensions(",
+          "label": "projects_and_references_validate_known_shapes_and_preserve_extensions"
+        }
+      ],
+      "evidence": "setup-discovery"
     },
     "rpc.call": {
       "method": "POST",

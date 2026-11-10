@@ -38,7 +38,16 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-None.
+- [ ] Complete stable app-setup discovery: project list, config documents/shells,
+  provider list/get and references (70 → 76 supported operations). Review pinned
+  schema/source, add typed resources and shared models with sensitive Debug
+  redaction, test-first protocol and isolated live checks, docs/example and
+  coverage. Pass workspace/feature/MSRV, fmt/lint/docs and generation checks;
+  commit/push and verify Linux CI plus pinned smoke/active compatibility.
+  Implementation and local checks are complete: 330 workspace tests/doctests
+  pass (2 opt-in ignored), final setup adapter regressions, four Rust 1.88 feature
+  builds plus examples, fmt/clippy/docs, 13 generation checks and 38 Python tests.
+  Disposable smoke and active suites pass locally. Linux verification remains.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -95,14 +104,17 @@ The remaining 14 milestone-3 operations are experimental and stay out for now:
 
 ## Later: broader API coverage and release hardening (milestone 4)
 
-- [ ] Implement remaining stable session operations such as instructions.
+- [ ] Implement remaining stable session operations such as environment and moves.
   Activity, viewed acknowledgements, synthetic input, commands, compaction,
   revert and context/diff are implemented; see the goal records. Explicit
-  skill invocation and import/export are experimental in the current pin and
-  stay out until a separate opt-in review.
+  skill invocation, instruction management and import/export are experimental in
+  the current pin and stay out until a separate opt-in review.
 - [ ] Implement remaining configuration, project, skill and reference APIs.
-  Command/skill list discovery is complete.
+  Command/skill list discovery and stable project/config/shell/reference reads
+  are implemented. Mutations and experimental operations need separate review.
 - [ ] Implement provider, integration, and credential management APIs.
+  Stable provider list/get discovery is implemented; connection/credential changes
+  remain a separate goal.
 - [ ] Implement MCP management/resources and client-hosted MCP WebSockets.
 - [ ] Implement plugin management and generic plugin RPC calls/events with typed
   envelopes and support for dynamic payloads.
