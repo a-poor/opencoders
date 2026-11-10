@@ -666,6 +666,10 @@ remain outside this fixture. See [usage](../../docs/workflows.md).
 
 ## App-setup discovery (2026-11-09)
 
+Implementation revision `2b178893a03912f0c63195ec9797730e0699d0fa` passes all seven
+jobs in [Linux CI 42726525495](https://github.com/a-poor/opencoders/actions/runs/42726525495)
+and both jobs in [pinned compatibility 42726566487](https://github.com/a-poor/opencoders/actions/runs/42726566487).
+
 The six stable reads are checked by [`setup.rs`](../../tests/support/setup.rs)
 against the owned smoke server. Local macOS arm64 v2.2.5 smoke and active suites
 pass. Configuration has a file-backed document and a higher-priority virtual

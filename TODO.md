@@ -38,16 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-- [ ] Complete stable app-setup discovery: project list, config documents/shells,
-  provider list/get and references (70 → 76 supported operations). Review pinned
-  schema/source, add typed resources and shared models with sensitive Debug
-  redaction, test-first protocol and isolated live checks, docs/example and
-  coverage. Pass workspace/feature/MSRV, fmt/lint/docs and generation checks;
-  commit/push and verify Linux CI plus pinned smoke/active compatibility.
-  Implementation and local checks are complete: 330 workspace tests/doctests
-  pass (2 opt-in ignored), final setup adapter regressions, four Rust 1.88 feature
-  builds plus examples, fmt/clippy/docs, 13 generation checks and 38 Python tests.
-  Disposable smoke and active suites pass locally. Linux verification remains.
+None.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -233,6 +224,22 @@ when a decision is made.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 
 ## Completed
+
+- [x] Complete stable app-setup discovery: project list, config documents/shells,
+  provider list/get and reference catalogs (70 → 76 supported operations),
+  committed in `2b17889`. Preserve array/envelope shapes, location overrides,
+  archive filters, server ordering, shared models and exact numbers. Detailed
+  configuration types validate unions/bounds and redact Debug output; boxed
+  document entries keep directory entries small. Missing providers are typed.
+  Local validation: 330 workspace tests/doctests pass (2 opt-in ignored), final
+  adapter regressions, four Rust 1.88 feature builds and examples, fmt/clippy/docs,
+  13 generation targets, 38 Python tests and pinned v2.2.5 smoke/active suites.
+  All seven jobs in [CI 42726525495](https://github.com/a-poor/opencoders/actions/runs/42726525495)
+  and both jobs in [pinned compatibility 42726566487](https://github.com/a-poor/opencoders/actions/runs/42726566487)
+  pass at the implementation revision. Archive-read checks use owned seeded
+  metadata; remote references/providers, managed config, hot reload and Windows
+  shells remain outside live evidence. Docs/example/coverage are updated;
+  instruction management is correctly classified as experimental and left out.
 
 - [x] Complete stable session activity, viewed acknowledgements and synthetic input
   (67 → 70 supported operations), committed in `5cb5fcf`.
