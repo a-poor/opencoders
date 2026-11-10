@@ -72,7 +72,11 @@ and the protocol/server shell handlers. Retention eviction (25 exited commands),
 the seven-day file sweep, remote workspace bypass, plugin hooks, the 1 MiB ended
 preview and bounded synthetic tail are source-reviewed, not live stress coverage.
 Windows, restarts, concurrent session moves and plugin environment overrides are
-unverified. Hosted Linux verification is pending for this slice.
+unverified. At implementation commit `492253317d40b7cf55c47be83ebb0b3be1bfa127`,
+all seven Linux jobs in [ordinary CI 42729903511](https://github.com/a-poor/opencoders/actions/runs/42729903511)
+and both smoke/active jobs in [pinned compatibility 42730417495](https://github.com/a-poor/opencoders/actions/runs/42730417495)
+pass. The shell fixture is therefore verified on macOS arm64 and Linux x86-64;
+the later verification-record commit changes documentation only.
 
 ## Active execution
 

@@ -38,20 +38,7 @@ blank bullet at the end so the next note is easy to add.
 
 ## In progress
 
-- [ ] Complete the seven-operation stable shell goal (76 → 83 supported):
-  `shell.create/get/list/output/remove`, `session.shell`, `session.environment`.
-  Review v2.2.5 execution, output paging/UTF-8, retention and environment semantics;
-  generate strict inputs and shared responses; preserve metadata/numbers and
-  redact sensitive Debug output. Add model/protocol regressions and owned live
-  fixtures for exits, timeouts, termination, paging, session events/history and
-  environment replacement. Update guides/example/coverage and generation guards;
-  pass workspace/feature/MSRV, formatting/lints/docs, all generation checks and
-  pinned compatibility, then commit/push and verify Linux CI. Keep background
-  ownership, experimental/deprecated/migration APIs and publishing out of scope.
-  Implementation and local validation complete: 339 workspace tests/doctests
-  (2 opt-in ignored), 38 Python tests, four Rust 1.88 feature builds and examples,
-  fmt/clippy/docs, 14 generation checks, and pinned v2.2.5 smoke/active fixtures.
-  Hosted Linux CI and compatibility verification remain before goal completion.
+None.
 
 ## Now: contract and foundation (milestone 1)
 
@@ -238,6 +225,26 @@ when a decision is made.
   SSE IDs remain opaque metadata, separate from explicit log sequence checkpoints.
 
 ## Completed
+
+- [x] Complete stable standalone and session shell APIs (76 → 83 supported):
+  `shell.create/get/list/output/remove`, `session.shell`, `session.environment`,
+  committed in `4922533`. Strict generated inputs preserve omission/null/empty
+  distinctions and safe integers; polling shares event record/output types,
+  retains response metadata and redacts sensitive Debug values. Session shell
+  deadlines are independent of ordinary requests and mutations never retry.
+  Owned pinned fixtures verify exits, timeout, termination, byte/UTF-8 paging,
+  location isolation, session events/history, parked completion, environment
+  replacement and completion after a local HTTP timeout. Guides/example,
+  generation guards and coverage are updated.
+  Local validation: 339 workspace tests/doctests (2 opt-in ignored), 38 Python
+  tests, four Rust 1.88 feature builds and examples, fmt/clippy/docs, all 14
+  generation targets, and v2.2.5 smoke/active suites. All seven jobs in
+  [CI 42729903511](https://github.com/a-poor/opencoders/actions/runs/42729903511)
+  and both jobs in [compatibility 42730417495](https://github.com/a-poor/opencoders/actions/runs/42730417495)
+  pass at the implementation revision on Linux. Retention eviction/sweep,
+  Windows, remote workspaces, plugins and concurrent session moves remain
+  outside live evidence. Background ownership and experimental/deprecated/
+  migration routes remain out of scope; no release was published.
 
 - [x] Complete stable app-setup discovery: project list, config documents/shells,
   provider list/get and reference catalogs (70 → 76 supported operations),

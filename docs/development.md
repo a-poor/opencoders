@@ -39,7 +39,9 @@ arm64 and Linux x86-64**, using disposable data and no model calls. The 16 works
 operations and nine session-workflow operations also pass on macOS arm64 and
 Linux at `3ff1edb` in run 42713795590. Saved-permission management also passes
 on macOS arm64 and Linux at `ea1df6f` in run 42715208158.
-Run `python3 tools/live/run.py --websocket`;
+The seven shell/environment methods pass on both platforms at `4922533`, with
+all seven CI jobs and smoke/active compatibility jobs passing in runs
+42729903511 and 42730417495. Run `python3 tools/live/run.py --websocket`;
 see [compatibility details and CI](https://github.com/a-poor/opencoders/blob/main/tools/live/README.md) for prerequisites, release
 checksums, verified behavior, and limitations. Other endpoints remain unimplemented. Log payload replay/follow uses explicitly seeded
 fixtures because the stock CLI disables retention. Run `python3 tools/live/active.py`

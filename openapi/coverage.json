@@ -473,7 +473,7 @@
       ]
     },
     "shells": {
-      "live_scope": "The owned smoke fixture runs local commands with zero/nonzero exits, server timeout and explicit removal; checks merged output, running-only lists, retained detail, location overrides, byte cursors, UTF-8 splitting and deleted capture files; verifies session shell started/ended events, message history, parked synthetic completion, environment replacement including empty maps, and completion after a local HTTP timeout.",
+      "live_scope": "Verified 2026-11-09 on macOS arm64 and Linux x86-64 at implementation commit 4922533 (CI 42729903511; pinned compatibility 42730417495). The owned smoke fixture runs local commands with zero/nonzero exits, server timeout and explicit removal; checks merged output, running-only lists, retained detail, location overrides, byte cursors, UTF-8 splitting and deleted capture files; verifies session shell started/ended events, message history, parked synthetic completion, environment replacement including empty maps, and completion after a local HTTP timeout.",
       "live_tests": [
         {
           "file": "tests/support/shells.rs",
